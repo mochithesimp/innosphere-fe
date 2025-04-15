@@ -1,10 +1,10 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import EmailVerificationPage from './pages/EmailVerificationPage'
+import LoginPage from './pages/Auth/LoginPage'
+import RegisterPage from './pages/Auth/RegisterPage'
+import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage'
+import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
+import EmailVerificationPage from './pages/Auth/EmailVerificationPage'
 
 function App() {
   return (
