@@ -12,18 +12,20 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
     return (
         <div className="flex h-screen w-full bg-white fixed">
             {/* Left side - Form Content */}
-            <div className="w-full lg:w-3/5 p-8 flex flex-col justify-center bg-white">
-                {/* Logo */}
-                <div className="mb-8 pl-8" style={{ alignSelf: 'flex-start' }}>
+            <div className="w-full lg:w-3/5 p-8 flex flex-col relative bg-white">
+                {/* Logo - Fixed position at the top */}
+                <div className="absolute top-8 left-8 z-10">
                     <div className="flex items-center gap-3">
                         <img src="/logo.png" alt="InnoSphere Logo" className="w-8 h-8" />
                         <span className="text-xl font-medium">InnoSphere</span>
                     </div>
                 </div>
 
-                {/* Form Container */}
-                <div className="max-w-md mx-auto w-full px-4">
-                    {children}
+                {/* Form Container - Centered */}
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="max-w-md w-full px-4">
+                        {children}
+                    </div>
                 </div>
             </div>
 

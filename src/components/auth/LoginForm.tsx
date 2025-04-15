@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
+import { useNavigate } from 'react-router-dom';
 
 const LoginForm: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
+    };
+
+    const handleRegisterClick = () => {
+        navigate('/register');
     };
 
     return (
@@ -15,9 +21,16 @@ const LoginForm: React.FC = () => {
             <div className="text-left">
                 <h1 className="text-2xl font-bold mb-1">Đăng nhập</h1>
                 <div className="text-sm text-gray-600">
-                    Bạn chưa có tài khoản?
-                    <a href="#" className="text-[#309689] hover:underline ml-1">
-                        Đăng ký
+                    Không có tài khoản?
+                    <a
+                        href="#"
+                        className="text-[#309689] hover:underline ml-1"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleRegisterClick();
+                        }}
+                    >
+                        Tạo tài khoản
                     </a>
                 </div>
             </div>
@@ -62,45 +75,33 @@ const LoginForm: React.FC = () => {
                 <div className="flex items-center space-x-2">
                     <Checkbox id="remember" className="mt-0" />
                     <label htmlFor="remember" className="text-sm text-gray-600">
-                        Nhớ mật khẩu
+                        Ghi nhớ tôi
                     </label>
                 </div>
                 <a href="#" className="text-sm text-[#309689] hover:underline">
-                    Quên mật khẩu?
+                    Quên mật khẩu
                 </a>
             </div>
 
             {/* Submit button */}
-            <div className="text-center">
-                <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    style={{
-                        display: 'block',
-                        width: '100%',
-                        backgroundColor: '#309689',
-                        color: 'white',
-                        textDecoration: 'none',
-                        padding: '12px 16px',
-                        borderRadius: '6px',
-                        fontWeight: '500',
-                        border: 'none'
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span>Đăng Nhập</span>
-                        <svg
-                            style={{ width: '16px', height: '16px', marginLeft: '8px' }}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                        </svg>
-                    </div>
-                </a>
-            </div>
+            <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="block w-full bg-[#309689] text-white rounded-md text-center py-3 font-medium"
+            >
+                <div className="flex items-center justify-center">
+                    Đăng Nhập
+                    <svg
+                        className="w-4 h-4 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
 
             {/* Divider */}
             <div className="relative flex items-center justify-center my-4">
