@@ -1,0 +1,31 @@
+/* Force light mode styles */
+:root {
+  color-scheme: light !important;
+}
+
+html, body, #root {
+  background-color: white !important;
+  color: black !important;
+}
+
+.dark {
+  background-color: white !important;
+  color: black !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html, body, #root {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  input, button, select, textarea {
+    background-color: white !important;
+    color: black !important;
+  }
+}
+
+.dark-override {
+  background-color: white !important;
+  color: black !important;
+} 
