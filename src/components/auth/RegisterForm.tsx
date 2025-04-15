@@ -20,6 +20,12 @@ const RegisterForm: React.FC = () => {
         navigate('/login');
     };
 
+    const handleRegisterSubmit = (e: React.MouseEvent) => {
+        e.preventDefault();
+        // API call to register
+        navigate('/verify-email');
+    };
+
     return (
         <div className="space-y-6">
             {/* Title and Dropdown in a layout row */}
@@ -145,7 +151,7 @@ const RegisterForm: React.FC = () => {
             {/* Submit button */}
             <a
                 href="#"
-                onClick={(e) => e.preventDefault()}
+                onClick={handleRegisterSubmit}
                 className="block w-full bg-[#309689] text-white rounded-md text-center py-3 font-medium"
             >
                 <div className="flex items-center justify-center">
