@@ -9,6 +9,13 @@ const ForgotPasswordForm: React.FC = () => {
         navigate('/login');
     };
 
+    const handleResetPassword = (e: React.MouseEvent) => {
+        e.preventDefault();
+        // checkkkkkk
+        // APIIIII
+        navigate('/reset-password');
+    };
+
     return (
         <div className="space-y-6">
             {/* Title */}
@@ -52,7 +59,7 @@ const ForgotPasswordForm: React.FC = () => {
             {/* Submit button */}
             <a
                 href="#"
-                onClick={(e) => e.preventDefault()}
+                onClick={handleResetPassword}
                 className="block w-full bg-[#309689] text-white rounded-md text-center py-3 font-medium"
             >
                 <div className="flex items-center justify-center">
