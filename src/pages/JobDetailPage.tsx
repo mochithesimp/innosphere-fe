@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import Popup from '../components/Popup';
 
 const JobDetailPage: React.FC = () => {
+    const [showModal, setShowModal] = useState(false);
+
+    const openModal = () => {
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+    };
+
     return (
         <div className="bg-white min-h-screen">
             <Header />
@@ -79,15 +90,19 @@ const JobDetailPage: React.FC = () => {
 
                         {/* Apply button */}
                         <div style={{ width: '180px' }}>
-                            <div style={{
-                                backgroundColor: '#37A594',
-                                borderRadius: '4px',
-                                padding: '12px 0',
-                                textAlign: 'center',
-                                color: 'white',
-                                fontWeight: '500',
-                                width: '100%'
-                            }}>
+                            <div
+                                style={{
+                                    backgroundColor: '#37A594',
+                                    borderRadius: '4px',
+                                    padding: '12px 0',
+                                    textAlign: 'center',
+                                    color: 'white',
+                                    fontWeight: '500',
+                                    width: '100%',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={openModal}
+                            >
                                 Ứng Tuyển
                             </div>
                         </div>
@@ -227,7 +242,7 @@ const JobDetailPage: React.FC = () => {
 
                         {/* Related jobs section */}
                         <div className="mb-12 pt-8">
-                            <h2 className="text-2xl font-bold mb-6 text-left">Công việc liên quan</h2>
+                            <h2 className="text-3xl font-bold mb-6 text-left">Công việc liên quan</h2>
 
                             {/* Job item */}
                             <div className="border-b border-gray-200 py-6">
@@ -573,6 +588,13 @@ const JobDetailPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Use the Popup component instead of inline modal */}
+            <Popup
+                show={showModal}
+                onClose={closeModal}
+                jobTitle="Nhân viên phục vụ bàn"
+            />
 
             <Footer />
         </div>
