@@ -102,9 +102,9 @@ const timePeriods = [
     { id: '30', label: '30 ngày/tuần', count: 10 }
 ];
 
-// Create ChiTietButton component using SVG approach
-const ChiTietButton: React.FC = () => {
-    return (
+const ChiTietButton: React.FC<{ jobTitle?: string }> = ({ jobTitle }) => {
+    const isServerJob = jobTitle === "Nhân viên phục vụ bàn";
+    const buttonContent = (
         <div
             style={{
                 height: '36px',
@@ -124,6 +124,16 @@ const ChiTietButton: React.FC = () => {
             />
         </div>
     );
+
+    if (isServerJob) {
+        return (
+            <a href="/job-detail">
+                {buttonContent}
+            </a>
+        );
+    }
+
+    return buttonContent;
 };
 
 const JobListItem = ({ job }: { job: typeof jobData[0] }) => (
@@ -188,7 +198,7 @@ const JobListItem = ({ job }: { job: typeof jobData[0] }) => (
                         </div>
                     </div>
 
-                    <ChiTietButton />
+                    <ChiTietButton jobTitle={job.title} />
                 </div>
             </div>
         </div>
@@ -519,7 +529,7 @@ const JobsPage: React.FC = () => {
             <Header />
 
             {/* Banner with title */}
-            <div className="bg-black text-white pt-8 pb-12">
+            <div className="bg-black text-white pt-4 pb-8">
                 <div className="container mx-auto px-4 max-w-[90%]">
                     <h1 className="text-6xl font-bold text-center">Công Việc</h1>
                 </div>

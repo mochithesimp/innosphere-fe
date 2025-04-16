@@ -7,6 +7,7 @@ import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
 import EmailVerificationPage from './pages/Auth/EmailVerificationPage'
 import HomePage from './pages/HomePage'
 import JobsPage from './pages/JobsPage'
+import JobDetailPage from './pages/JobDetailPage'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/job-detail" element={<JobDetailPage />} />
         </Routes>
       </Router>
     </div>

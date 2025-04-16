@@ -1,7 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header: React.FC = () => {
+    const location = useLocation();
+    const path = location.pathname;
+
     return (
         <header className="bg-black text-white py-4">
             <div className="container mx-auto px-4 max-w-[90%]">
@@ -16,11 +19,36 @@ const Header: React.FC = () => {
 
                     {/* Navigation */}
                     <nav className="hidden md:flex items-center">
-                        <Link to="/" className="px-4 py-2 hover:text-[#309689] text-base">Trang chủ</Link>
-                        <Link to="/jobs" className="px-4 py-2 hover:text-[#309689] text-base font-medium">Công việc</Link>
-                        <Link to="/about" className="px-4 py-2 hover:text-[#309689] text-base">Về chúng tôi</Link>
-                        <Link to="/contact" className="px-4 py-2 hover:text-[#309689] text-base">Liên hệ</Link>
-                        <Link to="/ads" className="px-4 py-2 hover:text-[#309689] text-base">Quảng cáo</Link>
+                        <Link
+                            to="/"
+                            className={`px-4 py-2 text-base ${path === '/' ? 'font-bold text-white' : 'font-normal text-gray-300 hover:text-[#309689]'}`}
+                        >
+                            Trang chủ
+                        </Link>
+                        <Link
+                            to="/jobs"
+                            className={`px-4 py-2 text-base ${path === '/jobs' || path.includes('/job/') ? 'font-bold text-white' : 'font-normal text-gray-300 hover:text-[#309689]'}`}
+                        >
+                            Công việc
+                        </Link>
+                        <Link
+                            to="/about"
+                            className={`px-4 py-2 text-base ${path === '/about' ? 'font-bold text-white' : 'font-normal text-gray-300 hover:text-[#309689]'}`}
+                        >
+                            Về chúng tôi
+                        </Link>
+                        <Link
+                            to="/contact"
+                            className={`px-4 py-2 text-base ${path === '/contact' ? 'font-bold text-white' : 'font-normal text-gray-300 hover:text-[#309689]'}`}
+                        >
+                            Liên hệ
+                        </Link>
+                        <Link
+                            to="/ads"
+                            className={`px-4 py-2 text-base ${path === '/ads' ? 'font-bold text-white' : 'font-normal text-gray-300 hover:text-[#309689]'}`}
+                        >
+                            Quảng cáo
+                        </Link>
                     </nav>
 
                     {/* Auth buttons */}

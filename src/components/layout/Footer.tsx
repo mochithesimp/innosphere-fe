@@ -49,19 +49,39 @@ const Footer: React.FC = () => {
                             Nhận thông tin việc làm và mẹo nghề nghiệp mới nhất.
                         </p>
                         <form className="space-y-3 text-left">
-                            <input
-                                type="email"
-                                placeholder="Nhập Email"
-                                className="w-full px-4 py-3 bg-transparent border border-gray-700 rounded-md text-gray-300 focus:outline-none focus:border-[#309689] text-left"
-                                required
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="email"
+                                    placeholder="Nhập Email"
+                                    style={{
+                                        width: '100%',
+                                        padding: '14px 16px',
+                                        backgroundColor: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        borderRadius: '6px',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        outline: 'none'
+                                    }}
+                                    required
+                                />
+                            </div>
                             <div className="w-full">
-                                <button
-                                    type="submit"
-                                    className="w-full bg-[#309689] text-white py-4 px-6 rounded-lg text-lg font-medium hover:bg-[#277a6e] transition-colors duration-200"
+                                <div
+                                    style={{
+                                        backgroundColor: '#309689',
+                                        color: 'white',
+                                        padding: '12px 0',
+                                        borderRadius: '6px',
+                                        fontWeight: '500',
+                                        fontSize: '16px',
+                                        width: '100%',
+                                        textAlign: 'center',
+                                        cursor: 'pointer'
+                                    }}
                                 >
                                     Đăng ký ngay
-                                </button>
+                                </div>
                             </div>
                         </form>
                     </div>
