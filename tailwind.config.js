@@ -4,7 +4,7 @@ module.exports = {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
-    darkMode: false, // or 'media' or 'class'
+    darkMode: 'media', // Updated from 'false' to 'media'
     theme: {
         extend: {
             colors: {
@@ -15,6 +15,7 @@ module.exports = {
                     900: '#0c4f10', // Very dark green for backgrounds
                 },
                 teal: {
+                    500: '#309689', // Added exact teal color from the image
                     600: '#0d9488', // Teal color for buttons
                     700: '#0f766e', // Darker teal for hover
                 },

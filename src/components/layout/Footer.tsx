@@ -58,7 +58,7 @@ const Footer: React.FC = () => {
                             <div className="w-full">
                                 <button
                                     type="submit"
-                                    className="w-full bg-[#309689] text-white py-4 px-6 rounded-full text-lg font-medium hover:bg-[#277a6e] transition-colors duration-200"
+                                    className="w-full bg-[#309689] text-white py-4 px-6 rounded-lg text-lg font-medium hover:bg-[#277a6e] transition-colors duration-200"
                                 >
                                     Đăng ký ngay
                                 </button>
