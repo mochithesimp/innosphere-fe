@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { IoLocationOutline } from "react-icons/io5";
 
 import Header from '../components/Employee/Header';
 import Sidebar from '../components/Employee/Sidebar';
+import RatingModal from '../components/Employee/RatingModal';
 
 // Add CSS for the active pagination button and arrow icons
 const paginationStyles = `
@@ -22,18 +23,6 @@ const paginationStyles = `
         cursor: pointer;
     }
     
-    .pagination-arrow {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #e9f5f3;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        cursor: pointer;
-    }
-    
     .pagination-arrow svg {
         color: #35a79c;
         width: 16px;
@@ -41,24 +30,40 @@ const paginationStyles = `
     }
 `;
 
+// Add CSS for buttons
+const buttonStyles = `
+    .rating-button-fixed {
+        background-color: #F1F2F4 !important;
+        color: #309689 !important;
+        padding: 6px 16px !important;
+        border-radius: 6px !important;
+        border: 1px solid #e0e1e3 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        display: inline-block !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+`;
+
 const EmployeeJobsPage: React.FC = () => {
-    // Common button style for consistency
-    const buttonStyle = {
-        backgroundColor: '#EBF5F4',
-        color: '#309689',
-        padding: '6px 16px',
-        borderRadius: '6px',
-        border: '1px solid #d0e6e3',
-        fontSize: '14px',
-        fontWeight: '500',
-        display: 'inline-block',
-        textDecoration: 'none'
+    // State for managing the rating modal
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [selectedJob, setSelectedJob] = useState({ title: '', employer: '' });
+
+    // Function to open rating modal with job details
+    const openRatingModal = (jobTitle: string, employerName: string) => {
+        setSelectedJob({ title: jobTitle, employer: employerName });
+        setIsRatingModalOpen(true);
     };
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
-            {/* Add the CSS style */}
+            {/* Add the CSS styles */}
             <style>{paginationStyles}</style>
+            <style>{buttonStyles}</style>
 
             {/* Header component with bottom border */}
             <div className="w-full border-b border-gray-300">
@@ -118,7 +123,17 @@ const EmployeeJobsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div>
-                                        <a href="#" className="detail-button" style={buttonStyle}>
+                                        <a href="#" className="detail-button" style={{
+                                            backgroundColor: '#F1F2F4',
+                                            color: '#309689',
+                                            padding: '6px 16px',
+                                            borderRadius: '6px',
+                                            border: '1px solid #e0e1e3',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            display: 'inline-block',
+                                            textDecoration: 'none'
+                                        }}>
                                             Xem Chi Tiết
                                         </a>
                                     </div>
@@ -151,9 +166,12 @@ const EmployeeJobsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div>
-                                        <a href="#" className="detail-button" style={buttonStyle}>
+                                        <button
+                                            onClick={() => openRatingModal('Bán rau má', 'Di Bảy')}
+                                            className="rating-button-fixed"
+                                        >
                                             Đánh Giá
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -184,9 +202,12 @@ const EmployeeJobsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div>
-                                        <a href="#" className="detail-button" style={buttonStyle}>
+                                        <button
+                                            onClick={() => openRatingModal('Cắt bịch nước mắm', 'Di Bảy')}
+                                            className="rating-button-fixed"
+                                        >
                                             Đánh Giá
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -196,13 +217,13 @@ const EmployeeJobsPage: React.FC = () => {
                                         <div className="bg-gray-200 p-3 rounded-lg mr-4 flex items-center justify-center w-10 h-10">
                                             <span className="text-gray-700 font-bold text-lg">B</span>
                                         </div>
-                                        <div className="text-left">
+                                        <div className="text-left overflow-hidden">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-medium">Bán đậu hũ</h3>
-                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">9h00-15h00</span>
+                                                <h3 className="font-medium truncate">Bán đậu hũ</h3>
+                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3] whitespace-nowrap">9h00-15h00</span>
                                             </div>
                                             <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                                <IoLocationOutline className="mr-1" />
+                                                <IoLocationOutline className="mr-1 flex-shrink-0" />
                                                 <span>HCM</span>
                                                 <span className="mx-2">•</span>
                                                 <span>20.000/Giờ</span>
@@ -217,9 +238,12 @@ const EmployeeJobsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div>
-                                        <a href="#" className="detail-button" style={buttonStyle}>
+                                        <button
+                                            onClick={() => openRatingModal('Bán đậu hũ', 'Di Bảy')}
+                                            className="rating-button-fixed"
+                                        >
                                             Đánh Giá
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -250,7 +274,17 @@ const EmployeeJobsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div>
-                                        <a href="#" className="detail-button" style={buttonStyle}>
+                                        <a href="#" className="detail-button" style={{
+                                            backgroundColor: '#F1F2F4',
+                                            color: '#309689',
+                                            padding: '6px 16px',
+                                            borderRadius: '6px',
+                                            border: '1px solid #e0e1e3',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            display: 'inline-block',
+                                            textDecoration: 'none'
+                                        }}>
                                             Xem Chi Tiết
                                         </a>
                                     </div>
@@ -283,7 +317,17 @@ const EmployeeJobsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div>
-                                        <a href="#" className="detail-button" style={buttonStyle}>
+                                        <a href="#" className="detail-button" style={{
+                                            backgroundColor: '#F1F2F4',
+                                            color: '#309689',
+                                            padding: '6px 16px',
+                                            borderRadius: '6px',
+                                            border: '1px solid #e0e1e3',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            display: 'inline-block',
+                                            textDecoration: 'none'
+                                        }}>
                                             Xem Chi Tiết
                                         </a>
                                     </div>
@@ -350,6 +394,14 @@ const EmployeeJobsPage: React.FC = () => {
             <footer className="bg-white p-4 text-center text-gray-500 text-sm border-t border-gray-300 w-full">
                 <p>© 2025 InnoSphere. All rights Reserved</p>
             </footer>
+
+            {/* Rating Modal */}
+            <RatingModal
+                isOpen={isRatingModalOpen}
+                onClose={() => setIsRatingModalOpen(false)}
+                jobTitle={selectedJob.title}
+                employerName={selectedJob.employer}
+            />
         </div>
     );
 };
