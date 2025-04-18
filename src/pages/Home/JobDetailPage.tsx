@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
-import Popup from '../components/Popup';
+import Header from '../../components/layout/Header';
+import Footer from '../../components/layout/Footer';
+import Popup from '../../components/Popup';
 
 const JobDetailPage: React.FC = () => {
     const [showModal, setShowModal] = useState(false);

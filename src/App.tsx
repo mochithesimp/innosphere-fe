@@ -5,12 +5,12 @@ import RegisterPage from './pages/Auth/RegisterPage'
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage'
 import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
 import EmailVerificationPage from './pages/Auth/EmailVerificationPage'
-import HomePage from './pages/HomePage'
-import JobsPage from './pages/JobsPage'
-import JobDetailPage from './pages/JobDetailPage'
-import AboutPage from './pages/AboutPage'
-import ContactPage from './pages/ContactPage'
-import AdsPage from './pages/AdsPage'
+import HomePage from './pages/Home/HomePage'
+import JobsPage from './pages/Home/JobsPage'
+import JobDetailPage from './pages/Home/JobDetailPage'
+import AboutPage from './pages/Home/AboutPage'
+import ContactPage from './pages/Home/ContactPage'
+import AdsPage from './pages/Home/AdsPage'
 
 function App() {
   return (

@@ -1,6 +1,6 @@
 import React from 'react';
-import Footer from '../components/layout/Footer';
-import Header from '../components/layout/Header';
+import Footer from '../../components/layout/Footer';
+import Header from '../../components/layout/Header';
 import { Link } from 'react-router-dom';
 import { HiOutlineArrowRight } from 'react-icons/hi';
 
