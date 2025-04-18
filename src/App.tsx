@@ -15,6 +15,7 @@ import EmployeeDashboard from './pages/EmployeeDashboard'
 import EmployeeJobsPage from './pages/EmployeeJobsPage'
 import EmployeeFavorites from './pages/EmployeeFavorites'
 import EmployeeJobAlerts from './pages/EmployeeJobAlerts'
+import EmployeeSettings from './pages/EmployeeSettings'
 
 function App() {
   return (
@@ -39,7 +40,7 @@ function App() {
           <Route path="/employee/favorites" element={<EmployeeFavorites />} />
           <Route path="/employee/job-alerts" element={<EmployeeJobAlerts />} />
           <Route path="/employee/notifications" element={<EmployeeDashboard />} />
-          <Route path="/employee/settings" element={<EmployeeDashboard />} />
+          <Route path="/employee/settings" element={<EmployeeSettings />} />
         </Routes>
       </Router>
     </div>
