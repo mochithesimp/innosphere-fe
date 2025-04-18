@@ -11,6 +11,7 @@ import JobDetailPage from './pages/Home/JobDetailPage'
 import AboutPage from './pages/Home/AboutPage'
 import ContactPage from './pages/Home/ContactPage'
 import AdsPage from './pages/Home/AdsPage'
+import EmployeeDashboard from './pages/EmployeeDashboard'
 
 function App() {
   return (
@@ -28,6 +29,13 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/ads" element={<AdsPage />} />
+
+          {/* Employee routes */}
+          <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+          <Route path="/employee/jobs" element={<EmployeeDashboard />} />
+          <Route path="/employee/favorites" element={<EmployeeDashboard />} />
+          <Route path="/employee/notifications" element={<EmployeeDashboard />} />
+          <Route path="/employee/settings" element={<EmployeeDashboard />} />
         </Routes>
       </Router>
     </div>
