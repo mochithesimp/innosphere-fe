@@ -21,7 +21,7 @@ const Sidebar: React.FC = () => {
         location.pathname.includes('/dashboard') ? 'overview' :
             location.pathname.includes('/jobs') ? 'jobs' :
                 location.pathname.includes('/favorites') ? 'favorites' :
-                    location.pathname.includes('/notifications') ? 'notifications' :
+                    location.pathname.includes('/job-alerts') ? 'notifications' :
                         location.pathname.includes('/settings') ? 'settings' : 'overview'
     );
 
@@ -47,7 +47,7 @@ const Sidebar: React.FC = () => {
         {
             id: 'notifications',
             title: 'Cảnh báo công việc',
-            path: '/employee/notifications',
+            path: '/employee/job-alerts',
             icon: <BsBell className="w-5 h-5" />,
             count: 9
         },
