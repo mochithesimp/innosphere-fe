@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Header from '../components/Employee/Header';
 import Sidebar from '../components/Employee/Sidebar';
 import { FiUpload, FiPlus } from 'react-icons/fi';
@@ -7,6 +7,7 @@ import { FiUser } from 'react-icons/fi';
 import { BsFileEarmarkText } from 'react-icons/bs';
 import { BiWorld } from 'react-icons/bi';
 import { IoSettingsOutline } from 'react-icons/io5';
+import CVModal from '../components/Employee/CVModal';
 
 
 const settingStyles = `
@@ -159,10 +160,19 @@ const settingStyles = `
 
 const EmployeeSettings: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>('basic');
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isCVModalOpen, setIsCVModalOpen] = useState(false);
 
     const handleFileUpload = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleAddCV = (name: string, file: File | null) => {
+        // Here you would typically handle the CV upload to a server
+        console.log('Adding CV:', name, file);
+        // Close the modal
+        setIsCVModalOpen(false);
+        // You might want to refresh the CVs list or show a success message
     };
 
     return (
@@ -545,7 +555,10 @@ const EmployeeSettings: React.FC = () => {
                                         </div>
 
                                         {/* Add CV Button */}
-                                        <div className="border-2 border-dashed border-gray-200 p-4 rounded-lg flex items-start cursor-pointer hover:bg-gray-50 relative">
+                                        <div
+                                            className="border-2 border-dashed border-gray-200 p-4 rounded-lg flex items-start cursor-pointer hover:bg-gray-50 relative"
+                                            onClick={() => setIsCVModalOpen(true)}
+                                        >
                                             <div className="flex items-start">
                                                 <div className="mr-3">
                                                     <div className="h-6 w-6 rounded-full bg-[#E8F5F3] flex items-center justify-center">
@@ -578,6 +591,13 @@ const EmployeeSettings: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* CV Modal */}
+            <CVModal
+                isOpen={isCVModalOpen}
+                onClose={() => setIsCVModalOpen(false)}
+                onSubmit={handleAddCV}
+            />
         </div>
     );
 };
