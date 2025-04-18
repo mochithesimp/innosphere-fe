@@ -8,6 +8,9 @@ import EmailVerificationPage from './pages/Auth/EmailVerificationPage'
 import HomePage from './pages/HomePage'
 import JobsPage from './pages/JobsPage'
 import JobDetailPage from './pages/JobDetailPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import AdsPage from './pages/AdsPage'
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/job-detail" element={<JobDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/ads" element={<AdsPage />} />
         </Routes>
       </Router>
     </div>
