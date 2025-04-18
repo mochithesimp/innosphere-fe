@@ -134,7 +134,7 @@ const AdsPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Basic Plan */}
                         <div className="border border-teal-500 rounded-3xl flex flex-col h-full overflow-hidden">
-                            <div className="p-6 border-b border-teal-500">
+                            <div className="p-6 border-b border-teal-500 text-left">
                                 <h3 className="font-medium text-lg">Trang chi tiết công việc</h3>
                             </div>
 
@@ -180,7 +180,7 @@ const AdsPage: React.FC = () => {
 
                         {/* Premium Plan - Highlighted */}
                         <div className="rounded-3xl flex flex-col h-full bg-[#F0F9F6] overflow-hidden">
-                            <div className="p-6 border-b border-teal-500">
+                            <div className="p-6 border-b border-teal-500 text-left">
                                 <h3 className="font-medium text-lg">Trái/ phải trang chính</h3>
                             </div>
 
@@ -226,7 +226,7 @@ const AdsPage: React.FC = () => {
 
                         {/* Premium Plan */}
                         <div className="border border-teal-500 rounded-3xl flex flex-col h-full overflow-hidden">
-                            <div className="p-6 border-b border-teal-500">
+                            <div className="p-6 border-b border-teal-500 text-left">
                                 <h3 className="font-medium text-lg">Trên cùng trang chính</h3>
                             </div>
 
