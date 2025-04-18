@@ -80,19 +80,22 @@ const Sidebar: React.FC = () => {
                         to={item.path}
                         className={`flex items-center px-4 py-3 text-sm 
                             ${activeItem === item.id
-                                ? 'bg-[#eafaf7] border-l-[3px] border-[#46c1ae]'
-                                : 'text-gray-600 hover:bg-gray-50 border-l-[3px] border-transparent'
+                                ? 'bg-[#E8F5F3] border-l-4 border-[#309689]'
+                                : 'text-gray-600 hover:bg-gray-50 border-l-4 border-transparent'
                             }`}
                         onClick={() => handleItemClick(item.id)}
                     >
-                        <span className={`ml-1 ${activeItem === item.id ? 'text-[#46c1ae]' : 'text-gray-500'}`}>
+                        <span className={activeItem === item.id ? 'text-[#309689]' : 'text-gray-500'}>
                             {item.icon}
                         </span>
-                        <span className={`ml-3 ${activeItem === item.id ? 'text-[#46c1ae]' : 'text-gray-600'}`}>
+                        <span className={`ml-3 font-medium ${activeItem === item.id ? 'text-[#309689]' : 'text-gray-600'}`}>
                             {item.title}
                         </span>
                         {item.count && (
-                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs ml-auto">
+                            <span className={`px-2 py-0.5 rounded-full text-xs ml-auto ${activeItem === item.id
+                                ? 'bg-[#E8F5F3] text-[#309689]'
+                                : 'bg-gray-100 text-gray-600'
+                                }`}>
                                 {item.count < 10 ? `0${item.count}` : item.count}
                             </span>
                         )}
@@ -102,13 +105,13 @@ const Sidebar: React.FC = () => {
                 {/* Logout Button - Positioned at the end of middle content */}
                 <Link
                     to="/logout"
-                    className="flex items-center px-4 py-3 mt-auto text-sm text-gray-600 hover:bg-gray-50 border-l-[3px] border-transparent"
+                    className="flex items-center px-4 py-3 mt-auto text-sm text-gray-600 hover:bg-gray-50 border-l-4 border-transparent"
                     onClick={() => handleItemClick('logout')}
                 >
-                    <span className="ml-1">
-                        <IoLogOutOutline className="w-5 h-5 text-gray-500" />
+                    <span className="text-gray-500">
+                        <IoLogOutOutline className="w-5 h-5" />
                     </span>
-                    <span className="ml-3">Đăng xuất</span>
+                    <span className="ml-3 font-medium">Đăng xuất</span>
                 </Link>
             </div>
         </div>
