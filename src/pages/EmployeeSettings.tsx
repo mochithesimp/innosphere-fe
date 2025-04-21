@@ -578,7 +578,139 @@ const EmployeeSettings: React.FC = () => {
                         )}
 
                         {/* Other tabs would be implemented similarly */}
-                        {activeTab !== 'basic' && (
+                        {activeTab === 'profile' && (
+                            <div>
+                                <h2 className="text-lg font-medium text-gray-800 mb-4 text-left">Hồ sơ</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Quốc tịch
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="VN">Việt Nam</option>
+                                                <option value="US">Hoa Kỳ</option>
+                                                <option value="KR">Hàn Quốc</option>
+                                                <option value="JP">Nhật Bản</option>
+                                                <option value="SG">Singapore</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Ngày sinh
+                                        </label>
+                                        <input
+                                            type="date"
+                                            className="input-field text-left"
+                                            placeholder="dd/mm/yyyy"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Giới tính
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="male">Nam</option>
+                                                <option value="female">Nữ</option>
+                                                <option value="other">Khác</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Tình trạng hôn nhân
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="single">Độc thân</option>
+                                                <option value="married">Đã kết hôn</option>
+                                                <option value="divorced">Đã ly hôn</option>
+                                                <option value="widowed">Góa phụ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Học vấn
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="high-school">Trung học phổ thông</option>
+                                                <option value="college">Cao đẳng</option>
+                                                <option value="bachelor">Cử nhân</option>
+                                                <option value="master">Thạc sĩ</option>
+                                                <option value="phd">Tiến sĩ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Kinh nghiệm
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="0">Chưa có kinh nghiệm</option>
+                                                <option value="1">Dưới 1 năm</option>
+                                                <option value="2">1-2 năm</option>
+                                                <option value="3">3-5 năm</option>
+                                                <option value="5">Trên 5 năm</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                        Tiểu sử
+                                    </label>
+                                    <textarea
+                                        className="input-field h-40 text-left"
+                                        placeholder="Viết tiểu sử của bạn ở đây. Hãy cho nhà tuyển dụng biết bạn là ai..."
+                                    ></textarea>
+
+                                    <div className="flex items-center mt-2 text-gray-500 text-xs">
+                                        <button className="p-1 mr-1 text-gray-400">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                                                <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                                <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                            </svg>
+                                        </button>
+                                        <button className="p-1 mr-1 text-gray-400">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                            </svg>
+                                        </button>
+                                        <button className="p-1 mr-1 text-gray-400">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                                                <path d="M4 8h16M4 16h16"></path>
+                                            </svg>
+                                        </button>
+                                        <button className="p-1 mr-1 text-gray-400">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                                                <path d="M4 6h16M4 12h16M4 18h12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4">
+                                    <button className="apply-button">
+                                        Lưu Thay Đổi
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab !== 'basic' && activeTab !== 'profile' && (
                             <div className="text-center py-12">
                                 <p className="text-gray-500">Nội dung đang được phát triển</p>
                             </div>
