@@ -297,6 +297,58 @@ const settingStyles = `
         font-size: 14px;
         color: #4b5563;
     }
+
+    /* Custom checkbox styling to match the image */
+    .custom-checkbox {
+        display: inline-block;
+        position: relative;
+        width: 20px;
+        height: 20px;
+        margin-right: 12px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .custom-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+    
+    .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 20px;
+        width: 20px;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
+        background-color: white;
+    }
+    
+    .custom-checkbox input:checked ~ .checkmark {
+        background-color: #309689;
+        border-color: #309689;
+    }
+    
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+    }
+    
+    .custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+        left: 7px;
+        top: 3px;
+        width: 6px;
+        height: 11px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
 `;
 
 const EmployeeSettings: React.FC = () => {
@@ -305,6 +357,11 @@ const EmployeeSettings: React.FC = () => {
     const [isCVModalOpen, setIsCVModalOpen] = useState(false);
     const [profilePrivacy, setProfilePrivacy] = useState(true);
     const [resumePrivacy, setResumePrivacy] = useState(false);
+
+    // Add state for password visibility toggling
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleFileUpload = () => {
         fileInputRef.current?.click();
@@ -324,6 +381,19 @@ const EmployeeSettings: React.FC = () => {
 
     const toggleResumePrivacy = () => {
         setResumePrivacy(!resumePrivacy);
+    };
+
+    // Password visibility toggle handlers
+    const toggleCurrentPasswordVisibility = () => {
+        setShowCurrentPassword(!showCurrentPassword);
+    };
+
+    const toggleNewPasswordVisibility = () => {
+        setShowNewPassword(!showNewPassword);
+    };
+
+    const toggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword(!showConfirmPassword);
     };
 
     return (
@@ -1140,62 +1210,74 @@ const EmployeeSettings: React.FC = () => {
                                 <h2 className="text-lg font-medium text-gray-800 mb-6 text-left">Thông báo</h2>
 
                                 <div className="mb-8">
-                                    <div className="notification-item">
-                                        <input
-                                            id="notify-selected"
-                                            type="checkbox"
-                                            className="notification-checkbox"
-                                            defaultChecked
-                                        />
-                                        <label htmlFor="notify-selected" className="notification-label text-left">
-                                            Thông báo cho tôi khi nhà tuyển dụng chọn tôi
-                                        </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex items-start">
+                                            <label className="custom-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    id="notify-selected"
+                                                    defaultChecked
+                                                />
+                                                <span className="checkmark"></span>
+                                            </label>
+                                            <label htmlFor="notify-selected" className="block text-sm text-gray-700">
+                                                Thông báo cho tôi khi nhà tuyển dụng chọn tôi
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-start">
+                                            <label className="custom-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    id="notify-saved"
+                                                />
+                                                <span className="checkmark"></span>
+                                            </label>
+                                            <label htmlFor="notify-saved" className="block text-sm text-gray-700">
+                                                Thông báo cho tôi khi nhà tuyển dụng lưu hồ sơ của tôi
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-start">
+                                            <label className="custom-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    id="notify-expired"
+                                                    defaultChecked
+                                                />
+                                                <span className="checkmark"></span>
+                                            </label>
+                                            <label htmlFor="notify-expired" className="block text-sm text-gray-700">
+                                                Thông báo cho tôi khi công việc tôi đã nộp đơn hết hạn
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-start">
+                                            <label className="custom-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    id="notify-rejected"
+                                                    defaultChecked
+                                                />
+                                                <span className="checkmark"></span>
+                                            </label>
+                                            <label htmlFor="notify-rejected" className="block text-sm text-gray-700">
+                                                Thông báo cho tôi khi nhà tuyển dụng từ chối tôi
+                                            </label>
+                                        </div>
                                     </div>
 
-                                    <div className="notification-item">
-                                        <input
-                                            id="notify-saved"
-                                            type="checkbox"
-                                            className="notification-checkbox"
-                                        />
-                                        <label htmlFor="notify-saved" className="notification-label text-left">
-                                            Thông báo cho tôi khi nhà tuyển dụng lưu hồ sơ của tôi
+                                    <div className="flex items-start mt-4">
+                                        <label className="custom-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                id="notify-jobs"
+                                                defaultChecked
+                                            />
+                                            <span className="checkmark"></span>
                                         </label>
-                                    </div>
-
-                                    <div className="notification-item">
-                                        <input
-                                            id="notify-expired"
-                                            type="checkbox"
-                                            className="notification-checkbox"
-                                            defaultChecked
-                                        />
-                                        <label htmlFor="notify-expired" className="notification-label text-left">
-                                            Thông báo cho tôi khi công việc tôi đã nộp đơn hết hạn
-                                        </label>
-                                    </div>
-
-                                    <div className="notification-item">
-                                        <input
-                                            id="notify-jobs"
-                                            type="checkbox"
-                                            className="notification-checkbox"
-                                            defaultChecked
-                                        />
-                                        <label htmlFor="notify-jobs" className="notification-label text-left">
+                                        <label htmlFor="notify-jobs" className="block text-sm text-gray-700">
                                             Thông báo cho tôi khi tôi có tối 5 thông báo việc làm
-                                        </label>
-                                    </div>
-
-                                    <div className="notification-item">
-                                        <input
-                                            id="notify-rejected"
-                                            type="checkbox"
-                                            className="notification-checkbox"
-                                            defaultChecked
-                                        />
-                                        <label htmlFor="notify-rejected" className="notification-label text-left">
-                                            Thông báo cho tôi khi nhà tuyển dụng từ chối tôi
                                         </label>
                                     </div>
                                 </div>
@@ -1300,15 +1382,25 @@ const EmployeeSettings: React.FC = () => {
                                         </label>
                                         <div className="relative">
                                             <input
-                                                type="password"
+                                                type={showCurrentPassword ? "text" : "password"}
                                                 className="input-field pr-10"
                                                 placeholder="Password"
                                             />
-                                            <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
+                                            <button
+                                                type="button"
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                onClick={toggleCurrentPasswordVisibility}
+                                            >
+                                                {showCurrentPassword ? (
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
@@ -1319,15 +1411,25 @@ const EmployeeSettings: React.FC = () => {
                                         </label>
                                         <div className="relative">
                                             <input
-                                                type="password"
+                                                type={showNewPassword ? "text" : "password"}
                                                 className="input-field pr-10"
                                                 placeholder="Password"
                                             />
-                                            <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
+                                            <button
+                                                type="button"
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                onClick={toggleNewPasswordVisibility}
+                                            >
+                                                {showNewPassword ? (
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
@@ -1338,15 +1440,25 @@ const EmployeeSettings: React.FC = () => {
                                         </label>
                                         <div className="relative">
                                             <input
-                                                type="password"
+                                                type={showConfirmPassword ? "text" : "password"}
                                                 className="input-field pr-10"
                                                 placeholder="Password"
                                             />
-                                            <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
+                                            <button
+                                                type="button"
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                onClick={toggleConfirmPasswordVisibility}
+                                            >
+                                                {showConfirmPassword ? (
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
