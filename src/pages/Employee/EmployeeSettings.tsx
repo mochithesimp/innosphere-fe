@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
-import Header from '../components/Employee/Header';
-import Sidebar from '../components/Employee/Sidebar';
+import Header from '../../components/Employee/Header';
+import Sidebar from '../../components/Employee/Sidebar';
 import { FiUpload, FiPlus } from 'react-icons/fi';
 import { BsGlobe } from 'react-icons/bs';
 import { FiUser } from 'react-icons/fi';
 import { BsFileEarmarkText } from 'react-icons/bs';
 import { BiWorld } from 'react-icons/bi';
 import { IoSettingsOutline } from 'react-icons/io5';
-import CVModal from '../components/Employee/CVModal';
+import CVModal from '../../components/Employee/CVModal';
 
 
 const settingStyles = `

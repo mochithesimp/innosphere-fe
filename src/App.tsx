@@ -11,11 +11,11 @@ import JobDetailPage from './pages/Home/JobDetailPage'
 import AboutPage from './pages/Home/AboutPage'
 import ContactPage from './pages/Home/ContactPage'
 import AdsPage from './pages/Home/AdsPage'
-import EmployeeDashboard from './pages/EmployeeDashboard'
-import EmployeeJobsPage from './pages/EmployeeJobsPage'
-import EmployeeFavorites from './pages/EmployeeFavorites'
-import EmployeeJobAlerts from './pages/EmployeeJobAlerts'
-import EmployeeSettings from './pages/EmployeeSettings'
+import EmployeeDashboard from './pages/Employee/EmployeeDashboard'
+import EmployeeJobsPage from './pages/Employee/EmployeeJobsPage'
+import EmployeeFavorites from './pages/Employee/EmployeeFavorites'
+import EmployeeJobAlerts from './pages/Employee/EmployeeJobAlerts'
+import EmployeeSettings from './pages/Employee/EmployeeSettings'
 
 function App() {
   return (

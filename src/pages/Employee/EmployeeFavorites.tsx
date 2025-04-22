@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../components/Employee/Header';
-import Sidebar from '../components/Employee/Sidebar';
+import Header from '../../components/Employee/Header';
+import Sidebar from '../../components/Employee/Sidebar';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { IoLocationOutline } from "react-icons/io5";
 import { FaBookmark } from 'react-icons/fa';

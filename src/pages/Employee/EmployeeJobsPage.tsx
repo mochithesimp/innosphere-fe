@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { IoLocationOutline } from "react-icons/io5";
 
-import Header from '../components/Employee/Header';
-import Sidebar from '../components/Employee/Sidebar';
-import RatingModal from '../components/Employee/RatingModal';
+import Header from '../../components/Employee/Header';
+import Sidebar from '../../components/Employee/Sidebar';
+import RatingModal from '../../components/Employee/RatingModal';
 
 // Add CSS for the active pagination button and arrow icons
 const paginationStyles = `

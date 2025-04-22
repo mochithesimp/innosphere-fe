@@ -4,9 +4,9 @@ import { FaRegBookmark, FaChevronRight } from 'react-icons/fa';
 import { HiOutlineBriefcase } from "react-icons/hi";
 import { FiBell } from "react-icons/fi";
 
-import Header from '../components/Employee/Header';
+import Header from '../../components/Employee/Header';
 
-import Sidebar from '../components/Employee/Sidebar';
+import Sidebar from '../../components/Employee/Sidebar';
 
 import { IoLocationOutline } from "react-icons/io5";
 
