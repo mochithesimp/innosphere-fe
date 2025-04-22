@@ -69,6 +69,28 @@ const settingStyles = `
         box-shadow: 0 0 0 1px #e8f5f3;
     }
     
+    .input-with-icon-container {
+        display: flex;
+        width: 100%;
+    }
+    
+    .input-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 0.875rem;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-right: none;
+        border-radius: 0.375rem 0 0 0.375rem;
+    }
+    
+    .input-with-icon {
+        flex: 1;
+        border-left: none;
+        border-radius: 0 0.375rem 0.375rem 0;
+    }
+    
     .select-field {
         width: 100%;
         padding: 0.75rem;
@@ -156,12 +178,133 @@ const settingStyles = `
         align-items: center;
         justify-content: space-between;
     }
+    
+    .privacy-container {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background-color: white;
+    }
+    
+    .toggle-container {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        border-radius: 12px;
+        transition: background-color 0.3s;
+        cursor: pointer;
+    }
+    
+    .toggle-container.active {
+        background-color: #309689;
+    }
+    
+    .toggle-container.inactive {
+        background-color: #e5e7eb;
+    }
+    
+    .toggle-circle {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s;
+    }
+    
+    .toggle-container.active .toggle-circle {
+        transform: translateX(20px);
+    }
+    
+    .toggle-label {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 8px;
+        padding-right: 8px;
+        min-width: 36px;
+    }
+    
+    .toggle-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding-left: 4px;
+    }
+    
+    .toggle-text.active {
+        color: #309689;
+    }
+    
+    .toggle-text.inactive {
+        color: #dc2626;
+    }
+    
+    .privacy-text {
+        margin-left: 12px;
+        font-size: 0.875rem;
+        color: #4b5563;
+        padding-left: 12px;
+        border-left: 1px solid #e5e7eb;
+    }
+
+    .notification-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+    }
+
+    .notification-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e5e7eb;
+        border-radius: 4px;
+        margin-right: 12px;
+        margin-top: 1px;
+        cursor: pointer;
+        position: relative;
+        background-color: white;
+        flex-shrink: 0;
+    }
+
+    .notification-checkbox:checked {
+        background-color: #309689;
+        border-color: #309689;
+    }
+
+    .notification-checkbox:checked::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 6px;
+        width: 6px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .notification-label {
+        cursor: pointer;
+        font-size: 14px;
+        color: #4b5563;
+    }
 `;
 
 const EmployeeSettings: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>('basic');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isCVModalOpen, setIsCVModalOpen] = useState(false);
+    const [profilePrivacy, setProfilePrivacy] = useState(true);
+    const [resumePrivacy, setResumePrivacy] = useState(false);
 
     const handleFileUpload = () => {
         fileInputRef.current?.click();
@@ -173,6 +316,14 @@ const EmployeeSettings: React.FC = () => {
         // Close the modal
         setIsCVModalOpen(false);
         // You might want to refresh the CVs list or show a success message
+    };
+
+    const toggleProfilePrivacy = () => {
+        setProfilePrivacy(!profilePrivacy);
+    };
+
+    const toggleResumePrivacy = () => {
+        setResumePrivacy(!resumePrivacy);
     };
 
     return (
@@ -315,15 +466,29 @@ const EmployeeSettings: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                                                    Liên lạc
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                                    Phone
                                                 </label>
-                                                <input
-                                                    type="tel"
-                                                    id="phoneNumber"
-                                                    className="input-field"
-                                                    placeholder="+84 987654321"
-                                                />
+                                                <div className="flex w-full">
+                                                    <div className="inline-block">
+                                                        <button className="flex items-center border border-gray-300 rounded-l-md h-[42px] px-3 bg-white">
+                                                            <div className="flex items-center">
+                                                                <span className="inline-block w-6 h-4 mr-2 overflow-hidden">
+                                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" alt="Vietnam flag" className="h-full w-full object-cover" />
+                                                                </span>
+                                                                <span className="text-gray-700 font-normal">+84</span>
+                                                                <svg className="ml-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                                </svg>
+                                                            </div>
+                                                        </button>
+                                                    </div>
+                                                    <input
+                                                        type="tel"
+                                                        className="flex-1 px-3 py-[9px] border border-l-0 border-gray-300 rounded-r-md focus:outline-none text-gray-500"
+                                                        placeholder="Phone number.."
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
 
@@ -358,19 +523,18 @@ const EmployeeSettings: React.FC = () => {
                                             <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1 text-left">
                                                 Trang web cá nhân (nếu có)
                                             </label>
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <BsGlobe className="text-gray-400" />
+                                            <div className="input-with-icon-container">
+                                                <div className="input-icon-wrapper">
+                                                    <BsGlobe className="text-[#309689]" />
                                                 </div>
                                                 <input
                                                     type="url"
                                                     id="website"
-                                                    className="input-field pl-10"
+                                                    className="input-field input-with-icon"
                                                     placeholder="Website url..."
                                                     style={{
                                                         color: "#9ca3af",
-                                                        letterSpacing: "0.01em",
-                                                        padding: "12px 12px 12px 40px"
+                                                        letterSpacing: "0.01em"
                                                     }}
                                                 />
                                             </div>
@@ -702,7 +866,7 @@ const EmployeeSettings: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="pt-4">
+                                <div className="pt-4 text-left">
                                     <button className="apply-button">
                                         Lưu Thay Đổi
                                     </button>
@@ -898,9 +1062,318 @@ const EmployeeSettings: React.FC = () => {
                             </div>
                         )}
 
-                        {activeTab !== 'basic' && activeTab !== 'profile' && activeTab !== 'social' && (
-                            <div className="text-center py-12">
-                                <p className="text-gray-500">Nội dung đang được phát triển</p>
+                        {activeTab === 'account' && (
+                            <div>
+                                <h2 className="text-lg font-medium text-gray-800 mb-6 text-left">Thông tin liên lạc</h2>
+
+                                <div className="space-y-4 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Vị trí
+                                        </label>
+                                        <div className="input-with-icon-container">
+                                            <div className="input-icon-wrapper">
+                                                <svg className="h-5 w-5 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                className="input-field input-with-icon"
+                                                placeholder="Tên thành phố, tiểu bang, quốc gia"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Phone
+                                        </label>
+                                        <div className="flex w-full">
+                                            <div className="inline-block">
+                                                <button className="flex items-center border border-gray-300 rounded-l-md h-[42px] px-3 bg-white">
+                                                    <div className="flex items-center">
+                                                        <span className="inline-block w-6 h-4 mr-2 overflow-hidden">
+                                                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" alt="Vietnam flag" className="h-full w-full object-cover" />
+                                                        </span>
+                                                        <span className="text-gray-700 font-normal">+84</span>
+                                                        <svg className="ml-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="tel"
+                                                className="flex-1 px-3 py-[9px] border border-l-0 border-gray-300 rounded-r-md focus:outline-none text-gray-500"
+                                                placeholder="Phone number.."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Email
+                                        </label>
+                                        <div className="input-with-icon-container">
+                                            <div className="input-icon-wrapper">
+                                                <svg className="h-5 w-5 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <input
+                                                type="email"
+                                                className="input-field input-with-icon"
+                                                placeholder="Email address"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <button className="apply-button">
+                                            Lưu Thay Đổi
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <h2 className="text-lg font-medium text-gray-800 mb-6 text-left">Thông báo</h2>
+
+                                <div className="mb-8">
+                                    <div className="notification-item">
+                                        <input
+                                            id="notify-selected"
+                                            type="checkbox"
+                                            className="notification-checkbox"
+                                            defaultChecked
+                                        />
+                                        <label htmlFor="notify-selected" className="notification-label text-left">
+                                            Thông báo cho tôi khi nhà tuyển dụng chọn tôi
+                                        </label>
+                                    </div>
+
+                                    <div className="notification-item">
+                                        <input
+                                            id="notify-saved"
+                                            type="checkbox"
+                                            className="notification-checkbox"
+                                        />
+                                        <label htmlFor="notify-saved" className="notification-label text-left">
+                                            Thông báo cho tôi khi nhà tuyển dụng lưu hồ sơ của tôi
+                                        </label>
+                                    </div>
+
+                                    <div className="notification-item">
+                                        <input
+                                            id="notify-expired"
+                                            type="checkbox"
+                                            className="notification-checkbox"
+                                            defaultChecked
+                                        />
+                                        <label htmlFor="notify-expired" className="notification-label text-left">
+                                            Thông báo cho tôi khi công việc tôi đã nộp đơn hết hạn
+                                        </label>
+                                    </div>
+
+                                    <div className="notification-item">
+                                        <input
+                                            id="notify-jobs"
+                                            type="checkbox"
+                                            className="notification-checkbox"
+                                            defaultChecked
+                                        />
+                                        <label htmlFor="notify-jobs" className="notification-label text-left">
+                                            Thông báo cho tôi khi tôi có tối 5 thông báo việc làm
+                                        </label>
+                                    </div>
+
+                                    <div className="notification-item">
+                                        <input
+                                            id="notify-rejected"
+                                            type="checkbox"
+                                            className="notification-checkbox"
+                                            defaultChecked
+                                        />
+                                        <label htmlFor="notify-rejected" className="notification-label text-left">
+                                            Thông báo cho tôi khi nhà tuyển dụng từ chối tôi
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <h2 className="text-lg font-medium text-gray-800 mb-6 text-left">Thông tin thêm</h2>
+
+                                <div className="grid grid-cols-1 gap-6 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Khu vực
+                                        </label>
+                                        <div className="input-with-icon-container">
+                                            <div className="input-icon-wrapper">
+                                                <svg className="h-5 w-5 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                className="input-field input-with-icon"
+                                                placeholder="Tên thành phố, tiểu bang, quốc gia"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Vị trí
+                                        </label>
+                                        <div className="input-with-icon-container">
+                                            <div className="input-icon-wrapper">
+                                                <svg className="h-5 w-5 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                className="input-field input-with-icon"
+                                                placeholder="Vị trí bạn nhắm đến"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-8 text-left">
+                                    <button className="apply-button">
+                                        Lưu Thay Đổi
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    <div>
+                                        <h2 className="text-lg font-medium text-gray-800 mb-4 text-left">Hồ sơ riêng tư</h2>
+
+                                        <div className="privacy-container">
+                                            <div
+                                                className={`toggle-container ${profilePrivacy ? 'active' : 'inactive'}`}
+                                                onClick={toggleProfilePrivacy}
+                                            >
+                                                <div className="toggle-circle"></div>
+                                            </div>
+                                            <div className="toggle-label">
+                                                <span className={`toggle-text ${profilePrivacy ? 'active' : 'inactive'}`}>
+                                                    {profilePrivacy ? 'YES' : 'NO'}
+                                                </span>
+                                            </div>
+                                            <span className="privacy-text">
+                                                Hồ sơ của bạn hiện đã được công khai
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h2 className="text-lg font-medium text-gray-800 mb-4 text-left">Sơ yếu lý lịch riêng tư</h2>
+
+                                        <div className="privacy-container">
+                                            <div
+                                                className={`toggle-container ${resumePrivacy ? 'active' : 'inactive'}`}
+                                                onClick={toggleResumePrivacy}
+                                            >
+                                                <div className="toggle-circle"></div>
+                                            </div>
+                                            <div className="toggle-label">
+                                                <span className={`toggle-text ${resumePrivacy ? 'active' : 'inactive'}`}>
+                                                    {resumePrivacy ? 'YES' : 'NO'}
+                                                </span>
+                                            </div>
+                                            <span className="privacy-text">
+                                                Sơ yếu lý lịch của bạn hiện đang ở chế độ riêng tư
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h2 className="text-lg font-medium text-gray-800 mb-6 text-left">Thay đổi mật khẩu</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Mật khẩu hiện tại
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="password"
+                                                className="input-field pr-10"
+                                                placeholder="Password"
+                                            />
+                                            <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Mật khẩu mới
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="password"
+                                                className="input-field pr-10"
+                                                placeholder="Password"
+                                            />
+                                            <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Xác nhận mật khẩu
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="password"
+                                                className="input-field pr-10"
+                                                placeholder="Password"
+                                            />
+                                            <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-8 text-left">
+                                    <button className="apply-button">
+                                        Lưu Thay Đổi
+                                    </button>
+                                </div>
+
+                                <div className="mb-8">
+                                    <h2 className="text-lg font-medium text-gray-800 mb-4 text-left">Xóa tài khoản của bạn</h2>
+
+                                    <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
+                                        <p className="text-sm text-gray-700 text-left">
+                                            Nếu bạn xóa tài khoản InnoSphere của mình, bạn sẽ không còn có thể nhận được thông tin về các công việc phù hợp, các nhà tuyển dụng đang theo dõi, thông báo việc làm, các công việc được chọn lọc và nhiều thông tin khác. Bạn sẽ bị từ bỏ khỏi tất cả các dịch vụ của InnoSphere.com.
+                                        </p>
+                                    </div>
+
+                                    <button className="flex items-center px-6 py-2 bg-white border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition duration-200">
+                                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Đóng Tài Khoản
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
