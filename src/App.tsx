@@ -17,6 +17,7 @@ import EmployeeFavorites from './pages/Employee/EmployeeFavorites'
 import EmployeeJobAlerts from './pages/Employee/EmployeeJobAlerts'
 import EmployeeSettings from './pages/Employee/EmployeeSettings'
 import EmployerSettingsPage from './pages/Employer/SettingsPage'
+import EstablishmentInfoPage from './pages/Employer/EstablishmentInfoPage'
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
 
           {/* Employer routes */}
           <Route path="/employer/settings" element={<EmployerSettingsPage />} />
+          <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
         </Routes>
       </Router>
     </div>

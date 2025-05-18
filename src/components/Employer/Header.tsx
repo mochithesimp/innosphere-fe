@@ -8,16 +8,16 @@ type HeaderProps = {
 const Header: React.FC<HeaderProps> = ({ currentStep }) => {
     // Calculate the progress percentage based on current step
     const steps = [
-        { id: 'business-info', title: 'Thông tin doanh nghiệp' },
-        { id: 'establishment-info', title: 'Thông tin thành lập' },
-        { id: 'social-media-info', title: 'Thông tin mạng xã hội' },
-        { id: 'contact-info', title: 'Thông tin liên hệ' }
+        { id: 'business-info', title: 'Thông tin doanh nghiệp', percentage: 0 },
+        { id: 'establishment-info', title: 'Thông tin thành lập', percentage: 25 },
+        { id: 'social-media-info', title: 'Thông tin mạng xã hội', percentage: 50 },
+        { id: 'contact-info', title: 'Thông tin liên hệ', percentage: 100 }
     ];
 
     const currentStepIndex = steps.findIndex(step => step.id === currentStep);
-    const progressPercentage = currentStepIndex >= 0
-        ? `${(currentStepIndex / (steps.length - 1)) * 100}%`
-        : '0%';
+    const currentPercentage = currentStepIndex >= 0 ? steps[currentStepIndex].percentage : 0;
+    const progressPercentage = `${currentPercentage}%`;
+    const showCompletionText = currentPercentage > 0;
 
     return (
         <header className="bg-white border-b mb-8">
@@ -28,8 +28,13 @@ const Header: React.FC<HeaderProps> = ({ currentStep }) => {
                         <span className="text-[#00FF19] font-semibold text-xl ml-2">InnoSphere</span>
                     </Link>
                     <div className="ml-auto">
-                        <div className="text-sm text-gray-500 text-left">Quá trình thiết lập</div>
-                        <div className="w-64 bg-[#EBF5F4] h-2 rounded-full mt-1">
+                        <div className="flex justify-between text-sm text-gray-500 mb-1">
+                            <span>Quá trình thiết lập</span>
+                            {showCompletionText && (
+                                <span className="text-[#309689]">Đã hoàn thành {progressPercentage}</span>
+                            )}
+                        </div>
+                        <div className="w-64 bg-[#EBF5F4] h-2 rounded-full">
                             <div
                                 className="bg-[#309689] h-2 rounded-full"
                                 style={{ width: progressPercentage }}
