@@ -1,5 +1,5 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/Auth/LoginPage'
 import RegisterPage from './pages/Auth/RegisterPage'
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage'
@@ -21,7 +21,9 @@ import EstablishmentInfoPage from './pages/Employer/EstablishmentInfoPage'
 import SocialMediaInfoPage from './pages/Employer/SocialMediaInfoPage'
 import ContactInfoPage from './pages/Employer/ContactInfoPage'
 import CompletionPage from './pages/Employer/CompletionPage'
-import DashboardPage from './pages/Employer/DashboardPage'
+import EmployerLayout from './components/Employer/EmployerLayout'
+import OverviewContent from './components/Employer/Dashboard/OverviewContent'
+import PostJobContent from './components/Employer/PostJob/PostJobContent'
 
 function App() {
   return (
@@ -48,13 +50,19 @@ function App() {
           <Route path="/employee/notifications" element={<EmployeeDashboard />} />
           <Route path="/employee/settings" element={<EmployeeSettings />} />
 
-          {/* Employer routes */}
-          <Route path="/employer/settings" element={<EmployerSettingsPage />} />
+          {/* Employer routes using nested routes with EmployerLayout */}
+          <Route path="/employer" element={<EmployerLayout />}>
+            <Route index element={<Navigate to="/employer/dashboard" replace />} />
+            <Route path="dashboard" element={<OverviewContent />} />
+            <Route path="post-job" element={<PostJobContent />} />
+            <Route path="settings" element={<EmployerSettingsPage />} />
+          </Route>
+
+          {/* Legacy employer routes (these can be migrated to nested routes later) */}
           <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
           <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
           <Route path="/employer/contact-info" element={<ContactInfoPage />} />
           <Route path="/employer/setup-complete" element={<CompletionPage />} />
-          <Route path="/employer/dashboard" element={<DashboardPage />} />
         </Routes>
       </Router>
     </div>

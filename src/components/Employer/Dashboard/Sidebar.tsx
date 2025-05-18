@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     RiDashboardLine,
@@ -21,16 +21,29 @@ interface SidebarItem {
 
 const Sidebar: React.FC = () => {
     const location = useLocation();
-    const [activeItem, setActiveItem] = useState<string>(
-        location.pathname === '/employer/dashboard' ? 'overview' :
-            location.pathname === '/employer/profile' ? 'profile' :
-                location.pathname === '/employer/post-job' ? 'post-job' :
-                    location.pathname === '/employer/my-jobs' ? 'my-jobs' :
-                        location.pathname === '/employer/saved-candidates' ? 'saved-candidates' :
-                            location.pathname === '/employer/plans' ? 'plans' :
-                                location.pathname === '/employer/companies' ? 'companies' :
-                                    location.pathname === '/employer/settings' ? 'settings' : 'overview'
-    );
+    const [activeItem, setActiveItem] = useState<string>('overview');
+
+    // Update active item based on URL path
+    useEffect(() => {
+        const path = location.pathname;
+        if (path.includes('/employer/dashboard')) {
+            setActiveItem('overview');
+        } else if (path.includes('/employer/profile')) {
+            setActiveItem('profile');
+        } else if (path.includes('/employer/post-job')) {
+            setActiveItem('post-job');
+        } else if (path.includes('/employer/my-jobs')) {
+            setActiveItem('my-jobs');
+        } else if (path.includes('/employer/saved-candidates')) {
+            setActiveItem('saved-candidates');
+        } else if (path.includes('/employer/plans')) {
+            setActiveItem('plans');
+        } else if (path.includes('/employer/companies')) {
+            setActiveItem('companies');
+        } else if (path.includes('/employer/settings')) {
+            setActiveItem('settings');
+        }
+    }, [location.pathname]);
 
     const menuItems: SidebarItem[] = [
         {
