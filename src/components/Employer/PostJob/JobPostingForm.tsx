@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
+import JobPromotionPopup from './JobPromotionPopup';
 
 const JobPostingForm: React.FC = () => {
     const [salaryRangeFrom, setSalaryRangeFrom] = useState('');
     const [salaryRangeTo, setSalaryRangeTo] = useState('');
     const [applicationType, setApplicationType] = useState<'internal' | 'external' | 'email'>('internal');
+    const [showPromotionPopup, setShowPromotionPopup] = useState(false);
+
+    const handleSubmit = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setShowPromotionPopup(true);
+    };
 
     return (
         <>
@@ -493,7 +500,7 @@ const JobPostingForm: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '20px' }}>
                         <a
                             href="#"
-                            onClick={(e) => e.preventDefault()}
+                            onClick={handleSubmit}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -526,6 +533,12 @@ const JobPostingForm: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Promotion Popup */}
+            <JobPromotionPopup
+                isOpen={showPromotionPopup}
+                onClose={() => setShowPromotionPopup(false)}
+            />
         </>
     );
 };

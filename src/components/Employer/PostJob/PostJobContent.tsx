@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaCheck, FaTimes, FaCreditCard } from 'react-icons/fa';
+import JobPromotionPopup from './JobPromotionPopup';
 
 interface PlanDetails {
     name: string;
@@ -12,6 +13,7 @@ const PostJobContent: React.FC = () => {
     const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
     const [useExistingCard, setUseExistingCard] = useState(true);
+    const [showPromotionPopup, setShowPromotionPopup] = useState(false);
 
     const handleSelectPlan = (plan: PlanDetails) => {
         setSelectedPlan(plan);
@@ -130,8 +132,8 @@ const PostJobContent: React.FC = () => {
         // @ts-expect-error - Adding custom method to Window interface
         window.handlePayment = () => {
             setShowPaymentModal(false);
-            // Navigate to job posting form
-            window.location.href = '/employer/create-job';
+            // Show promotion popup before navigating to job creation page
+            setShowPromotionPopup(true);
         };
 
         return () => {
@@ -146,6 +148,12 @@ const PostJobContent: React.FC = () => {
             delete window.handlePayment;
         };
     }, []);
+
+    // Add the navigation function for the promotion popup
+    const handlePromotionComplete = () => {
+        setShowPromotionPopup(false);
+        window.location.href = '/employer/create-job';
+    };
 
     return (
         <div className="flex-1">
@@ -470,6 +478,12 @@ const PostJobContent: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Promotion Popup */}
+            <JobPromotionPopup
+                isOpen={showPromotionPopup}
+                onClose={handlePromotionComplete}
+            />
         </div>
     );
 };
