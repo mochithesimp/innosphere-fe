@@ -20,6 +20,7 @@ import EmployerSettingsPage from './pages/Employer/SettingsPage'
 import EstablishmentInfoPage from './pages/Employer/EstablishmentInfoPage'
 import SocialMediaInfoPage from './pages/Employer/SocialMediaInfoPage'
 import ContactInfoPage from './pages/Employer/ContactInfoPage'
+import CompletionPage from './pages/Employer/CompletionPage'
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
           <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
           <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
           <Route path="/employer/contact-info" element={<ContactInfoPage />} />
+          <Route path="/employer/setup-complete" element={<CompletionPage />} />
         </Routes>
       </Router>
     </div>

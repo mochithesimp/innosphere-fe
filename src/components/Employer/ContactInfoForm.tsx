@@ -68,7 +68,7 @@ const ContactInfoForm: React.FC = () => {
                     Trang Trước
                 </Link>
                 <Link
-                    to="#"
+                    to="/employer/setup-complete"
                     className="bg-[#309689] hover:bg-[#277b70] text-white font-medium py-2.5 px-6 rounded-md inline-flex items-center"
                 >
                     Hoàn Thành
