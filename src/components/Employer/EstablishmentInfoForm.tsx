@@ -162,10 +162,10 @@ const EstablishmentInfoForm: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex justify-start gap-4 mt-12">
+            <div className="flex justify-between gap-4 mt-12">
                 <Link
                     to="/employer/settings"
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-6 rounded-md inline-flex items-center"
+                    className="bg-[#EBF5F4] hover:bg-[#daeae8] text-gray-700 font-medium py-2.5 px-6 rounded-md inline-flex items-center border border-[#E4E5E8]"
                 >
                     Trang Trước
                 </Link>

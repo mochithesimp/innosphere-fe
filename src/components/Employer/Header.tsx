@@ -11,7 +11,7 @@ const Header: React.FC<HeaderProps> = ({ currentStep }) => {
         { id: 'business-info', title: 'Thông tin doanh nghiệp', percentage: 0 },
         { id: 'establishment-info', title: 'Thông tin thành lập', percentage: 25 },
         { id: 'social-media-info', title: 'Thông tin mạng xã hội', percentage: 50 },
-        { id: 'contact-info', title: 'Thông tin liên hệ', percentage: 100 }
+        { id: 'contact-info', title: 'Thông tin liên hệ', percentage: 75 }
     ];
 
     const currentStepIndex = steps.findIndex(step => step.id === currentStep);
