@@ -1,5 +1,5 @@
 import React from 'react';
-import Header from '../../components/Employer/Header';
+import SettingsHeader from '../../components/Employer/SettingsHeader';
 import SubHeader from '../../components/Employer/SubHeader';
 import ContactInfoForm from '../../components/Employer/ContactInfoForm';
 
@@ -8,7 +8,7 @@ const ContactInfoPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
-            <Header currentStep={currentStep} />
+            <SettingsHeader currentStep={currentStep} />
             <main className="flex-grow">
                 <SubHeader currentStep={currentStep} />
                 <ContactInfoForm />

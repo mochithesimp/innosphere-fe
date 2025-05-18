@@ -2,7 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaBell } from 'react-icons/fa';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+    currentStep?: string;
+}
+
+const Header: React.FC<HeaderProps> = () => {
     return (
         <>
             {/* Top Navigation */}

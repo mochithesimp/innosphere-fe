@@ -24,6 +24,7 @@ import CompletionPage from './pages/Employer/CompletionPage'
 import EmployerLayout from './components/Employer/EmployerLayout'
 import OverviewContent from './components/Employer/Dashboard/OverviewContent'
 import PostJobContent from './components/Employer/PostJob/PostJobContent'
+import JobPostingFormPage from './pages/Employer/JobPostingFormPage'
 
 function App() {
   return (
@@ -55,10 +56,11 @@ function App() {
             <Route index element={<Navigate to="/employer/dashboard" replace />} />
             <Route path="dashboard" element={<OverviewContent />} />
             <Route path="post-job" element={<PostJobContent />} />
-            <Route path="settings" element={<EmployerSettingsPage />} />
+            <Route path="create-job" element={<JobPostingFormPage />} />
           </Route>
 
           {/* Legacy employer routes (these can be migrated to nested routes later) */}
+          <Route path="/employer/settings" element={<EmployerSettingsPage />} />
           <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
           <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
           <Route path="/employer/contact-info" element={<ContactInfoPage />} />
