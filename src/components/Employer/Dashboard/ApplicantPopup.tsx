@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { IoMdClose } from 'react-icons/io';
 import { RiStarLine, RiMailLine, RiUserReceived2Line, RiToggleLine, RiToggleFill } from 'react-icons/ri';
-import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYoutube, FaStar } from 'react-icons/fa';
 
 // Use the same Applicant interface as in JobApplicationsView
 interface Applicant {
@@ -19,13 +19,170 @@ interface ApplicantPopupProps {
     applicant: Applicant | null;
 }
 
+// Rating Popup Component
+interface RatingPopupProps {
+    isOpen: boolean;
+    onClose: () => void;
+    applicant: Applicant | null;
+}
+
+const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant }) => {
+    const [ratings, setRatings] = useState({
+        workEfficiency: 3,
+        attitude: 4,
+        responsibility: 2,
+        skills: 5
+    });
+    const [comment, setComment] = useState('');
+
+    if (!isOpen || !applicant) return null;
+
+    const handleRatingChange = (category: string, value: number) => {
+        setRatings(prev => ({
+            ...prev,
+            [category]: value
+        }));
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg w-[450px] overflow-auto relative p-6">
+                <div className="flex justify-between items-center mb-4 text-left">
+                    <h2 className="text-xl font-semibold text-left">Đánh giá ứng viên: {applicant.name}</h2>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
+                        <IoMdClose size={20} />
+                    </button>
+                </div>
+
+                <p className="text-gray-600 mb-6 text-left">Độ tin cậy và chất lượng công việc thế nào?</p>
+
+                <div className="space-y-6">
+                    <div className="text-left">
+                        <p className="mb-2 text-gray-700 font-medium text-left">Hiệu suất công việc</p>
+                        <div className="flex space-x-2 justify-start">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => handleRatingChange('workEfficiency', star)}
+                                >
+                                    <FaStar
+                                        size={24}
+                                        className={star <= ratings.workEfficiency
+                                            ? "text-yellow-500"
+                                            : "text-gray-300"}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="text-left">
+                        <p className="mb-2 text-gray-700 font-medium text-left">Thái độ và tinh thần làm việc</p>
+                        <div className="flex space-x-2 justify-start">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => handleRatingChange('attitude', star)}
+                                >
+                                    <FaStar
+                                        size={24}
+                                        className={star <= ratings.attitude
+                                            ? "text-yellow-500"
+                                            : "text-gray-300"}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="text-left">
+                        <p className="mb-2 text-gray-700 font-medium text-left">Tinh thần trách nhiệm</p>
+                        <div className="flex space-x-2 justify-start">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => handleRatingChange('responsibility', star)}
+                                >
+                                    <FaStar
+                                        size={24}
+                                        className={star <= ratings.responsibility
+                                            ? "text-yellow-500"
+                                            : "text-gray-300"}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="text-left">
+                        <p className="mb-2 text-gray-700 font-medium text-left">Kỹ năng và năng lực</p>
+                        <div className="flex space-x-2 justify-start">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => handleRatingChange('skills', star)}
+                                >
+                                    <FaStar
+                                        size={24}
+                                        className={star <= ratings.skills
+                                            ? "text-yellow-500"
+                                            : "text-gray-300"}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="text-left">
+                        <p className="mb-2 text-gray-700 font-medium text-left">Bạn có thể cho chúng tôi biết thêm không?</p>
+                        <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md p-3 h-[100px] resize-none focus:outline-none focus:border-[#309689] text-left"
+                            placeholder="Thêm phản hồi"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div className="flex justify-between mt-6">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    >
+                        Hủy bỏ
+                    </button>
+                    <a href="#" className="px-6 py-2 bg-[#309689] text-white rounded-md hover:bg-[#277b70] flex items-center justify-center">
+                        Gửi
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applicant }) => {
     const [isRatingMode, setIsRatingMode] = useState(false);
+    const [isRatingPopupOpen, setIsRatingPopupOpen] = useState(false);
 
     if (!isOpen || !applicant) return null;
 
     const toggleRatingMode = () => {
         setIsRatingMode(!isRatingMode);
+    };
+
+    const openRatingPopup = () => {
+        setIsRatingPopupOpen(true);
+    };
+
+    const closeRatingPopup = () => {
+        setIsRatingPopupOpen(false);
     };
 
     return (
@@ -67,7 +224,14 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                 <span>Send Mail</span>
                             </button>
                             {isRatingMode ? (
-                                <a href="#" className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md">
+                                <a
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        openRatingPopup();
+                                    }}
+                                    className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md"
+                                >
                                     <span>Đánh Giá Ứng Viên</span>
                                 </a>
                             ) : (
@@ -339,6 +503,13 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                     </div>
                 </div>
             </div>
+
+            {/* Rating Popup */}
+            <RatingPopup
+                isOpen={isRatingPopupOpen}
+                onClose={closeRatingPopup}
+                applicant={applicant}
+            />
         </div>
     );
 };
