@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { RiMore2Line, RiAddCircleLine, RiCloseLine, RiCheckLine } from 'react-icons/ri';
+import { useNavigate } from 'react-router-dom';
 
 const MyJobsContent: React.FC = () => {
     const [selectedJobStatus, setSelectedJobStatus] = useState<string>('All Jobs');
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const navigate = useNavigate();
 
     // Function to handle button hover effect directly in DOM
     useEffect(() => {
@@ -135,6 +137,10 @@ const MyJobsContent: React.FC = () => {
     // Handle page change
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
+    };
+
+    const handleViewApplications = () => {
+        navigate('/employer/job-applications');
     };
 
     // Sample job data for demonstration
@@ -314,7 +320,10 @@ const MyJobsContent: React.FC = () => {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-left flex items-center">
-                                    <button className="view-profile-btn mr-3">
+                                    <button
+                                        className="view-profile-btn mr-3"
+                                        onClick={handleViewApplications}
+                                    >
                                         Xem Hồ Sơ
                                     </button>
                                     <div className="dropdown-container relative">

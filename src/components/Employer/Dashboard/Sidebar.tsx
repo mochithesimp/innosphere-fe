@@ -32,7 +32,7 @@ const Sidebar: React.FC = () => {
             setActiveItem('profile');
         } else if (path.includes('/employer/post-job') || path.includes('/employer/create-job')) {
             setActiveItem('post-job');
-        } else if (path.includes('/employer/my-jobs')) {
+        } else if (path.includes('/employer/my-jobs') || path.includes('/employer/job-applications')) {
             setActiveItem('my-jobs');
         } else if (path.includes('/employer/saved-candidates')) {
             setActiveItem('saved-candidates');
