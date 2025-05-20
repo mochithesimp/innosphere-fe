@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RiHome2Line, RiEditLine, RiDeleteBinLine, RiMoreFill } from 'react-icons/ri';
+import ApplicantPopup from './ApplicantPopup';
 
 // Define the Applicant type
 interface Applicant {
@@ -18,6 +19,8 @@ const JobApplicationsView: React.FC = () => {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const sortRef = useRef<HTMLDivElement>(null);
     const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+    const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -45,6 +48,18 @@ const JobApplicationsView: React.FC = () => {
     // Register menu ref
     const setMenuRef = (id: string, el: HTMLDivElement | null) => {
         menuRefs.current[id] = el;
+    };
+
+    // Open applicant popup
+    const handleApplicantClick = (applicant: Applicant) => {
+        setSelectedApplicant(applicant);
+        setIsPopupOpen(true);
+    };
+
+    // Close applicant popup
+    const handleClosePopup = () => {
+        setIsPopupOpen(false);
+        setSelectedApplicant(null);
     };
 
     // Sample data for applicants
@@ -114,7 +129,11 @@ const JobApplicationsView: React.FC = () => {
     // Render applicant card in the Tất cả column
     const renderApplicantCard = (applicant: Applicant) => {
         return (
-            <div key={applicant.id} className="bg-white rounded-lg shadow border border-gray-200 mb-4 text-left">
+            <div
+                key={applicant.id}
+                className="bg-white rounded-lg shadow border border-gray-200 mb-4 text-left cursor-pointer hover:border-[#309689]"
+                onClick={() => handleApplicantClick(applicant)}
+            >
                 <div className="p-4">
                     <div className="flex items-start">
                         {/* Blank Avatar */}
@@ -157,7 +176,11 @@ const JobApplicationsView: React.FC = () => {
     // Render applicant card in the Chọn lọc column
     const renderSelectedApplicantCard = (applicant: Applicant) => {
         return (
-            <div key={applicant.id} className="bg-white rounded-lg shadow border border-gray-200 mb-4 text-left">
+            <div
+                key={applicant.id}
+                className="bg-white rounded-lg shadow border border-gray-200 mb-4 text-left cursor-pointer hover:border-[#309689]"
+                onClick={() => handleApplicantClick(applicant)}
+            >
                 <div className="p-4">
                     <div className="flex items-start">
                         {/* Blank Avatar */}
@@ -354,6 +377,13 @@ const JobApplicationsView: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Applicant Popup */}
+            <ApplicantPopup
+                isOpen={isPopupOpen}
+                onClose={handleClosePopup}
+                applicant={selectedApplicant}
+            />
         </div>
     );
 };
