@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { IoMdClose } from 'react-icons/io';
 
@@ -9,6 +9,50 @@ interface JobPromotionPopupProps {
 
 const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }) => {
     const [promotionType, setPromotionType] = useState<'top' | 'highlight'>('top');
+
+    // Add button styles using CSS
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            .post-job-btn {
+                background-color: #309689 !important;
+                color: white !important;
+                padding: 10px 24px !important;
+                border-radius: 6px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-weight: 500 !important;
+                border: none !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .post-job-btn:hover {
+                background-color: #257b6f !important;
+            }
+            
+            .skip-now-btn {
+                padding: 10px 24px !important;
+                border-radius: 6px !important;
+                color: #6B7280 !important;
+                font-weight: 500 !important;
+                background-color: transparent !important;
+                border: none !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .skip-now-btn:hover {
+                color: #374151 !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
 
     if (!isOpen) return null;
 
@@ -161,24 +205,13 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
 
                     <div className="flex justify-between mt-8">
                         <button
-                            className="px-6 py-2 text-gray-500 font-medium hover:text-gray-700"
+                            className="skip-now-btn"
                             onClick={onClose}
                         >
                             Skip Now
                         </button>
                         <button
-                            style={{
-                                backgroundColor: '#309689',
-                                color: 'white',
-                                padding: '10px 24px',
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: '500',
-                                border: 'none',
-                                cursor: 'pointer'
-                            }}
+                            className="post-job-btn"
                             onClick={onClose}
                         >
                             Đăng Việc <FiArrowRight className="ml-2" />
