@@ -16,7 +16,7 @@ import EmployeeJobsPage from './pages/Employee/EmployeeJobsPage'
 import EmployeeFavorites from './pages/Employee/EmployeeFavorites'
 import EmployeeJobAlerts from './pages/Employee/EmployeeJobAlerts'
 import EmployeeSettings from './pages/Employee/EmployeeSettings'
-import EmployerSettingsPage from './pages/Employer/SettingsPage'
+
 import EstablishmentInfoPage from './pages/Employer/EstablishmentInfoPage'
 import SocialMediaInfoPage from './pages/Employer/SocialMediaInfoPage'
 import ContactInfoPage from './pages/Employer/ContactInfoPage'
@@ -24,6 +24,7 @@ import CompletionPage from './pages/Employer/CompletionPage'
 import EmployerLayout from './components/Employer/EmployerLayout'
 import OverviewContent from './components/Employer/Dashboard/OverviewContent'
 import PostJobContent from './components/Employer/PostJob/PostJobContent'
+import SettingsContent from './components/Employer/Dashboard/SettingsContent'
 import JobPostingFormPage from './pages/Employer/JobPostingFormPage'
 import MyJobsContent from './components/Employer/Dashboard/MyJobsContent'
 import JobApplicationsPage from './pages/Employer/JobApplicationsPage'
@@ -65,10 +66,10 @@ function App() {
             <Route path="job-applications" element={<JobApplicationsPage />} />
             <Route path="saved-candidates" element={<SavedCandidatesPage />} />
             <Route path="plans" element={<PlanAndPaymentPage />} />
+            <Route path="settings" element={<SettingsContent />} />
           </Route>
 
           {/* Legacy employer routes (these can be migrated to nested routes later) */}
-          <Route path="/employer/settings" element={<EmployerSettingsPage />} />
           <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
           <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
           <Route path="/employer/contact-info" element={<ContactInfoPage />} />
