@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { RiUploadCloudLine, RiUser3Line, RiBuilding2Line, RiGlobalLine, RiSettings4Line } from 'react-icons/ri';
 import { BiBold, BiItalic, BiUnderline, BiStrikethrough, BiLink, BiListUl, BiListOl } from 'react-icons/bi';
+import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaTrash } from 'react-icons/fa';
+import { IoMdAdd } from 'react-icons/io';
 
 const SettingsContent: React.FC = () => {
     const [activeTab, setActiveTab] = useState('company-info');
@@ -8,6 +10,10 @@ const SettingsContent: React.FC = () => {
     const [companyDescription, setCompanyDescription] = useState('');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [socialLinks, setSocialLinks] = useState([
+        { id: 1, type: 'facebook', url: '' },
+        { id: 2, type: 'twitter', url: '' }
+    ]);
 
     const tabs = [
         {
@@ -50,6 +56,45 @@ const SettingsContent: React.FC = () => {
 
     const handleDeleteCover = () => {
         setCoverFile(null);
+    };
+
+    // Social media functions
+    const handleUrlChange = (id: number, value: string) => {
+        setSocialLinks(links => links.map(link =>
+            link.id === id ? { ...link, url: value } : link
+        ));
+    };
+
+    const handleTypeChange = (id: number, type: string) => {
+        setSocialLinks(links => links.map(link =>
+            link.id === id ? { ...link, type } : link
+        ));
+    };
+
+    const handleDeleteSocialLink = (id: number) => {
+        setSocialLinks(links => links.filter(link => link.id !== id));
+    };
+
+    const addNewSocialLink = () => {
+        if (socialLinks.length >= 4) return; // Limit to maximum 4 links
+        const newId = Math.max(...socialLinks.map(link => link.id), 0) + 1;
+        setSocialLinks([...socialLinks, { id: newId, type: 'facebook', url: '' }]);
+    };
+
+    // Get the icon component based on platform type
+    const getSocialIcon = (type: string) => {
+        switch (type) {
+            case 'facebook':
+                return <FaFacebookF className="h-5 w-5 text-[#1877F2]" />;
+            case 'twitter':
+                return <FaTwitter className="h-5 w-5 text-[#1DA1F2]" />;
+            case 'instagram':
+                return <FaInstagram className="h-5 w-5 text-[#E4405F]" />;
+            case 'youtube':
+                return <FaYoutube className="h-5 w-5 text-[#FF0000]" />;
+            default:
+                return <FaFacebookF className="h-5 w-5 text-[#1877F2]" />;
+        }
     };
 
     return (
@@ -441,8 +486,105 @@ const SettingsContent: React.FC = () => {
             )}
 
             {activeTab === 'social-media' && (
-                <div className="text-center py-12">
-                    <p className="text-gray-500">Hồ sơ mạng xã hội - Đang phát triển</p>
+                <div className="max-w-4xl">
+                    {/* Social Media Links - Reused from existing component */}
+                    {socialLinks.map((link, index) => (
+                        <div key={link.id} className="mb-6">
+                            <label className="block text-gray-700 text-sm font-medium mb-2 text-left">
+                                Liên Kết {index + 1}
+                            </label>
+                            <div className="flex gap-3">
+                                <div className="relative">
+                                    <select
+                                        className="appearance-none bg-white border border-gray-300 hover:border-gray-400 pl-10 pr-8 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] text-gray-500"
+                                        value={link.type}
+                                        onChange={(e) => handleTypeChange(link.id, e.target.value)}
+                                    >
+                                        <option value="facebook">Facebook</option>
+                                        <option value="twitter">Twitter</option>
+                                        <option value="instagram">Instagram</option>
+                                        <option value="youtube">Youtube</option>
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        {getSocialIcon(link.type)}
+                                    </div>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div className="relative flex-1">
+                                    <input
+                                        type="text"
+                                        placeholder="Profile link/url..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689]"
+                                        value={link.url}
+                                        onChange={(e) => handleUrlChange(link.id, e.target.value)}
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => handleDeleteSocialLink(link.id)}
+                                    className="bg-gray-100 hover:bg-gray-200 p-2 rounded-md"
+                                >
+                                    <FaTrash className="h-4 w-4 text-gray-500" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Add New Social Link Button */}
+                    <div className="mb-8">
+                        {socialLinks.length < 4 ? (
+                            <div className="w-full bg-[#F1F2F4] hover:bg-gray-200 py-3 rounded-md text-gray-600 cursor-pointer" onClick={addNewSocialLink}>
+                                <div className="flex justify-center items-center gap-2">
+                                    <IoMdAdd className="h-5 w-5" />
+                                    <span>Add New Social Link</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center text-sm text-gray-500 py-2">
+                                Đã đạt giới hạn tối đa 4 liên kết
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="flex justify-start">
+                        <style>
+                            {`
+                                .custom-save-button {
+                                    background-color: #309689 !important;
+                                    color: white !important;
+                                    border: none !important;
+                                    padding: 12px 32px !important;
+                                    border-radius: 8px !important;
+                                    font-weight: 600 !important;
+                                    font-size: 14px !important;
+                                    cursor: pointer !important;
+                                    transition: all 0.2s ease !important;
+                                    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+                                    outline: none !important;
+                                }
+                                .custom-save-button:hover {
+                                    background-color: #277b70 !important;
+                                    color: white !important;
+                                }
+                                .custom-save-button:focus {
+                                    background-color: #309689 !important;
+                                    color: white !important;
+                                    outline: none !important;
+                                }
+                                .custom-save-button:active {
+                                    background-color: #1f5f56 !important;
+                                    color: white !important;
+                                }
+                            `}
+                        </style>
+                        <button className="custom-save-button">
+                            Lưu Thay Đổi
+                        </button>
+                    </div>
                 </div>
             )}
 
