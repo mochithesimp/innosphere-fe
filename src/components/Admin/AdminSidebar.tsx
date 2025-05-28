@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
     IoHomeOutline,
     IoReceiptOutline,
@@ -19,7 +19,7 @@ interface SidebarItem {
 }
 
 const AdminSidebar: React.FC = () => {
-    const [activeItem, setActiveItem] = useState('dashboard');
+    const location = useLocation();
 
     const sidebarItems: SidebarItem[] = [
         {
@@ -82,32 +82,34 @@ const AdminSidebar: React.FC = () => {
         <aside className="w-64 bg-white h-full border-r border-gray-200">
             <nav className="mt-6">
                 <ul className="space-y-1 px-4">
-                    {sidebarItems.map((item) => (
-                        <li key={item.id}>
-                            <NavLink
-                                to={item.path}
-                                onClick={() => setActiveItem(item.id)}
-                                className={({ isActive }) =>
-                                    `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${isActive || activeItem === item.id
-                                        ? 'bg-gray-100 border-r-2'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                    }`
-                                }
-                                style={({ isActive }) => (isActive || activeItem === item.id) ? {
-                                    color: '#309689',
-                                    borderRightColor: '#309689'
-                                } : {}}
-                            >
-                                <span
-                                    className="mr-3"
-                                    style={(activeItem === item.id) ? { color: '#309689' } : {}}
+                    {sidebarItems.map((item) => {
+                        const isActive = location.pathname === item.path;
+                        return (
+                            <li key={item.id}>
+                                <NavLink
+                                    to={item.path}
+                                    className={
+                                        `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${isActive
+                                            ? 'bg-gray-100 border-r-2'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        }`
+                                    }
+                                    style={isActive ? {
+                                        color: '#309689',
+                                        borderRightColor: '#309689'
+                                    } : {}}
                                 >
-                                    {item.icon}
-                                </span>
-                                {item.label}
-                            </NavLink>
-                        </li>
-                    ))}
+                                    <span
+                                        className="mr-3"
+                                        style={isActive ? { color: '#309689' } : {}}
+                                    >
+                                        {item.icon}
+                                    </span>
+                                    {item.label}
+                                </NavLink>
+                            </li>
+                        );
+                    })}
                 </ul>
             </nav>
         </aside>

@@ -1,7 +1,35 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { IoNotificationsOutline, IoSettingsOutline } from 'react-icons/io5';
 
 const AdminHeader: React.FC = () => {
+    const location = useLocation();
+
+    const getPageTitle = () => {
+        switch (location.pathname) {
+            case '/admin/dashboard':
+                return 'Tổng Quan';
+            case '/admin/orders':
+                return 'Giao dịch';
+            case '/admin/accounts':
+                return 'Tài khoản';
+            case '/admin/investments':
+                return 'Đầu tư';
+            case '/admin/credit-cards':
+                return 'Thẻ tín dụng';
+            case '/admin/loans':
+                return 'Khoản vay';
+            case '/admin/services':
+                return 'Dịch vụ';
+            case '/admin/packages':
+                return 'Các gói dịch vụ và quảng cáo';
+            case '/admin/settings':
+                return 'Cài đặt';
+            default:
+                return 'Tổng Quan';
+        }
+    };
+
     return (
         <header className="bg-white shadow-sm border-b border-gray-200">
             <div className="flex items-center justify-between px-6 py-4 pr-12">
@@ -17,7 +45,7 @@ const AdminHeader: React.FC = () => {
 
                 {/* Center section - Page title */}
                 <div className="flex-1 flex items-center">
-                    <h1 className="text-xl font-semibold text-gray-800">Tổng Quan</h1>
+                    <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
                 </div>
 
                 {/* Right side - User info and actions */}
