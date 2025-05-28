@@ -31,6 +31,10 @@ import JobApplicationsPage from './pages/Employer/JobApplicationsPage'
 import SavedCandidatesPage from './pages/Employer/SavedCandidatesPage'
 import PlanAndPaymentPage from './pages/Employer/PlanAndPaymentPage'
 
+// Admin imports
+import AdminLayout from './components/Admin/AdminLayout'
+import AdminPage from './pages/Admin/AdminPage'
+
 function App() {
   return (
     <div className="fixed inset-0 overflow-auto bg-white">
@@ -55,6 +59,20 @@ function App() {
           <Route path="/employee/job-alerts" element={<EmployeeJobAlerts />} />
           <Route path="/employee/notifications" element={<EmployeeDashboard />} />
           <Route path="/employee/settings" element={<EmployeeSettings />} />
+
+          {/* Admin routes using nested routes with AdminLayout */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminPage />} />
+            <Route path="orders" element={<AdminPage />} />
+            <Route path="accounts" element={<AdminPage />} />
+            <Route path="investments" element={<AdminPage />} />
+            <Route path="credit-cards" element={<AdminPage />} />
+            <Route path="loans" element={<AdminPage />} />
+            <Route path="services" element={<AdminPage />} />
+            <Route path="packages" element={<AdminPage />} />
+            <Route path="settings" element={<AdminPage />} />
+          </Route>
 
           {/* Employer routes using nested routes with EmployerLayout */}
           <Route path="/employer" element={<EmployerLayout />}>
