@@ -4,6 +4,7 @@ import AdminDashboardContent from '../../components/Admin/Dashboard/AdminDashboa
 import TransactionsContent from '../../components/Admin/Transactions/TransactionsContent';
 import AccountsContent from '../../components/Admin/Accounts/AccountsContent';
 import PackagesContent from '../../components/Admin/Packages/PackagesContent';
+import SettingsContent from '../../components/Admin/Settings/SettingsContent';
 
 const AdminPage: React.FC = () => {
     const location = useLocation();
@@ -27,7 +28,7 @@ const AdminPage: React.FC = () => {
             case '/admin/packages':
                 return <PackagesContent />;
             case '/admin/settings':
-                return <div className="p-6">Cài đặt content coming soon...</div>;
+                return <SettingsContent />;
             default:
                 return <AdminDashboardContent />;
         }
