@@ -89,7 +89,7 @@ const AdminSidebar: React.FC = () => {
                                 <NavLink
                                     to={item.path}
                                     className={
-                                        `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${isActive
+                                        `flex items-center justify-start px-4 py-3 text-sm font-medium text-left rounded-lg transition-colors duration-200 ${isActive
                                             ? 'bg-gray-100 border-r-2'
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`
@@ -105,7 +105,7 @@ const AdminSidebar: React.FC = () => {
                                     >
                                         {item.icon}
                                     </span>
-                                    {item.label}
+                                    <span className="text-left">{item.label}</span>
                                 </NavLink>
                             </li>
                         );
