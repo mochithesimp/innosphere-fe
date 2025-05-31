@@ -26,6 +26,12 @@ const SettingsContent: React.FC = () => {
         }
     });
 
+    const [securityData, setSecurityData] = useState({
+        twoFactorAuth: true,
+        currentPassword: '••••••••••',
+        newPassword: '••••••••••'
+    });
+
     const tabs = [
         { id: 'profile', label: 'Chỉnh sửa hồ sơ' },
         { id: 'customize', label: 'Tùy chỉnh' },
@@ -56,9 +62,16 @@ const SettingsContent: React.FC = () => {
         }));
     };
 
+    const handleSecurityChange = (field: string, value: string | boolean) => {
+        setSecurityData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
     const handleSave = () => {
         // Handle save functionality
-        console.log('Saving data:', formData, customizeData);
+        console.log('Saving data:', formData, customizeData, securityData);
     };
 
     return (
@@ -79,6 +92,13 @@ const SettingsContent: React.FC = () => {
                     .toggle-off {
                         background-color: #9CA3AF !important;
                     }
+                    .tab-active {
+                        color: #309689 !important;
+                        border-bottom-color: #309689 !important;
+                    }
+                    .settings-input-text {
+                        color: #309689 !important;
+                    }
                 `}
             </style>
 
@@ -90,7 +110,7 @@ const SettingsContent: React.FC = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                                ? 'border-[#309689] text-[#309689]'
+                                ? 'tab-active'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
@@ -385,7 +405,71 @@ const SettingsContent: React.FC = () => {
 
             {activeTab === 'security' && (
                 <div className="p-6">
-                    <p className="text-gray-500">Bảo mật content coming soon...</p>
+                    {/* Two-Factor Authentication Section */}
+                    <div className="mb-8">
+                        <h3 className="text-left text-sm font-medium text-gray-700 mb-4">Xác thực hai yếu tố</h3>
+
+                        <div className="flex items-center py-2">
+                            <button
+                                onClick={() => handleSecurityChange('twoFactorAuth', !securityData.twoFactorAuth)}
+                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none mr-4 ${securityData.twoFactorAuth ? 'toggle-on' : 'toggle-off'
+                                    }`}
+                            >
+                                <span
+                                    className="inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-md"
+                                    style={{
+                                        transform: securityData.twoFactorAuth ? 'translateX(24px)' : 'translateX(2px)'
+                                    }}
+                                />
+                            </button>
+                            <span className="text-sm text-gray-700">Bật hoặc tắt xác thực hai yếu tố</span>
+                        </div>
+                    </div>
+
+                    {/* Change Password Section */}
+                    <div className="mb-8">
+                        <h3 className="text-left text-sm font-medium text-gray-700 mb-4">Đổi mật khẩu</h3>
+
+                        <div className="space-y-6">
+                            {/* Current Password */}
+                            <div>
+                                <label className="block text-left text-sm font-medium text-gray-700 mb-2">
+                                    Mật khẩu hiện tại
+                                </label>
+                                <input
+                                    type="password"
+                                    value={securityData.currentPassword}
+                                    onChange={(e) => handleSecurityChange('currentPassword', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#309689] focus:border-transparent settings-input-text"
+                                    placeholder="••••••••••"
+                                />
+                            </div>
+
+                            {/* New Password */}
+                            <div>
+                                <label className="block text-left text-sm font-medium text-gray-700 mb-2">
+                                    Mật khẩu mới
+                                </label>
+                                <input
+                                    type="password"
+                                    value={securityData.newPassword}
+                                    onChange={(e) => handleSecurityChange('newPassword', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#309689] focus:border-transparent settings-input-text"
+                                    placeholder="••••••••••"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end">
+                        <button
+                            onClick={handleSave}
+                            className="px-8 py-2 text-sm rounded-lg transition-colors settings-save-button"
+                        >
+                            Lưu
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
