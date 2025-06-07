@@ -8,7 +8,7 @@ type SubHeaderProps = {
 
 const SubHeader: React.FC<SubHeaderProps> = ({ currentStep }) => {
     const steps = [
-        { id: 'business-info', title: 'Thông tin doanh nghiệp', icon: <FiUser className="w-5 h-5" />, path: '/employer/settings' },
+        { id: 'business-info', title: 'Thông tin doanh nghiệp', icon: <FiUser className="w-5 h-5" />, path: '/employer/business-info' },
         { id: 'establishment-info', title: 'Thông tin thành lập', icon: <FiFileText className="w-5 h-5" />, path: '/employer/establishment-info' },
         { id: 'social-media-info', title: 'Thông tin mạng xã hội', icon: <FiGlobe className="w-5 h-5" />, path: '/employer/social-media-info' },
         { id: 'contact-info', title: 'Thông tin liên hệ', icon: <FiPhone className="w-5 h-5" />, path: '/employer/contact-info' },

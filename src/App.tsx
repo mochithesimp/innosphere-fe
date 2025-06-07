@@ -17,6 +17,7 @@ import EmployeeFavorites from './pages/Employee/EmployeeFavorites'
 import EmployeeJobAlerts from './pages/Employee/EmployeeJobAlerts'
 import EmployeeSettings from './pages/Employee/EmployeeSettings'
 
+import BusinessInfoPage from './pages/Employer/BusinessInfoPage'
 import EstablishmentInfoPage from './pages/Employer/EstablishmentInfoPage'
 import SocialMediaInfoPage from './pages/Employer/SocialMediaInfoPage'
 import ContactInfoPage from './pages/Employer/ContactInfoPage'
@@ -88,6 +89,7 @@ function App() {
           </Route>
 
           {/* Legacy employer routes (these can be migrated to nested routes later) */}
+          <Route path="/employer/business-info" element={<BusinessInfoPage />} />
           <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
           <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
           <Route path="/employer/contact-info" element={<ContactInfoPage />} />
