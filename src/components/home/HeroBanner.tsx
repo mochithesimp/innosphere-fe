@@ -1,34 +1,26 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getRoleFromToken } from "../../utils/jwtHelper";
 
 const HeroBanner: React.FC = () => {
-  //   const [role, setRole] = useState("");
-
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const isLoggedIn = token;
-
-  //   useEffect(() => {
-  //     const fetchUser = async () => {
-  //       try {
-  //         if (!token) {
-  //           console.error("Token not found");
-  //           return;
-  //         }
-  //         const userRoleFromToken = getRoleFromToken(token) || "";
-  //         console.log("Role: ");
-  //         setRole(userRoleFromToken);
-  //       } catch (error) {
-  //         console.error("Error fetching user", error);
-  //         throw new Error("User not found");
-  //       }
-  //     };
-
-  //     fetchUser();
-  //   }, [token]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
+  };
+
+  const handleAvatarClick = () => {
+    if (token) {
+      const role = getRoleFromToken(token);
+      if (role === "Worker") {
+        navigate("/employee/dashboard");
+      } else if (role === "Employer") {
+        navigate("/employer/dashboard");
+      }
+    }
   };
 
   return (
@@ -98,13 +90,38 @@ const HeroBanner: React.FC = () => {
             {/* Authentication Buttons */}
             <div className="flex items-center space-x-4">
               {isLoggedIn ? (
-                <Link
-                  to="/login"
-                  onClick={handleLogout}
-                  className="text-white hover:text-[#309689] transition-colors"
-                >
-                  Đăng xuất
-                </Link>
+                <div className="flex items-center space-x-3">
+                  {/* User Avatar */}
+                  <button
+                    onClick={handleAvatarClick}
+                    className="w-8 h-8 bg-[#309689] rounded-full flex items-center justify-center hover:bg-[#277a6e] transition-colors"
+                    title="Đi tới Dashboard"
+                  >
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      ></path>
+                    </svg>
+                  </button>
+
+                  {/* Logout Button */}
+                  <Link
+                    to="/login"
+                    onClick={handleLogout}
+                    className="text-white hover:text-[#309689] transition-colors"
+                  >
+                    Đăng xuất
+                  </Link>
+                </div>
               ) : (
                 <>
                   <Link

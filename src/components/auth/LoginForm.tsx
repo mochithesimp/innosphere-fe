@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
 import { useNavigate } from "react-router-dom";
-import { login } from "../apiServices/AccountServices/loginService";
+import { login } from "../apiServices/AccountServices/authServices";
 import swal from "sweetalert";
 import { getRoleFromToken, getUserIdFromToken } from "../../utils/jwtHelper";
 import { AxiosError } from "axios";
 import { toast } from "react-toastify";
+import { validateEmail, validatePassword } from "../../utils/validation";
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const togglePasswordVisibility = () => {
@@ -22,20 +24,18 @@ const LoginForm: React.FC = () => {
 
   const handleLoginClick = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    if (!email) {
-      setEmailError("Email is required");
-    } else {
-      setEmailError("");
-    }
+    // Validate email
+    const emailValidationError = validateEmail(email);
+    setEmailError(emailValidationError);
 
-    if (!password) {
-      setPasswordError("Password is required");
-    } else {
-      setPasswordError("");
-    }
+    // Validate password
+    const passwordValidationError = validatePassword(password);
+    setPasswordError(passwordValidationError);
 
-    if (!email || !password) {
+    if (emailValidationError || passwordValidationError) {
+      setIsLoading(false);
       return;
     }
 
@@ -60,8 +60,8 @@ const LoginForm: React.FC = () => {
 
         if (role === "Admin") {
           swal({
-            title: "Access Denied",
-            text: "Incorrect Account or Password.",
+            title: "Truy cập bị từ chối",
+            text: "Tài khoản hoặc mật khẩu không chính xác.",
             icon: "warning",
             buttons: {
               ok: {
@@ -73,18 +73,24 @@ const LoginForm: React.FC = () => {
           });
           return;
         }
-        if (role === "Worker" || role === "Employer") {
+
+        // Navigate based on role
+        if (role === "Worker") {
+          navigate("/employee/dashboard");
+        } else if (role === "Employer") {
+          navigate("/employer/business-info");
+        } else {
           navigate("/");
         }
-      } else {
-        return;
+
+        toast.success("Đăng nhập thành công!");
       }
     } catch (error) {
       if (error instanceof AxiosError) {
         if (error.response?.status === 403) {
           swal({
-            title: "Banned",
-            text: "Your account has been banned indefinitely and cannot log in.",
+            title: "Tài khoản bị cấm",
+            text: "Tài khoản của bạn đã bị cấm vĩnh viễn và không thể đăng nhập.",
             icon: "error",
             buttons: {
               ok: {
@@ -98,16 +104,17 @@ const LoginForm: React.FC = () => {
           error.response?.status === 400 ||
           error.response?.status === 401
         ) {
-          swal("Validation Error", "Incorrect Account or Password", "error");
+          swal("Lỗi xác thực", "Tài khoản hoặc mật khẩu không chính xác", "error");
         } else {
-          // Handle other status codes
           console.error("Login failed:", error.response?.status);
-          toast.error("Login failed. Please try again.");
+          toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
         }
       } else {
         console.error("An error occurred:", error);
-        toast.error("An unexpected error occurred. Please try again.");
+        toast.error("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -144,53 +151,59 @@ const LoginForm: React.FC = () => {
         <Input
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (emailError) setEmailError("");
+          }}
           placeholder="Địa chỉ Email"
           className="w-full p-3"
           required
         />
-        {emailError && <span className="text-red-500 absolute mt-10">{emailError}</span>}
+        {emailError && <span className="text-red-500 text-sm mt-1">{emailError}</span>}
       </div>
 
       {/* Password field */}
       <div>
-      <div className="relative flex flex-wrap ">
-  <Input
-    type={showPassword ? "text" : "password"}
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    placeholder="Mật khẩu"
-    className="w-full p-3 pr-10"
-    required
-  />
-  <button
-    className="absolute inset-y-0 right-0 flex items-center pr-3 m-2"
-    type="button"
-    onClick={togglePasswordVisibility}
-  >
-    <svg
-      className="w-5 h-5 text-gray-400"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d={
-          showPassword
-            ? "M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-            : "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-        }
-      />
-    </svg>
-  </button>
-  {passwordError && <span className="text-red-500 absolute mt-10 left-0">{passwordError}</span>}
-</div>
-
+        <div className="relative flex flex-wrap">
+          <Input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (passwordError) setPasswordError("");
+            }}
+            placeholder="Mật khẩu"
+            className="w-full p-3 pr-10"
+            required
+          />
+          <button
+            className="absolute inset-y-0 right-0 flex items-center pr-3 m-2"
+            type="button"
+            onClick={togglePasswordVisibility}
+          >
+            <svg
+              className="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d={
+                  showPassword
+                    ? "M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                    : "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                }
+              />
+            </svg>
+          </button>
+        </div>
+        {passwordError && <span className="text-red-500 text-sm mt-1">{passwordError}</span>}
       </div>
+
       {/* Remember me and forgot password */}
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
@@ -218,21 +231,23 @@ const LoginForm: React.FC = () => {
         className="block w-full bg-[#309689] text-white rounded-md text-center py-3 font-medium"
       >
         <div className="flex items-center justify-center">
-          Đăng Nhập
-          <svg
-            className="w-4 h-4 ml-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M14 5l7 7m0 0l-7 7m7-7H3"
-            ></path>
-          </svg>
+          {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
+          {!isLoading && (
+            <svg
+              className="w-4 h-4 ml-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              ></path>
+            </svg>
+          )}
         </div>
       </a>
 

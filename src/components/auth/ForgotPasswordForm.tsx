@@ -1,18 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '../ui/input';
 import { useNavigate } from 'react-router-dom';
+import { forgotPassword } from '../apiServices/AccountServices/authServices';
+import { toast } from 'react-toastify';
+import { validateEmail } from '../../utils/validation';
 
 const ForgotPasswordForm: React.FC = () => {
+    const [email, setEmail] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleLoginReturn = () => {
         navigate('/login');
     };
 
-    const handleResetPassword = (e: React.MouseEvent) => {
+    const handleResetPassword = async (e: React.MouseEvent) => {
         e.preventDefault();
-        // checkkkkkk
-        // APIIIII
+
+        const emailValidation = validateEmail(email);
+        setEmailError(emailValidation);
+
+        if (emailValidation) {
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            // Call the API but always proceed to reset password page
+            // This prevents email enumeration attacks
+            await forgotPassword(email);
+        } catch (error) {
+            // Log error but don't show it to user for security reasons
+            console.log('Forgot password request processed for:', email, error);
+        }
+
+        // Always store email and navigate to reset password page
+        // regardless of whether email exists or not
+        localStorage.setItem('resetPasswordEmail', email);
+
+        toast.success('Nếu email tồn tại trong hệ thống, mã OTP đã được gửi. Vui lòng kiểm tra hộp thư của bạn.');
+
+        setIsLoading(false);
         navigate('/reset-password');
     };
 
@@ -54,7 +84,19 @@ const ForgotPasswordForm: React.FC = () => {
             </div>
 
             {/* Email field */}
-            <Input type="email" placeholder="Địa chỉ Email" className="w-full p-3" />
+            <div>
+                <Input
+                    type="email"
+                    placeholder="Địa chỉ Email"
+                    className="w-full p-3"
+                    value={email}
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError) setEmailError('');
+                    }}
+                />
+                {emailError && <span className="text-red-500 text-sm mt-1">{emailError}</span>}
+            </div>
 
             {/* Submit button */}
             <a
@@ -63,16 +105,18 @@ const ForgotPasswordForm: React.FC = () => {
                 className="block w-full bg-[#309689] text-white rounded-md text-center py-3 font-medium"
             >
                 <div className="flex items-center justify-center">
-                    Đặt Lại Mật Khẩu
-                    <svg
-                        className="w-4 h-4 ml-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                    </svg>
+                    {isLoading ? 'Đang gửi mã...' : 'Đặt Lại Mật Khẩu'}
+                    {!isLoading && (
+                        <svg
+                            className="w-4 h-4 ml-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    )}
                 </div>
             </a>
 
