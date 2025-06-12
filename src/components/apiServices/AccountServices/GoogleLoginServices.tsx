@@ -3,15 +3,15 @@ import request from "../../../utils/request";
 
 export const GoogleLogin = async (
   idToken: string,
-  email: string,
-  name: string,
+  type: string,
+  fullName: string,
   phoneNumber: string
 ) => {
   try {
     const res = await request.post("/api/auth/login-google", {
       idToken,
-      email,
-      name,
+      type,
+      fullName,
       phoneNumber,
     });
     console.log("check data search: ", res);
