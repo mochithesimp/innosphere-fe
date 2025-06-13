@@ -1,75 +1,81 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { JobService, JobPostingApiResponse } from '../../services';
 
+// Interface for display data (hybrid of API + static)
 interface JobProps {
     id: number;
     title: string;
     company: string;
     logo: string;
     timePosted: string;
-    schedule: string;
+    schedule: string; // Static F&B
     timeRange: string;
     salary: string;
-    location: string;
+    location: string; // Static location
 }
 
-const jobData: JobProps[] = [
-    {
-        id: 1,
-        title: "Nhân viên phục vụ bàn",
-        company: "Minh Anh Coffee",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "10 phút trước",
-        schedule: "F&B",
-        timeRange: "7h00-12h00",
-        salary: "27.000/giờ",
-        location: "Quận 9, HCM"
-    },
-    {
-        id: 2,
-        title: "Nhân viên rửa chén",
-        company: "Becker Restaurant",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "12 phút trước",
-        schedule: "F&B",
-        timeRange: "18h00-23h00",
-        salary: "35.000/giờ",
-        location: "Quận 2, HCM"
-    },
-    {
-        id: 3,
-        title: "Nhân viên sắp xếp hàng hoá",
-        company: "Sammi Shop",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "15 phút trước",
-        schedule: "Retail",
-        timeRange: "13h00-17h00",
-        salary: "30.000/giờ",
-        location: "Quận 7, HCM"
-    },
-    {
-        id: 4,
-        title: "Nhân viên phát tờ rơi",
-        company: "Sapphire PR",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "24 phút trước",
-        schedule: "Event",
-        timeRange: "7h00-11h00",
-        salary: "25.000/giờ",
-        location: "Quận 1, HCM"
-    },
-    {
-        id: 5,
-        title: "Nhân viên đóng gói đơn hàng",
-        company: "Hebe Beauty",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "26 phút trước",
-        schedule: "Retail",
-        timeRange: "17h00-22h00",
-        salary: "27.000/giờ",
-        location: "Quận 9, HCM"
-    }
+// Static data for the fields that should remain hardcoded
+const staticJobData = [
+    { schedule: "F&B", location: "Quận 9, HCM" },
+    { schedule: "F&B", location: "Quận 2, HCM" },
+    { schedule: "Retail", location: "Quận 7, HCM" },
+    { schedule: "Event", location: "Quận 1, HCM" },
+    { schedule: "Retail", location: "Quận 9, HCM" }
 ];
+
+// Static avatar image
+const DEFAULT_AVATAR = "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain";
+
+// Utility function to format time to hh:mm
+const formatTime = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    return date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+};
+
+// Utility function to format posted time
+const getTimeAgo = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 60) {
+        return `${diffInMinutes} phút trước`;
+    } else if (diffInMinutes < 1440) {
+        const hours = Math.floor(diffInMinutes / 60);
+        return `${hours} giờ trước`;
+    } else {
+        const days = Math.floor(diffInMinutes / 1440);
+        return `${days} ngày trước`;
+    }
+};
+
+// Function to convert API data to display data with static overrides
+const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[]): JobProps[] => {
+    return apiJobs.map((apiJob, index) => {
+        const staticData = staticJobData[index] || staticJobData[0]; // Fallback to first item if index out of bounds
+        const timeRange = `${formatTime(apiJob.startTime)}-${formatTime(apiJob.endTime)}`;
+        const formattedSalary = `${apiJob.hourlyRate?.toLocaleString()}/giờ`;
+
+        return {
+            id: apiJob.id,
+            title: apiJob.title, // Dynamic from API
+            company: apiJob.companyName, // Dynamic from API
+            logo: DEFAULT_AVATAR, // Static avatar
+            timePosted: getTimeAgo(apiJob.postedAt), // Dynamic from API
+            schedule: staticData.schedule, // Static F&B, Retail, Event
+            timeRange: timeRange, // Dynamic from API (formatted)
+            salary: formattedSalary, // Dynamic from API (formatted)
+            location: staticData.location // Static location
+        };
+    });
+};
 
 const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
     return (
@@ -149,6 +155,60 @@ const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
 };
 
 const FreelanceSection: React.FC = () => {
+    const [jobs, setJobs] = useState<JobProps[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                setLoading(true);
+                // Use the JobService to get homepage jobs
+                const apiJobs = await JobService.getHomepageJobs();
+
+                if (apiJobs && apiJobs.length > 0) {
+                    // Convert API data to display data with static overrides
+                    const displayJobs = convertApiToDisplayData(apiJobs);
+                    setJobs(displayJobs);
+                } else {
+                    setJobs([]);
+                }
+            } catch (err) {
+                console.error('Error fetching jobs:', err);
+                setError('Failed to load job listings');
+                setJobs([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchJobs();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="bg-white py-12">
+                <div className="container mx-auto px-4 max-w-[90%]">
+                    <div className="flex justify-center items-center h-32">
+                        <div className="text-gray-500">Đang tải việc làm...</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white py-12">
+                <div className="container mx-auto px-4 max-w-[90%]">
+                    <div className="flex justify-center items-center h-32">
+                        <div className="text-red-500">{error}</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white py-12">
             <div className="container mx-auto px-4 max-w-[90%]">
@@ -160,9 +220,15 @@ const FreelanceSection: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm p-4">
-                    {jobData.map((job) => (
-                        <JobCard key={job.id} job={job} />
-                    ))}
+                    {jobs.length > 0 ? (
+                        jobs.map((job) => (
+                            <JobCard key={job.id} job={job} />
+                        ))
+                    ) : (
+                        <div className="text-center text-gray-500 py-8">
+                            Không có việc làm nào để hiển thị
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

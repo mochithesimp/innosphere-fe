@@ -1,82 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Footer from '../../components/layout/Footer';
 import Header from '../../components/layout/Header';
+import { JobService, JobPostingApiResponse, JobSearchFilters } from '../../services';
 
-const jobData = [
-    {
-        id: 1,
-        title: "Nhân viên phục vụ bàn",
-        company: "Minh Anh Coffee",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "10 phút trước",
-        category: "F&B",
-        timeRange: "7h00-12h00",
-        salary: "27.000/giờ",
-        location: "Quận 9, HCM"
-    },
-    {
-        id: 2,
-        title: "Nhân viên rửa chén",
-        company: "Becker Restaurant",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "12 phút trước",
-        category: "F&B",
-        timeRange: "18h00-23h00",
-        salary: "35.000/giờ",
-        location: "Quận 2, HCM"
-    },
-    {
-        id: 3,
-        title: "Nhân viên sắp xếp hàng hoá",
-        company: "Sammi Shop",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "15 phút trước",
-        category: "Retail",
-        timeRange: "13h00-17h00",
-        salary: "30.000/giờ",
-        location: "Quận 7, HCM"
-    },
-    {
-        id: 4,
-        title: "Nhân viên phát tờ rơi",
-        company: "Sapphire PR",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "24 phút trước",
-        category: "Event",
-        timeRange: "7h00-11h00",
-        salary: "25.000/giờ",
-        location: "Quận 1, HCM"
-    },
-    {
-        id: 5,
-        title: "Nhân viên đóng gói đơn hàng",
-        company: "Hebe Beauty",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "26 phút trước",
-        category: "Retail",
-        timeRange: "17h00-22h00",
-        salary: "27.000/giờ",
-        location: "Quận 9, HCM"
-    },
-    {
-        id: 6,
-        title: "Nhân viên chạy bàn",
-        company: "Nhà Hàng Hải Sản",
-        logo: "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain",
-        timePosted: "30 phút trước",
-        category: "F&B",
-        timeRange: "13h00-17h00",
-        salary: "30.000/giờ",
-        location: "Quận 2, HCM"
-    }
+// Interface for display data (hybrid of API + static)
+interface JobProps {
+    id: number;
+    title: string;
+    company: string;
+    logo: string;
+    timePosted: string;
+    category: string; // Static
+    timeRange: string;
+    salary: string;
+    location: string; // Static
+}
+
+// Static data for the fields that should remain hardcoded (cycling pattern)
+const staticJobData = [
+    { category: "F&B", location: "Quận 9, HCM" },
+    { category: "F&B", location: "Quận 2, HCM" },
+    { category: "Retail", location: "Quận 7, HCM" },
+    { category: "Event", location: "Quận 1, HCM" },
+    { category: "Retail", location: "Quận 9, HCM" },
+    { category: "F&B", location: "Quận 3, HCM" }
 ];
 
-// Categories for the filters
+// Static avatar image
+const DEFAULT_AVATAR = "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain";
+
+// Utility function to format time to hh:mm
+const formatTime = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    return date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+};
+
+// Utility function to format posted time
+const getTimeAgo = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 60) {
+        return `${diffInMinutes} phút trước`;
+    } else if (diffInMinutes < 1440) {
+        const hours = Math.floor(diffInMinutes / 60);
+        return `${hours} giờ trước`;
+    } else {
+        const days = Math.floor(diffInMinutes / 1440);
+        return `${days} ngày trước`;
+    }
+};
+
+// Function to convert API data to display data with static overrides
+const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[], startIndex: number = 0): JobProps[] => {
+    return apiJobs.map((apiJob, index) => {
+        const staticIndex = (startIndex + index) % staticJobData.length;
+        const staticData = staticJobData[staticIndex];
+        const timeRange = `${formatTime(apiJob.startTime)}-${formatTime(apiJob.endTime)}`;
+        const formattedSalary = `${apiJob.hourlyRate?.toLocaleString()}/giờ`;
+
+        return {
+            id: apiJob.id,
+            title: apiJob.title, // Dynamic from API
+            company: apiJob.companyName, // Dynamic from API
+            logo: DEFAULT_AVATAR, // Static avatar
+            timePosted: getTimeAgo(apiJob.postedAt), // Dynamic from API
+            category: staticData.category, // Static category
+            timeRange: timeRange, // Dynamic from API (formatted)
+            salary: formattedSalary, // Dynamic from API (formatted)
+            location: staticData.location // Static location
+        };
+    });
+};
+
+// Categories for the filters - updated without counts
 const categories = [
-    { id: 'f&b', label: 'F&B', count: 10 },
-    { id: 'ban-le', label: 'Bán lẻ', count: 10 },
-    { id: 'su-kien', label: 'Sự kiện', count: 10 },
-    { id: 'khac', label: 'Khác', count: 10 }
+    { id: 'all', label: 'Tất cả' },
+    { id: 'f&b', label: 'F&B' },
+    { id: 'retail', label: 'Bán lẻ' },
+    { id: 'event', label: 'Sự kiện' },
+    { id: 'other', label: 'Khác' }
 ];
 
 const experience = [
@@ -87,19 +97,20 @@ const experience = [
 ];
 
 const experienceLevels = [
-    { id: 'khong-yeu-cau', label: 'Không yêu cầu kinh nghiệm', count: 10 },
-    { id: 'chua-co', label: 'Chưa có kinh nghiệm', count: 10 },
-    { id: 'nguoi-moi', label: 'Người mới bắt đầu', count: 10 },
-    { id: 'co-kinh-nghiem', label: 'Có kinh nghiệm', count: 10 },
-    { id: 'kinh-nghiem-cao', label: 'Kinh nghiệm cao', count: 10 }
+    { id: 'intern', label: 'Thực tập sinh', count: 5 },
+    { id: 'entry', label: 'Mới tốt nghiệp', count: 15 },
+    { id: 'junior', label: '1-2 năm kinh nghiệm', count: 20 },
+    { id: 'mid', label: '3-5 năm kinh nghiệm', count: 12 },
+    { id: 'senior', label: 'Trên 5 năm kinh nghiệm', count: 8 }
 ];
 
-const timePeriods = [
-    { id: 'tat-ca', label: 'Tất cả', count: 10 },
-    { id: '1-3', label: '1-3 giờ/ngày', count: 10 },
-    { id: '4-6', label: '4-6 giờ/ngày', count: 10 },
-    { id: '7', label: '7 ngày/tuần', count: 10 },
-    { id: '30', label: '30 ngày/tuần', count: 10 }
+// Salary ranges for filtering
+const salaryRanges = [
+    { id: 'under-20', label: 'Dưới 20.000đ/giờ', minRate: 0, maxRate: 20000, count: 8 },
+    { id: '20-30', label: '20.000đ - 30.000đ/giờ', minRate: 20000, maxRate: 30000, count: 15 },
+    { id: '30-50', label: '30.000đ - 50.000đ/giờ', minRate: 30000, maxRate: 50000, count: 12 },
+    { id: '50-100', label: '50.000đ - 100.000đ/giờ', minRate: 50000, maxRate: 100000, count: 6 },
+    { id: 'over-100', label: 'Trên 100.000đ/giờ', minRate: 100000, maxRate: 999999, count: 3 }
 ];
 
 const ChiTietButton: React.FC<{ jobTitle?: string }> = ({ jobTitle }) => {
@@ -136,7 +147,7 @@ const ChiTietButton: React.FC<{ jobTitle?: string }> = ({ jobTitle }) => {
     return buttonContent;
 };
 
-const JobListItem = ({ job }: { job: typeof jobData[0] }) => (
+const JobListItem = ({ job }: { job: JobProps }) => (
     <div className="border-b border-gray-200 py-6 first:pt-0">
         <div className="flex justify-between items-start mb-2">
             <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
@@ -205,269 +216,107 @@ const JobListItem = ({ job }: { job: typeof jobData[0] }) => (
     </div>
 );
 
-// Separate button component with direct DOM styling
-const XemThemButton: React.FC = () => {
+
+const CategoryFilter: React.FC<{
+    selectedCategory: string;
+    onCategoryChange: (category: string) => void;
+}> = ({ selectedCategory, onCategoryChange }) => {
     return (
-        <div
-            style={{
-                width: '100%',
-                height: '36px',
-                marginTop: '12px',
-                borderRadius: '6px',
-                overflow: 'hidden'
-            }}
-        >
-            <img
-                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMzMDk2ODkiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSJ3aGl0ZSI+WGVtIFRow6ptPC90ZXh0Pjwvc3ZnPg=="
-                alt="Xem Thêm"
-                style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    cursor: 'pointer'
-                }}
-            />
+        <div className="mb-6">
+            <h3 className="font-bold text-base mb-3 text-gray-800 text-left">Danh mục</h3>
+            <div className="space-y-2">
+                {categories.map((category) => (
+                    <label key={category.id} className="flex items-center cursor-pointer">
+                        <input
+                            type="radio"
+                            name="category"
+                            value={category.id}
+                            checked={selectedCategory === category.id}
+                            onChange={(e) => onCategoryChange(e.target.value)}
+                            className="w-4 h-4 text-[#309689] border-gray-300 focus:ring-[#309689] focus:ring-2"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{category.label}</span>
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const SalaryFilter: React.FC<{
+    selectedSalaryRange: string;
+    onSalaryApply: (minRate: number | undefined, maxRate: number | undefined) => void;
+}> = ({ selectedSalaryRange, onSalaryApply }) => {
+    const [tempSelectedRange, setTempSelectedRange] = useState(selectedSalaryRange);
+
+    const handleApply = () => {
+        const selectedRange = salaryRanges.find(range => range.id === tempSelectedRange);
+        onSalaryApply(selectedRange?.minRate, selectedRange?.maxRate);
+    };
+
+    const handleClear = () => {
+        setTempSelectedRange('');
+        onSalaryApply(undefined, undefined);
+    };
+
+    return (
+        <div className="mb-6">
+            <h3 className="font-bold text-base mb-3 text-gray-800 text-left">Lương</h3>
+            <div className="space-y-2 mb-4">
+                {salaryRanges.map((range) => (
+                    <label key={range.id} className="flex items-center justify-between cursor-pointer">
+                        <div className="flex items-center">
+                            <input
+                                type="radio"
+                                name="salary"
+                                value={range.id}
+                                checked={tempSelectedRange === range.id}
+                                onChange={(e) => setTempSelectedRange(e.target.value)}
+                                className="w-4 h-4 text-[#309689] border-gray-300 focus:ring-[#309689] focus:ring-2"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{range.label}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{range.count}</span>
+                    </label>
+                ))}
+            </div>
+            <div className="flex gap-2">
+                <button
+                    onClick={handleApply}
+                    className="flex-1 bg-[#309689] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#267a6e] transition-colors"
+                >
+                    Áp dụng
+                </button>
+                {selectedSalaryRange && (
+                    <button
+                        onClick={handleClear}
+                        className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                    >
+                        Xóa
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
 
 const FilterSection = ({ title, items }: { title: string, items: { id: string, label: string, count: number }[] }) => {
     return (
-        <div className="mb-4">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 text-left">{title}</h3>
-            <div className="space-y-1.5">
-                {items.map(item => (
-                    <div key={item.id} className="flex items-center">
-                        <input
-                            type="checkbox"
-                            id={item.id}
-                            className="h-4 w-4 text-[#309689] border-gray-300 rounded focus:ring-0"
-                        />
-                        <label htmlFor={item.id} className="ml-2 text-gray-600 text-sm">
-                            {item.label}
-                        </label>
-                        <span className="ml-auto text-gray-400 text-xs">{item.count}</span>
-                    </div>
+        <div className="mb-6">
+            <h3 className="font-bold text-base mb-3 text-gray-800 text-left">{title}</h3>
+            <div className="space-y-2">
+                {items.map((item) => (
+                    <label key={item.id} className="flex items-center justify-between cursor-pointer">
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 text-[#309689] border-gray-300 rounded focus:ring-[#309689] focus:ring-2"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{item.label}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{item.count}</span>
+                    </label>
                 ))}
-            </div>
-            {title === "Danh mục" && <XemThemButton />}
-        </div>
-    );
-};
-
-// Create ApDungButton component using SVG approach
-const ApDungButton: React.FC = () => {
-    return (
-        <div
-            style={{
-                height: '22px',
-                marginLeft: '8px',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                display: 'inline-block',
-                cursor: 'pointer'
-            }}
-        >
-            <img
-                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSIyMiI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgcng9IjQiIGZpbGw9IiMzMDk2ODkiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9IjUwMCI+w4FwIEThu6VuZzwvdGV4dD48L3N2Zz4="
-                alt="Áp Dụng"
-                style={{
-                    height: '100%',
-                    objectFit: 'cover'
-                }}
-            />
-        </div>
-    );
-};
-
-const SalarySlider = () => {
-    const [minValue, setMinValue] = useState(0);
-    const [maxValue, setMaxValue] = useState(60);
-    const [isDraggingMin, setIsDraggingMin] = useState(false);
-    const [isDraggingMax, setIsDraggingMax] = useState(false);
-    const maxSalary = 999999;
-
-    const minSalary = Math.round((minValue / 100) * maxSalary);
-    const currentMaxSalary = Math.round((maxValue / 100) * maxSalary);
-
-    const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMinValue = parseInt(e.target.value);
-        setMinValue(Math.min(newMinValue, maxValue - 5));
-    };
-
-    const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMaxValue = parseInt(e.target.value);
-        // Hard limit to 100 to prevent exceeding max value
-        const limitedMaxValue = Math.min(newMaxValue, 100);
-        // Don't let max value go below min value + 5
-        setMaxValue(Math.max(limitedMaxValue, minValue + 5));
-    };
-
-    const handleMinSalaryInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const valueStr = e.target.value.replace(/\D/g, '');
-        const value = parseInt(valueStr);
-
-        if (!isNaN(value)) {
-            const maxAllowed = Math.min(maxSalary, (maxValue / 100) * maxSalary - 10000);
-            const limitedValue = Math.min(value, maxAllowed);
-            const newMinValue = Math.min(Math.round((limitedValue / maxSalary) * 100), maxValue - 5);
-            setMinValue(newMinValue);
-        }
-    };
-
-    const handleMaxSalaryInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const valueStr = e.target.value.replace(/\D/g, '');
-        const value = parseInt(valueStr);
-
-        if (!isNaN(value)) {
-            // Ensure value is strictly capped at maxSalary
-            const strictMaxSalary = Math.min(value, maxSalary);
-            // Ensure value doesn't exceed max salary or go below min value
-            const minAllowed = Math.max(0, (minValue / 100) * maxSalary + 10000);
-            const limitedValue = Math.max(Math.min(strictMaxSalary, maxSalary), minAllowed);
-            const newMaxValue = Math.max(Math.min(Math.round((limitedValue / maxSalary) * 100), 100), minValue + 5);
-            setMaxValue(newMaxValue);
-        }
-    };
-
-    const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isDraggingMin || isDraggingMax) return;
-
-        const track = e.currentTarget;
-        const trackRect = track.getBoundingClientRect();
-        const clickPosition = ((e.clientX - trackRect.left) / trackRect.width) * 100;
-
-        const distToMin = Math.abs(clickPosition - minValue);
-        const distToMax = Math.abs(clickPosition - maxValue);
-
-        if (distToMin < distToMax) {
-            setMinValue(Math.min(Math.round(clickPosition), maxValue - 5));
-        } else {
-            setMaxValue(Math.max(Math.round(clickPosition), minValue + 5));
-        }
-    };
-
-    const handleMinHandleMouseDown = () => {
-        setIsDraggingMin(true);
-    };
-
-    const handleMaxHandleMouseDown = () => {
-        setIsDraggingMax(true);
-    };
-
-    // Add a validation effect to ensure max values stay within bounds
-    React.useEffect(() => {
-        // Force max value to stay at or below 100
-        if (maxValue > 100) {
-            setMaxValue(100);
-        }
-
-        // Ensure current salary values don't exceed maxSalary
-        const currentMaxSalaryValue = Math.round((maxValue / 100) * maxSalary);
-        if (currentMaxSalaryValue > maxSalary) {
-            setMaxValue(100); // Reset to 100% of max
-        }
-    }, [maxValue, maxSalary]);
-
-    // Mouse event handlers for dragging
-    React.useEffect(() => {
-        const handleMouseUp = () => {
-            setIsDraggingMin(false);
-            setIsDraggingMax(false);
-        };
-
-        window.addEventListener('mouseup', handleMouseUp);
-        return () => {
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, []);
-
-    return (
-        <div className="mb-4">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 text-left">Lương</h3>
-            <div className="px-2">
-                <div
-                    className="w-full bg-gray-200 rounded-full h-1.5 mb-4 relative cursor-pointer"
-                    onClick={handleTrackClick}
-                >
-                    {/* Progress bar */}
-                    <div
-                        className="bg-[#309689] h-1.5 absolute rounded-full"
-                        style={{
-                            left: `${minValue}%`,
-                            width: `${maxValue - minValue}%`
-                        }}
-                    ></div>
-
-                    {/* Min handle */}
-                    <div
-                        className="bg-white border border-[#309689] w-3 h-3 rounded-full absolute -mt-0.75 top-0 z-10 transform -translate-x-1/2 cursor-grab"
-                        style={{
-                            left: `${minValue}%`,
-                            borderWidth: isDraggingMin ? '2px' : '1px',
-                            zIndex: isDraggingMin ? 40 : 10
-                        }}
-                        onMouseDown={handleMinHandleMouseDown}
-                    ></div>
-
-                    {/* Min slider (invisible) */}
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={minValue}
-                        onChange={handleMinChange}
-                        className="absolute top-0 left-0 opacity-0 h-1.5 cursor-pointer z-30"
-                        style={{ left: '0%', width: `${maxValue}%` }}
-                    />
-
-                    {/* Max handle */}
-                    <div
-                        className="bg-white border border-[#309689] w-3 h-3 rounded-full absolute -mt-0.75 top-0 z-10 transform -translate-x-1/2 cursor-grab"
-                        style={{
-                            left: `${maxValue}%`,
-                            borderWidth: isDraggingMax ? '2px' : '1px',
-                            zIndex: isDraggingMax ? 40 : 10
-                        }}
-                        onMouseDown={handleMaxHandleMouseDown}
-                    ></div>
-
-                    {/* Max slider (invisible) */}
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={maxValue}
-                        onChange={handleMaxChange}
-                        className="absolute top-0 right-0 opacity-0 h-1.5 cursor-pointer z-30"
-                        style={{ left: `${minValue}%`, width: `${100 - minValue}%` }}
-                    />
-                </div>
-
-                {/* Input fields for direct entry */}
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            value={minSalary.toLocaleString('vi-VN')}
-                            onChange={handleMinSalaryInput}
-                            className="w-full border border-gray-300 rounded-md p-1 text-xs text-gray-700 text-center"
-                        />
-                    </div>
-                    <div className="mx-2 text-gray-400">-</div>
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            value={currentMaxSalary.toLocaleString('vi-VN')}
-                            onChange={handleMaxSalaryInput}
-                            className="w-full border border-gray-300 rounded-md p-1 text-xs text-gray-700 text-center"
-                        />
-                    </div>
-                </div>
-
-                <div className="text-xs text-gray-600 flex justify-center items-center">
-                    <ApDungButton />
-                </div>
             </div>
         </div>
     );
@@ -523,6 +372,222 @@ const HiringBanner = () => {
 
 const JobsPage: React.FC = () => {
     const [sortOrder, setSortOrder] = useState("Mới nhất");
+    const [jobs, setJobs] = useState<JobProps[]>([]);
+    const [allJobs, setAllJobs] = useState<JobProps[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [activeFilters, setActiveFilters] = useState<JobSearchFilters>({ category: 'all' });
+    const [selectedSalaryRange, setSelectedSalaryRange] = useState<string>('');
+
+    const PAGE_SIZE = 6;
+
+    // Function to filter jobs by salary range (client-side)
+    const filterJobsBySalary = (jobsToFilter: JobProps[], minRate: number, maxRate: number): JobProps[] => {
+        return jobsToFilter.filter(job => {
+            const salaryMatch = job.salary.match(/(\d{1,3}(?:,\d{3})*)/);
+            if (!salaryMatch) return false;
+
+            const salaryValue = parseInt(salaryMatch[1].replace(/,/g, ''));
+            return salaryValue >= minRate && salaryValue <= maxRate;
+        });
+    };
+
+    // Function to filter jobs by category
+    const filterJobsByCategory = (jobsToFilter: JobProps[], categoryFilter: string): JobProps[] => {
+        if (!categoryFilter || categoryFilter === 'all') {
+            return jobsToFilter;
+        }
+
+        return jobsToFilter.filter(job => {
+            const jobCategory = job.category.toLowerCase();
+            switch (categoryFilter) {
+                case 'f&b':
+                    return jobCategory === 'f&b';
+                case 'retail':
+                    return jobCategory === 'retail';
+                case 'event':
+                    return jobCategory === 'event';
+                case 'other':
+                    return !['f&b', 'retail', 'event'].includes(jobCategory);
+                default:
+                    return true;
+            }
+        });
+    };
+
+    // Function to paginate filtered results
+    const paginateJobs = (filteredJobs: JobProps[], page: number): { paginatedJobs: JobProps[], totalPages: number, totalCount: number } => {
+        const startIndex = (page - 1) * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+        const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE);
+
+        return {
+            paginatedJobs,
+            totalPages,
+            totalCount: filteredJobs.length
+        };
+    };
+
+    // Function to fetch jobs from API
+    const fetchJobs = async (page: number, filters: JobSearchFilters = {}) => {
+        try {
+            setLoading(true);
+            const apiFilters: JobSearchFilters = {
+                keyword: filters.keyword,
+                cityId: filters.cityId
+            };
+
+            const response = await JobService.getJobPostings(1, 50, apiFilters);
+
+            if (response && response.data) {
+                const displayJobs = convertApiToDisplayData(response.data, 0);
+                setAllJobs(displayJobs);
+
+                const filteredJobs = filterJobsByCategory(displayJobs, filters.category || 'all');
+
+                const { paginatedJobs, totalPages: filteredTotalPages, totalCount: filteredTotalCount } = paginateJobs(filteredJobs, page);
+
+                setJobs(paginatedJobs);
+                setTotalCount(filteredTotalCount);
+                setTotalPages(filteredTotalPages);
+            } else {
+                setJobs([]);
+                setAllJobs([]);
+                setTotalCount(0);
+                setTotalPages(0);
+            }
+        } catch (err) {
+            console.error('Error fetching jobs:', err);
+            setError('Failed to load job listings');
+            setJobs([]);
+            setAllJobs([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle salary filter application (client-side)
+    const handleSalaryApply = (minRate: number | undefined, maxRate: number | undefined) => {
+        const selectedRange = salaryRanges.find(range => range.minRate === minRate && range.maxRate === maxRate);
+        setSelectedSalaryRange(selectedRange?.id || '');
+
+        let filteredJobs = allJobs;
+
+        if (activeFilters.category && activeFilters.category !== 'all') {
+            filteredJobs = filterJobsByCategory(filteredJobs, activeFilters.category);
+        }
+
+        if (minRate !== undefined && maxRate !== undefined) {
+            filteredJobs = filterJobsBySalary(filteredJobs, minRate, maxRate);
+        }
+
+        const { paginatedJobs, totalPages: filteredTotalPages, totalCount: filteredTotalCount } = paginateJobs(filteredJobs, 1);
+
+        setJobs(paginatedJobs);
+        setTotalCount(filteredTotalCount);
+        setTotalPages(filteredTotalPages);
+        setCurrentPage(1);
+    };
+
+    const handleFilterChange = (newFilters: JobSearchFilters) => {
+        const categoryChanged = newFilters.category !== activeFilters.category;
+        const searchChanged = newFilters.keyword !== activeFilters.keyword;
+
+        if (categoryChanged && !searchChanged && allJobs.length > 0) {
+            const filteredJobs = filterJobsByCategory(allJobs, newFilters.category || 'all');
+            const { paginatedJobs, totalPages: filteredTotalPages, totalCount: filteredTotalCount } = paginateJobs(filteredJobs, 1);
+
+            setJobs(paginatedJobs);
+            setTotalCount(filteredTotalCount);
+            setTotalPages(filteredTotalPages);
+            setCurrentPage(1);
+        } else {
+            fetchJobs(1, newFilters);
+            setCurrentPage(1);
+        }
+
+        setActiveFilters(newFilters);
+    };
+
+    const handlePageChange = (page: number) => {
+        if (allJobs.length > 0) {
+            const filteredJobs = filterJobsByCategory(allJobs, activeFilters.category || 'all');
+            const { paginatedJobs } = paginateJobs(filteredJobs, page);
+            setJobs(paginatedJobs);
+        }
+        setCurrentPage(page);
+    };
+
+    useEffect(() => {
+        fetchJobs(currentPage, activeFilters);
+    }, []);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newFilters: JobSearchFilters = {
+            ...activeFilters,
+            keyword: searchKeyword.trim() || undefined
+        };
+        handleFilterChange(newFilters);
+    };
+
+    const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchKeyword(e.target.value);
+    };
+
+    const clearSearch = () => {
+        setSearchKeyword("");
+        const newFilters: JobSearchFilters = {
+            ...activeFilters,
+            keyword: undefined
+        };
+        handleFilterChange(newFilters);
+    };
+
+    const handleCategoryChange = (category: string) => {
+        const newFilters: JobSearchFilters = {
+            ...activeFilters,
+            category: category
+        };
+        handleFilterChange(newFilters);
+    };
+
+    const goToPage = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            handlePageChange(page);
+        }
+    };
+
+    const goToNextPage = () => {
+        if (currentPage < totalPages) {
+            handlePageChange(currentPage + 1);
+        }
+    };
+
+    const getPaginationNumbers = () => {
+        const numbers = [];
+        const maxVisible = 5;
+
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        const end = Math.min(totalPages, start + maxVisible - 1);
+
+
+        if (end - start < maxVisible - 1) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
+
+        for (let i = start; i <= end; i++) {
+            numbers.push(i);
+        }
+
+        return numbers;
+    };
 
     return (
         <div className="bg-gray-50 min-h-screen">
@@ -538,7 +603,11 @@ const JobsPage: React.FC = () => {
             {/* Main Content */}
             <div className="container mx-auto px-4 max-w-[90%] py-8">
                 <div className="text-gray-500 text-xs mb-6">
-                    Đang hiển thị 6 trên 10 kết quả
+                    {loading ? (
+                        "Đang tải..."
+                    ) : (
+                        `Đang hiển thị ${jobs.length} trên ${totalCount} kết quả${activeFilters.keyword ? ` cho "${activeFilters.keyword}"` : ''}`
+                    )}
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-8">
@@ -547,18 +616,55 @@ const JobsPage: React.FC = () => {
                         <div className="bg-[#309689]/10 rounded-lg shadow-sm p-5">
                             <div className="mb-4">
                                 <h2 className="text-lg font-bold mb-3 text-gray-800 text-left">Tìm kiếm công việc</h2>
-                                <div className="relative">
+                                <form onSubmit={handleSearch} className="relative">
                                     <input
                                         type="text"
                                         placeholder="Công việc hoặc công ty"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-[#309689] bg-white"
+                                        value={searchKeyword}
+                                        onChange={handleSearchInputChange}
+                                        className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-[#309689] bg-white"
                                     />
-                                    <button className="absolute right-3 top-2 text-gray-400">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div className="absolute right-1 top-1 flex items-center">
+                                        {searchKeyword && (
+                                            <button
+                                                type="button"
+                                                onClick={clearSearch}
+                                                className="text-gray-400 hover:text-gray-600 p-1 mr-1"
+                                                title="Clear search"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                        <button
+                                            type="submit"
+                                            className="text-gray-400 hover:text-[#309689] p-1"
+                                            title="Search"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </form>
+
+                                {/* Search indicator */}
+                                {activeFilters.keyword && (
+                                    <div className="mt-2 flex items-center text-sm text-[#309689]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
-                                    </button>
-                                </div>
+                                        Đang tìm: "{activeFilters.keyword}"
+                                        <button
+                                            onClick={clearSearch}
+                                            className="ml-2 text-gray-400 hover:text-gray-600"
+                                            title="Clear search"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mb-4">
@@ -578,11 +684,16 @@ const JobsPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <FilterSection title="Danh mục" items={categories} />
+                            <CategoryFilter
+                                selectedCategory={activeFilters.category || 'all'}
+                                onCategoryChange={handleCategoryChange}
+                            />
                             <FilterSection title="Loại công việc" items={experience} />
                             <FilterSection title="Trình độ kinh nghiệm" items={experienceLevels} />
-                            <FilterSection title="Ngày đăng" items={timePeriods} />
-                            <SalarySlider />
+                            <SalaryFilter
+                                selectedSalaryRange={selectedSalaryRange}
+                                onSalaryApply={handleSalaryApply}
+                            />
                             <TagSection />
                             <HiringBanner />
                         </div>
@@ -592,7 +703,9 @@ const JobsPage: React.FC = () => {
                     <div className="md:w-3/4">
                         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                             <div className="flex justify-between items-center mb-6">
-                                <span className="text-gray-600">Hiển thị 6 việc làm</span>
+                                <span className="text-gray-600">
+                                    {loading ? "Đang tải..." : `Hiển thị ${jobs.length} việc làm`}
+                                </span>
                                 <div className="relative">
                                     <select
                                         className="bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg focus:outline-none focus:border-[#309689] appearance-none"
@@ -611,28 +724,60 @@ const JobsPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="divide-y divide-gray-200">
-                                {jobData.map(job => (
-                                    <JobListItem key={job.id} job={job} />
-                                ))}
-                            </div>
+                            {/* Job Listings */}
+                            {loading ? (
+                                <div className="flex justify-center items-center h-32">
+                                    <div className="text-gray-500">Đang tải việc làm...</div>
+                                </div>
+                            ) : error ? (
+                                <div className="flex justify-center items-center h-32">
+                                    <div className="text-red-500">{error}</div>
+                                </div>
+                            ) : jobs.length > 0 ? (
+                                <div className="divide-y divide-gray-200">
+                                    {jobs.map(job => (
+                                        <JobListItem key={job.id} job={job} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500 py-8">
+                                    {activeFilters.keyword
+                                        ? `Không tìm thấy việc làm nào cho "${activeFilters.keyword}"`
+                                        : "Không có việc làm nào để hiển thị"
+                                    }
+                                </div>
+                            )}
 
                             {/* Pagination */}
                             <div className="flex justify-center mt-8">
                                 <nav className="flex items-center space-x-2">
                                     <div className="flex-1 flex justify-end items-center">
-                                        <span className="bg-[#309689] text-white flex items-center justify-center w-8 h-8 rounded">
-                                            1
-                                        </span>
-                                        <span className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 cursor-pointer">
-                                            2
-                                        </span>
-                                        <button className="flex items-center justify-center ml-2 px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100">
-                                            Tiếp theo
-                                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                                            </svg>
-                                        </button>
+                                        {getPaginationNumbers().map(pageNum => (
+                                            pageNum === currentPage ? (
+                                                <span key={pageNum} className="bg-[#309689] text-white flex items-center justify-center w-8 h-8 rounded">
+                                                    {pageNum}
+                                                </span>
+                                            ) : (
+                                                <span
+                                                    key={pageNum}
+                                                    onClick={() => goToPage(pageNum)}
+                                                    className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 cursor-pointer"
+                                                >
+                                                    {pageNum}
+                                                </span>
+                                            )
+                                        ))}
+                                        {currentPage < totalPages && (
+                                            <button
+                                                onClick={goToNextPage}
+                                                className="flex items-center justify-center ml-2 px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                            >
+                                                Tiếp theo
+                                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </button>
+                                        )}
                                     </div>
                                 </nav>
                             </div>
