@@ -1,11 +1,100 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getRoleFromToken } from "../../utils/jwtHelper";
+import { getActiveCities } from "../apiServices/CityServices/cityService";
+import { getActiveJobTags } from "../apiServices/JobTagServices/jobTagService";
+import { getJobPostings } from "../apiServices/JobPostingServices/jobPostingService";
+import { getUserCountsByRole } from "../apiServices/UserServices/userService";
 
 const HeroBanner: React.FC = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const isLoggedIn = token;
+
+
+  const [cities, setCities] = useState<{ id: number; cityName: string; country: string }[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
+
+  const [jobTags, setJobTags] = useState<{ id: number; tagName: string }[]>([]);
+  const [selectedJobTagId, setSelectedJobTagId] = useState<number | null>(null);
+
+  const [keyword, setKeyword] = useState<string>("");
+
+  const [jobCount, setJobCount] = useState(0);
+  const [workerCount, setWorkerCount] = useState(0);
+  const [employerCount, setEmployerCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await getActiveCities();
+        setCities(response); // Update state cities → dropdown sẽ có data
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+      }
+    };
+
+    fetchCities(); // Gọi khi component mount
+  }, []);
+
+  useEffect(() => {
+    const fetchJobTags = async () => {
+      try {
+        const response = await getActiveJobTags();
+        setJobTags(response);
+      } catch (error) {
+        console.error("Error fetching job tags:", error);
+      }
+    };
+
+    fetchJobTags();
+  }, []);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const jobs = await getJobPostings({ Page: 1, PageSize: 1 });
+        const users = await getUserCountsByRole();
+        setJobCount(jobs.totalCount || 0);
+        setWorkerCount(users.totalWorkers);
+        setEmployerCount(users.totalEmployers);
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      }
+    };
+  
+    fetchCounts();
+  }, []);
+  
+
+  // Hàm xử lý khi click nút Tìm việc
+  const handleSearch = async () => {
+    const params: any = {
+      Page: 1,
+      PageSize: 10,
+    };
+
+    if (selectedCityId) params.CityId = selectedCityId;
+    if (selectedJobTagId) params.CategoryId = selectedJobTagId;
+    if (keyword.trim() !== "") params.Keyword = keyword.trim();
+
+    console.log("Searching jobs with params:", params);
+
+    try {
+      const result = await getJobPostings(params);
+      console.log("Search result:", result);
+
+      // Chuyển hướng qua trang /jobs với query param
+      const queryParams = new URLSearchParams();
+      if (selectedCityId) queryParams.append('cityId', selectedCityId.toString());
+      if (selectedJobTagId) queryParams.append('categoryId', selectedJobTagId.toString());
+      if (keyword.trim() !== "") queryParams.append('keyword', keyword.trim());
+
+      navigate(`/jobs?${queryParams.toString()}`);
+    } catch (error) {
+      console.error("Error during search:", error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -163,42 +252,39 @@ const HeroBanner: React.FC = () => {
 
               {/* Location dropdown */}
               <div className="flex-1 bg-white">
-                <div className="flex items-center justify-between h-full px-4 py-3 text-sm text-gray-600 cursor-pointer border-r border-gray-100">
-                  <span>Chọn vị trí</span>
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                </div>
+                <select
+                  className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none border-r border-gray-100"
+                  value={selectedCityId ?? ''}
+                  onChange={(e) => setSelectedCityId(Number(e.target.value))}
+                >
+                  <option value="">Chọn vị trí</option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>{city.cityName}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Category dropdown */}
               <div className="flex-1 bg-white">
-                <div className="flex items-center justify-between h-full px-4 py-3 text-sm text-gray-600 cursor-pointer">
-                  <span>Chọn danh mục</span>
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                </div>
+                <select
+                  value={selectedJobTagId ?? ""}
+                  onChange={(e) => setSelectedJobTagId(Number(e.target.value))}
+                  className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none"
+                >
+                  <option value="">Chọn danh mục</option>
+                  {jobTags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {tag.tagName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Search button */}
-              <div className="bg-[#309689] flex items-center justify-center px-6 py-3 text-sm text-white cursor-pointer hover:bg-[#277a6e]">
+              {/* Search button → thêm onClick={handleSearch} */}
+              <div
+                onClick={handleSearch}
+                className="bg-[#309689] flex items-center justify-center px-6 py-3 text-sm text-white cursor-pointer hover:bg-[#277a6e]"
+              >
                 <svg
                   className="w-4 h-4 mr-2"
                   fill="none"
@@ -238,7 +324,8 @@ const HeroBanner: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h4 className="font-bold text-xl text-white">25,850</h4>
+                {/* <h4 className="font-bold text-xl text-white">25,850</h4> */}
+                <h4 className="font-bold text-xl text-white">{jobCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Công việc</p>
               </div>
             </div>
@@ -261,7 +348,9 @@ const HeroBanner: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h4 className="font-bold text-xl text-white">10,250</h4>
+                {/* <h4 className="font-bold text-xl text-white">10,250</h4>
+                 */}
+                 <h4 className="font-bold text-xl text-white">{workerCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Ứng viên</p>
               </div>
             </div>
@@ -284,7 +373,8 @@ const HeroBanner: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h4 className="font-bold text-xl text-white">18,400</h4>
+                {/* <h4 className="font-bold text-xl text-white">18,400</h4> */}
+                <h4 className="font-bold text-xl text-white">{employerCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Doanh nghiệp</p>
               </div>
             </div>

@@ -65,4 +65,23 @@
     }
   };
 
+  // PATCH
+export const patch = async (path: string, data: any = {}, config = {}) => {
+  try {
+    const response: AxiosResponse = await request.patch(path, data, config);
+    return response.data;
+  } catch (error) {
+    handleError("patching", error);
+    throw error;
+  }
+};
+// Common error handler
+function handleError(action: string, error: unknown) {
+  if (error instanceof AxiosError) {
+    console.error(`Error ${action} data:`, error.message);
+  } else {
+    console.error(`Unexpected error ${action} data:`, error);
+  }
+}
+
   export default request;
