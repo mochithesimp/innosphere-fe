@@ -9,20 +9,14 @@ interface JobProps {
     company: string;
     logo: string;
     timePosted: string;
-    schedule: string; // Static F&B
+    schedule: string; // Static F&B/Retail/Event
     timeRange: string;
     salary: string;
-    location: string; // Static location
+    location: string; // Now from API (cityName)
 }
 
-// Static data for the fields that should remain hardcoded
-const staticJobData = [
-    { schedule: "F&B", location: "Quận 9, HCM" },
-    { schedule: "F&B", location: "Quận 2, HCM" },
-    { schedule: "Retail", location: "Quận 7, HCM" },
-    { schedule: "Event", location: "Quận 1, HCM" },
-    { schedule: "Retail", location: "Quận 9, HCM" }
-];
+// Static data for the fields that should remain hardcoded (cycling pattern for categories only)
+const staticJobCategories = ["F&B", "Retail", "Event", "F&B", "Retail"];
 
 // Static avatar image
 const DEFAULT_AVATAR = "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain";
@@ -56,12 +50,15 @@ const getTimeAgo = (dateTimeString: string) => {
     }
 };
 
-// Function to convert API data to display data with static overrides
+// Function to convert API data to display data with static categories but real location
 const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[]): JobProps[] => {
     return apiJobs.map((apiJob, index) => {
-        const staticData = staticJobData[index] || staticJobData[0]; // Fallback to first item if index out of bounds
+        const staticCategory = staticJobCategories[index % staticJobCategories.length];
         const timeRange = `${formatTime(apiJob.startTime)}-${formatTime(apiJob.endTime)}`;
         const formattedSalary = `${apiJob.hourlyRate?.toLocaleString()}/giờ`;
+
+        // Use actual city name from API, fallback to location field if cityName is not available
+        const actualLocation = apiJob.cityName || apiJob.location || 'Vị trí không xác định';
 
         return {
             id: apiJob.id,
@@ -69,10 +66,10 @@ const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[]): JobProps[] =
             company: apiJob.companyName, // Dynamic from API
             logo: DEFAULT_AVATAR, // Static avatar
             timePosted: getTimeAgo(apiJob.postedAt), // Dynamic from API
-            schedule: staticData.schedule, // Static F&B, Retail, Event
+            schedule: staticCategory, // Static cycling category
             timeRange: timeRange, // Dynamic from API (formatted)
             salary: formattedSalary, // Dynamic from API (formatted)
-            location: staticData.location // Static location
+            location: actualLocation // Dynamic from API (cityName or location)
         };
     });
 };
@@ -106,6 +103,7 @@ const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
                     <div className="mb-5">
                         <h3 className="font-bold text-2xl mb-1 text-left">{job.title}</h3>
                         <p className="text-gray-700 text-left">{job.company}</p>
+
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between">
@@ -140,13 +138,14 @@ const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
                             </div>
                         </div>
 
-                        <a
-                            href="#"
-                            onClick={(e) => e.preventDefault()}
-                            className="inline-block bg-[#309689] hover:bg-[#277a6e] text-white font-medium py-2 px-6 rounded-lg shadow-sm"
+                        <button
+                            onClick={() => {
+                                window.location.href = `/job-detail?id=${job.id}`;
+                            }}
+                            className="inline-block bg-[#309689] hover:bg-[#277a6e] text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors"
                         >
                             Chi Tiết
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>

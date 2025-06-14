@@ -19,6 +19,8 @@ export interface JobPostingApiResponse {
     isHighlighted: boolean;
     viewsCount: number;
     applicationsCount: number;
+    cityId: number | null;
+    cityName: string | null;
 }
 
 // Interface for paginated response (matching backend PagedResultModel)

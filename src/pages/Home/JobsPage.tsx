@@ -13,21 +13,23 @@ interface JobProps {
     category: string; // Static
     timeRange: string;
     salary: string;
-    location: string; // Static
+    location: string; // Now from API (cityName)
 }
 
-// Static data for the fields that should remain hardcoded (cycling pattern)
-const staticJobData = [
-    { category: "F&B", location: "Quận 9, HCM" },
-    { category: "F&B", location: "Quận 2, HCM" },
-    { category: "Retail", location: "Quận 7, HCM" },
-    { category: "Event", location: "Quận 1, HCM" },
-    { category: "Retail", location: "Quận 9, HCM" },
-    { category: "F&B", location: "Quận 3, HCM" }
+// Static data for the fields that should remain hardcoded (cycling pattern for categories only)
+const staticJobCategories = [
+    "F&B", "F&B", "Retail", "Event", "Retail", "F&B"
 ];
 
 // Static avatar image
 const DEFAULT_AVATAR = "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain";
+
+// City mapping for the dropdown
+const CITY_MAPPING = [
+    { id: 1, name: 'TP. Hồ Chí Minh', label: 'TP. Hồ Chí Minh' },
+    { id: 2, name: 'Đà Nẵng', label: 'Đà Nẵng' },
+    { id: 3, name: 'Hà Nội', label: 'Hà Nội' }
+];
 
 // Utility function to format time to hh:mm
 const formatTime = (dateTimeString: string) => {
@@ -58,13 +60,16 @@ const getTimeAgo = (dateTimeString: string) => {
     }
 };
 
-// Function to convert API data to display data with static overrides
+// Function to convert API data to display data with static categories but real location
 const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[], startIndex: number = 0): JobProps[] => {
     return apiJobs.map((apiJob, index) => {
-        const staticIndex = (startIndex + index) % staticJobData.length;
-        const staticData = staticJobData[staticIndex];
+        const staticIndex = (startIndex + index) % staticJobCategories.length;
+        const staticCategory = staticJobCategories[staticIndex];
         const timeRange = `${formatTime(apiJob.startTime)}-${formatTime(apiJob.endTime)}`;
         const formattedSalary = `${apiJob.hourlyRate?.toLocaleString()}/giờ`;
+
+        // Use actual city name from API, fallback to location field if cityName is not available
+        const actualLocation = apiJob.cityName || apiJob.location || 'Vị trí không xác định';
 
         return {
             id: apiJob.id,
@@ -72,10 +77,10 @@ const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[], startIndex: n
             company: apiJob.companyName, // Dynamic from API
             logo: DEFAULT_AVATAR, // Static avatar
             timePosted: getTimeAgo(apiJob.postedAt), // Dynamic from API
-            category: staticData.category, // Static category
+            category: staticCategory, // Static cycling category
             timeRange: timeRange, // Dynamic from API (formatted)
             salary: formattedSalary, // Dynamic from API (formatted)
-            location: staticData.location // Static location
+            location: actualLocation // Dynamic from API (cityName or location)
         };
     });
 };
@@ -89,20 +94,7 @@ const categories = [
     { id: 'other', label: 'Khác' }
 ];
 
-const experience = [
-    { id: 'phuc-vu', label: 'Phục vụ & thu ngân', count: 10 },
-    { id: 'ban-hang', label: 'Bán hàng & tiếp thị', count: 10 },
-    { id: 'ho-tro', label: 'Hỗ trợ/Văn phòng', count: 10 },
-    { id: 'pha-che', label: 'Pha chế/Nhà bếp', count: 10 }
-];
 
-const experienceLevels = [
-    { id: 'intern', label: 'Thực tập sinh', count: 5 },
-    { id: 'entry', label: 'Mới tốt nghiệp', count: 15 },
-    { id: 'junior', label: '1-2 năm kinh nghiệm', count: 20 },
-    { id: 'mid', label: '3-5 năm kinh nghiệm', count: 12 },
-    { id: 'senior', label: 'Trên 5 năm kinh nghiệm', count: 8 }
-];
 
 // Salary ranges for filtering
 const salaryRanges = [
@@ -113,9 +105,13 @@ const salaryRanges = [
     { id: 'over-100', label: 'Trên 100.000đ/giờ', minRate: 100000, maxRate: 999999, count: 3 }
 ];
 
-const ChiTietButton: React.FC<{ jobTitle?: string }> = ({ jobTitle }) => {
-    const isServerJob = jobTitle === "Nhân viên phục vụ bàn";
-    const buttonContent = (
+const ChiTietButton: React.FC<{ jobId: number }> = ({ jobId }) => {
+    const handleClick = () => {
+        // Navigate to job detail page with job ID
+        window.location.href = `/job-detail?id=${jobId}`;
+    };
+
+    return (
         <div
             style={{
                 height: '36px',
@@ -124,6 +120,7 @@ const ChiTietButton: React.FC<{ jobTitle?: string }> = ({ jobTitle }) => {
                 display: 'inline-block',
                 cursor: 'pointer'
             }}
+            onClick={handleClick}
         >
             <img
                 src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSIzNiI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgcng9IjYiIGZpbGw9IiMzMDk2ODkiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9IjUwMCI+Q2hpIFRp4bq/dDwvdGV4dD48L3N2Zz4="
@@ -135,86 +132,79 @@ const ChiTietButton: React.FC<{ jobTitle?: string }> = ({ jobTitle }) => {
             />
         </div>
     );
-
-    if (isServerJob) {
-        return (
-            <a href="/job-detail">
-                {buttonContent}
-            </a>
-        );
-    }
-
-    return buttonContent;
 };
 
-const JobListItem = ({ job }: { job: JobProps }) => (
-    <div className="border-b border-gray-200 py-6 first:pt-0">
-        <div className="flex justify-between items-start mb-2">
-            <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
-                {job.timePosted}
-            </div>
-            <button className="text-gray-400 hover:text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-            </button>
-        </div>
-
-        <div className="flex items-start">
-            <div className="mr-4">
-                <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
-                    <img
-                        src={job.logo}
-                        alt={job.company}
-                        className="w-full h-full object-cover"
-                    />
+const JobListItem = ({ job }: { job: JobProps }) => {
+    return (
+        <div className="border-b border-gray-200 py-6 first:pt-0">
+            <div className="flex justify-between items-start mb-2">
+                <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
+                    {job.timePosted}
                 </div>
+                <button className="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                </button>
             </div>
 
-            <div className="flex-1">
-                <div className="mb-4">
-                    <h3 className="font-bold text-xl mb-1 text-left">{job.title}</h3>
-                    <p className="text-gray-700 text-left">{job.company}</p>
+            <div className="flex items-start">
+                <div className="mr-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                        <img
+                            src={job.logo}
+                            alt={job.company}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between">
-                    <div className="flex flex-wrap gap-5 items-center">
-                        <div className="flex items-center text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            <span>{job.category}</span>
-                        </div>
+                <div className="flex-1">
+                    <div className="mb-4">
+                        <h3 className="font-bold text-xl mb-1 text-left">{job.title}</h3>
+                        <p className="text-gray-700 text-left">{job.company}</p>
 
-                        <div className="flex items-center text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>{job.timeRange}</span>
-                        </div>
-
-                        <div className="flex items-center text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>{job.salary}</span>
-                        </div>
-
-                        <div className="flex items-center text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <span>{job.location}</span>
-                        </div>
                     </div>
 
-                    <ChiTietButton jobTitle={job.title} />
+                    <div className="flex flex-wrap items-center justify-between">
+                        <div className="flex flex-wrap gap-5 items-center">
+                            <div className="flex items-center text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                <span>{job.category}</span>
+                            </div>
+
+                            <div className="flex items-center text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{job.timeRange}</span>
+                            </div>
+
+                            <div className="flex items-center text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{job.salary}</span>
+                            </div>
+
+                            <div className="flex items-center text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>{job.location}</span>
+                            </div>
+                        </div>
+
+                        <ChiTietButton jobId={job.id} />
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 
 const CategoryFilter: React.FC<{
@@ -300,27 +290,7 @@ const SalaryFilter: React.FC<{
     );
 };
 
-const FilterSection = ({ title, items }: { title: string, items: { id: string, label: string, count: number }[] }) => {
-    return (
-        <div className="mb-6">
-            <h3 className="font-bold text-base mb-3 text-gray-800 text-left">{title}</h3>
-            <div className="space-y-2">
-                {items.map((item) => (
-                    <label key={item.id} className="flex items-center justify-between cursor-pointer">
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 text-[#309689] border-gray-300 rounded focus:ring-[#309689] focus:ring-2"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{item.label}</span>
-                        </div>
-                        <span className="text-xs text-gray-500">{item.count}</span>
-                    </label>
-                ))}
-            </div>
-        </div>
-    );
-};
+
 
 const TagSection = () => {
     const tags = [
@@ -383,6 +353,7 @@ const JobsPage: React.FC = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [activeFilters, setActiveFilters] = useState<JobSearchFilters>({ category: 'all' });
     const [selectedSalaryRange, setSelectedSalaryRange] = useState<string>('');
+    const [selectedCityId, setSelectedCityId] = useState<number | undefined>(undefined);
 
     const PAGE_SIZE = 6;
 
@@ -558,6 +529,17 @@ const JobsPage: React.FC = () => {
         handleFilterChange(newFilters);
     };
 
+    const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const cityId = e.target.value ? parseInt(e.target.value) : undefined;
+        setSelectedCityId(cityId);
+
+        const newFilters: JobSearchFilters = {
+            ...activeFilters,
+            cityId: cityId
+        };
+        handleFilterChange(newFilters);
+    };
+
     const goToPage = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             handlePageChange(page);
@@ -670,11 +652,17 @@ const JobsPage: React.FC = () => {
                             <div className="mb-4">
                                 <h3 className="text-lg font-bold mb-3 text-gray-800 text-left">Vị trí</h3>
                                 <div className="relative">
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-[#309689] appearance-none bg-white">
-                                        <option>Chọn thành phố</option>
-                                        <option>TP. Hồ Chí Minh</option>
-                                        <option>Hà Nội</option>
-                                        <option>Đà Nẵng</option>
+                                    <select
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:border-[#309689] appearance-none bg-white"
+                                        value={selectedCityId || ''}
+                                        onChange={handleCityChange}
+                                    >
+                                        <option value="">Chọn thành phố</option>
+                                        {CITY_MAPPING.map((city) => (
+                                            <option key={city.id} value={city.id}>
+                                                {city.label}
+                                            </option>
+                                        ))}
                                     </select>
                                     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -688,8 +676,6 @@ const JobsPage: React.FC = () => {
                                 selectedCategory={activeFilters.category || 'all'}
                                 onCategoryChange={handleCategoryChange}
                             />
-                            <FilterSection title="Loại công việc" items={experience} />
-                            <FilterSection title="Trình độ kinh nghiệm" items={experienceLevels} />
                             <SalaryFilter
                                 selectedSalaryRange={selectedSalaryRange}
                                 onSalaryApply={handleSalaryApply}

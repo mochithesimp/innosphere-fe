@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import Popup from '../../components/Popup';
+import { JobService, JobPostingApiResponse } from '../../services';
 
 const JobDetailPage: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
+    const [searchParams] = useSearchParams();
+    const [jobData, setJobData] = useState<JobPostingApiResponse | null>(null);
+    const [relatedJobs, setRelatedJobs] = useState<JobPostingApiResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const jobId = searchParams.get('id');
 
     const openModal = () => {
         setShowModal(true);
@@ -13,6 +22,119 @@ const JobDetailPage: React.FC = () => {
     const closeModal = () => {
         setShowModal(false);
     };
+
+    // Utility function to format time to hh:mm
+    const formatTime = (dateTimeString: string) => {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        return date.toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    };
+
+    // Utility function to format posted time
+    const getTimeAgo = (dateTimeString: string) => {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        const now = new Date();
+        const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+        if (diffInMinutes < 60) {
+            return `${diffInMinutes} phút trước`;
+        } else if (diffInMinutes < 1440) {
+            const hours = Math.floor(diffInMinutes / 60);
+            return `${hours} giờ trước`;
+        } else {
+            const days = Math.floor(diffInMinutes / 1440);
+            return `${days} ngày trước`;
+        }
+    };
+
+    // Function to parse requirements with green tick formatting
+    const formatRequirements = (requirements: string) => {
+        if (!requirements) return [];
+        return requirements.split(',').map(req => req.trim()).filter(req => req.length > 0);
+    };
+
+    useEffect(() => {
+        const fetchJobData = async () => {
+            if (!jobId) {
+                setError('No job ID provided');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+
+                // Fetch job details
+                const job = await JobService.getJobPostingById(parseInt(jobId));
+                if (job) {
+                    setJobData(job);
+                } else {
+                    setError('Job not found');
+                }
+
+                // Fetch related jobs (get more jobs to filter out current job)
+                const relatedJobsResponse = await JobService.getJobPostings(1, 10);
+                if (relatedJobsResponse && relatedJobsResponse.data) {
+                    // Filter out the current job and take only 2 jobs
+                    const filteredJobs = relatedJobsResponse.data
+                        .filter(relatedJob => relatedJob.id !== parseInt(jobId))
+                        .slice(0, 2);
+                    setRelatedJobs(filteredJobs);
+                }
+
+            } catch (err) {
+                console.error('Error fetching job data:', err);
+                setError('Failed to load job data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchJobData();
+    }, [jobId]);
+
+    if (loading) {
+        return (
+            <div className="bg-white min-h-screen">
+                <Header />
+                <div className="bg-black text-white py-16">
+                    <div className="container mx-auto px-4 max-w-6xl">
+                        <h1 className="text-5xl font-bold text-center">Chi Tiết Công Việc</h1>
+                    </div>
+                </div>
+                <div className="container mx-auto px-4 max-w-6xl py-16 mt-6">
+                    <div className="flex justify-center items-center h-32">
+                        <div className="text-gray-500">Đang tải thông tin công việc...</div>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (error || !jobData) {
+        return (
+            <div className="bg-white min-h-screen">
+                <Header />
+                <div className="bg-black text-white py-16">
+                    <div className="container mx-auto px-4 max-w-6xl">
+                        <h1 className="text-5xl font-bold text-center">Chi Tiết Công Việc</h1>
+                    </div>
+                </div>
+                <div className="container mx-auto px-4 max-w-6xl py-16 mt-6">
+                    <div className="flex justify-center items-center h-32">
+                        <div className="text-red-500">{error || 'Không tìm thấy thông tin công việc'}</div>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white min-h-screen">
@@ -32,7 +154,7 @@ const JobDetailPage: React.FC = () => {
                     {/* Time posted badge */}
                     <div className="flex items-center mb-6">
                         <div className="text-[#309689] bg-[#ecf8f6] text-sm py-1 px-3 rounded-full">
-                            10 phút trước
+                            {getTimeAgo(jobData.postedAt)}
                         </div>
                         <button className="ml-auto text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,14 +169,14 @@ const JobDetailPage: React.FC = () => {
                             <div className="w-12 h-12 overflow-hidden">
                                 <img
                                     src="https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"
-                                    alt="Minh Anh Coffee"
+                                    alt={jobData.companyName}
                                     className="w-full h-full object-cover rounded-full"
                                 />
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold mb-1">Nhân viên phục vụ bàn</h2>
-                            <p className="text-gray-700">Minh Anh Coffee</p>
+                            <h2 className="text-2xl font-bold mb-1 text-left">{jobData.title}</h2>
+                            <p className="text-gray-700 text-left">{jobData.companyName}</p>
                         </div>
                     </div>
 
@@ -71,20 +193,20 @@ const JobDetailPage: React.FC = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span>7h00-12h00</span>
+                                <span>{formatTime(jobData.startTime)}-{formatTime(jobData.endTime)}</span>
                             </div>
                             <div className="flex items-center text-gray-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span>27.000đ/giờ</span>
+                                <span>{jobData.hourlyRate?.toLocaleString()}đ/giờ</span>
                             </div>
                             <div className="flex items-center text-gray-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span>Quận 9, HCM</span>
+                                <span>{jobData.cityName || jobData.location || 'Vị trí không xác định'}</span>
                             </div>
                         </div>
 
@@ -117,10 +239,7 @@ const JobDetailPage: React.FC = () => {
                         <div className="mb-8">
                             <h3 className="text-xl font-bold mb-4 text-left">Chi tiết công việc</h3>
                             <p className="text-gray-700 leading-relaxed mb-4 text-left">
-                                Nhân viên phục vụ bàn chịu trách nhiệm đảm bảo trải nghiệm ấn tượng tốt nhất cho khách hàng Công việc bao gồm
-                                tiếp đón khách, ghi chép order, phục vụ đồ uống và hỗ trợ khách hàng trong suốt quá trình dùng bữa. Đồng thời,
-                                nhân viên cũng cần chú ý sự sạch sẽ, gọn gàng tại khu vực chịu trách nhiệm của các bàn khách để đảm bảo
-                                vệ sinh lịch sự.
+                                {jobData.description || 'Mô tả công việc không có sẵn.'}
                             </p>
                         </div>
 
@@ -171,36 +290,22 @@ const JobDetailPage: React.FC = () => {
                         <div className="mb-8 pt-8">
                             <h3 className="text-xl font-bold mb-4 text-left">Kỹ Năng Chuyên Môn</h3>
                             <ul className="space-y-3">
-                                <li className="flex items-start">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    <span>Kỹ năng giao tiếp: Giao tiếp rõ ràng, thân thiện với khách hàng và đồng nghiệp.</span>
-                                </li>
-                                <li className="flex items-start">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    <span>Kỹ năng phục vụ: Hiểu quy trình phục vụ, mang món lịch sự đúng cách, chuyên nghiệp.</span>
-                                </li>
-                                <li className="flex items-start">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    <span>Xử lý tình huống: Giải quyết nhanh các yêu cầu hoặc khiếu nại của khách.</span>
-                                </li>
-                                <li className="flex items-start">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    <span>Quản lý thời gian: Sắp xếp công việc hiệu quả, phục vụ nhanh chóng.</span>
-                                </li>
-                                <li className="flex items-start">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    <span>Chịu áp lực: Làm việc tốt trong môi trường đông khách, cường độ cao.</span>
-                                </li>
+                                {formatRequirements(jobData.requirements || '').map((requirement, index) => (
+                                    <li key={index} className="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        <span>{requirement}</span>
+                                    </li>
+                                ))}
+                                {(!jobData.requirements || formatRequirements(jobData.requirements).length === 0) && (
+                                    <li className="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        <span>Không có yêu cầu đặc biệt</span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 
@@ -244,163 +349,94 @@ const JobDetailPage: React.FC = () => {
                         <div className="mb-12 pt-8">
                             <h2 className="text-3xl font-bold mb-6 text-left">Công việc liên quan</h2>
 
-                            {/* Job item */}
-                            <div className="border-b border-gray-200 py-6">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
-                                        24 phút trước
-                                    </div>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                <div className="flex items-start">
-                                    <div className="mr-4">
-                                        <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
-                                            <img
-                                                src="https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"
-                                                alt="Nhà Hàng Tâm Anh"
-                                                className="w-full h-full object-cover"
-                                            />
+                            {relatedJobs.map((relatedJob) => (
+                                <div key={relatedJob.id} className="border-b border-gray-200 py-6">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
+                                            {getTimeAgo(relatedJob.postedAt)}
                                         </div>
+                                        <button className="text-gray-400 hover:text-gray-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                            </svg>
+                                        </button>
                                     </div>
 
-                                    <div className="flex-1 text-left">
-                                        <div className="mb-4">
-                                            <h3 className="font-bold text-xl mb-1">Nhân viên phục vụ bàn</h3>
-                                            <p className="text-gray-700">Nhà Hàng Tâm Anh</p>
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center justify-between">
-                                            <div className="flex flex-wrap gap-5 items-center">
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                    </svg>
-                                                    <span>F&B</span>
-                                                </div>
-
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    <span>18h00-23h00</span>
-                                                </div>
-
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    <span>27.000đ/giờ</span>
-                                                </div>
-
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    </svg>
-                                                    <span>Quận 1, HCM</span>
-                                                </div>
-                                            </div>
-
-                                            <div style={{
-                                                backgroundColor: '#37A594',
-                                                color: 'white',
-                                                padding: '8px 24px',
-                                                borderRadius: '6px',
-                                                fontWeight: '500',
-                                                fontSize: '14px',
-                                                display: 'inline-block',
-                                                cursor: 'pointer'
-                                            }}>
-                                                Chi Tiết
+                                    <div className="flex items-start">
+                                        <div className="mr-4">
+                                            <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                                <img
+                                                    src="https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"
+                                                    alt={relatedJob.companyName}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Job item 2 */}
-                            <div className="border-b border-gray-200 py-6">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
-                                        24 phút trước
-                                    </div>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                <div className="flex items-start">
-                                    <div className="mr-4">
-                                        <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
-                                            <img
-                                                src="https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"
-                                                alt="Becker Restaurant"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex-1 text-left">
-                                        <div className="mb-4">
-                                            <h3 className="font-bold text-xl mb-1">Nhân viên rửa chén</h3>
-                                            <p className="text-gray-700">Becker Restaurant</p>
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center justify-between">
-                                            <div className="flex flex-wrap gap-5 items-center">
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                    </svg>
-                                                    <span>F&B</span>
-                                                </div>
-
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    <span>13h00-17h00</span>
-                                                </div>
-
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    <span>30.000đ/giờ</span>
-                                                </div>
-
-                                                <div className="flex items-center text-gray-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    </svg>
-                                                    <span>Quận 2, HCM</span>
-                                                </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="mb-4">
+                                                <h3 className="font-bold text-xl mb-1">{relatedJob.title}</h3>
+                                                <p className="text-gray-700">{relatedJob.companyName}</p>
                                             </div>
 
-                                            <div style={{
-                                                backgroundColor: '#37A594',
-                                                color: 'white',
-                                                padding: '8px 24px',
-                                                borderRadius: '6px',
-                                                fontWeight: '500',
-                                                fontSize: '14px',
-                                                display: 'inline-block',
-                                                cursor: 'pointer'
-                                            }}>
-                                                Chi Tiết
+                                            <div className="flex flex-wrap items-center justify-between">
+                                                <div className="flex flex-wrap gap-5 items-center">
+                                                    <div className="flex items-center text-gray-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                        </svg>
+                                                        <span>F&B</span>
+                                                    </div>
+
+                                                    <div className="flex items-center text-gray-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        <span>{formatTime(relatedJob.startTime)}-{formatTime(relatedJob.endTime)}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center text-gray-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        <span>{relatedJob.hourlyRate?.toLocaleString()}đ/giờ</span>
+                                                    </div>
+
+                                                    <div className="flex items-center text-gray-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        </svg>
+                                                        <span>{relatedJob.cityName || relatedJob.location || 'Vị trí không xác định'}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div
+                                                    style={{
+                                                        backgroundColor: '#37A594',
+                                                        color: 'white',
+                                                        padding: '8px 24px',
+                                                        borderRadius: '6px',
+                                                        fontWeight: '500',
+                                                        fontSize: '14px',
+                                                        display: 'inline-block',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onClick={() => window.location.href = `/job-detail?id=${relatedJob.id}`}
+                                                >
+                                                    Chi Tiết
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            ))}
+
+                            {relatedJobs.length === 0 && (
+                                <div className="text-center text-gray-500 py-8">
+                                    Không có công việc liên quan nào
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -421,7 +457,7 @@ const JobDetailPage: React.FC = () => {
                                     </div>
                                     <div style={{ textAlign: 'left' }}>
                                         <p className="font-medium text-black">Công việc</p>
-                                        <p className="text-[#65816d] text-sm mt-0.5">Nhân viên phục vụ bàn</p>
+                                        <p className="text-[#65816d] text-sm mt-0.5">{jobData.title}</p>
                                     </div>
                                 </div>
 
@@ -488,7 +524,7 @@ const JobDetailPage: React.FC = () => {
                                     </div>
                                     <div style={{ textAlign: 'left' }}>
                                         <p className="font-medium text-black">Lương</p>
-                                        <p className="text-[#65816d] text-sm mt-0.5">27.000/giờ</p>
+                                        <p className="text-[#65816d] text-sm mt-0.5">{jobData.hourlyRate?.toLocaleString()}/giờ</p>
                                     </div>
                                 </div>
 
@@ -502,7 +538,7 @@ const JobDetailPage: React.FC = () => {
                                     </div>
                                     <div style={{ textAlign: 'left' }}>
                                         <p className="font-medium text-black">Địa điểm</p>
-                                        <p className="text-[#65816d] text-sm mt-0.5">Quận 9, TP.HCM</p>
+                                        <p className="text-[#65816d] text-sm mt-0.5">{jobData.cityName || jobData.location || 'Vị trí không xác định'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -593,7 +629,7 @@ const JobDetailPage: React.FC = () => {
             <Popup
                 show={showModal}
                 onClose={closeModal}
-                jobTitle="Nhân viên phục vụ bàn"
+                jobTitle={jobData.title}
             />
 
             <Footer />
