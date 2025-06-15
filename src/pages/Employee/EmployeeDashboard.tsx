@@ -1,16 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaRegBookmark, FaChevronRight } from 'react-icons/fa';
 import { HiOutlineBriefcase } from "react-icons/hi";
 import { FiBell } from "react-icons/fi";
 
 import Header from '../../components/Employee/Header';
-
 import Sidebar from '../../components/Employee/Sidebar';
+import { WorkerService } from '../../services';
 
 import { IoLocationOutline } from "react-icons/io5";
 
 const EmployeeDashboard: React.FC = () => {
+    const [hasProfile, setHasProfile] = useState<boolean>(false);
+    const [profileLoading, setProfileLoading] = useState<boolean>(true);
+
+    // Check if worker profile exists (just check if API doesn't return 404)
+    useEffect(() => {
+        const checkWorkerProfile = async () => {
+            try {
+                setProfileLoading(true);
+                const profile = await WorkerService.getWorkerProfile();
+
+                // If we get any profile data back (no 404), hide the alert
+                setHasProfile(!!profile);
+                console.log('📋 Worker profile check:', {
+                    hasProfile: !!profile,
+                    profile: profile
+                });
+            } catch (error) {
+                console.error('Error checking worker profile:', error);
+                // If there's an error (like 404), show the profile completion alert
+                setHasProfile(false);
+            } finally {
+                setProfileLoading(false);
+            }
+        };
+
+        checkWorkerProfile();
+    }, []);
+
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             {/* Header component with bottom border */}
@@ -69,21 +97,33 @@ const EmployeeDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Profile Completion Alert */}
-                        <div className="bg-red-500 text-white rounded-lg p-6 mb-8">
-                            <div className="flex justify-between items-center">
-                                <div className="text-left">
-                                    <h3 className="text-xl font-semibold mb-1">Việc chỉnh sửa hồ sơ của bạn chưa hoàn tất.</h3>
-                                    <p className="text-sm opacity-90">Hoàn thiện việc chỉnh sửa hồ sơ của bạn và xây dựng Sơ yếu lý lịch tùy chỉnh của bạn</p>
+                        {/* Profile Completion Alert - Only show if profile is incomplete */}
+                        {profileLoading ? (
+                            <div className="bg-gray-100 rounded-lg p-6 mb-8 animate-pulse">
+                                <div className="flex justify-between items-center">
+                                    <div className="text-left">
+                                        <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+                                        <div className="h-4 bg-gray-300 rounded w-full"></div>
+                                    </div>
+                                    <div className="h-10 bg-gray-300 rounded w-32"></div>
                                 </div>
-                                <button className="bg-white font-medium px-4 py-2 rounded-lg flex items-center">
-                                    <span style={{ color: '#E05151' }}>Chỉnh Sửa Hồ Sơ</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="#E05151">
-                                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                </button>
                             </div>
-                        </div>
+                        ) : !hasProfile ? (
+                            <div className="bg-red-500 text-white rounded-lg p-6 mb-8">
+                                <div className="flex justify-between items-center">
+                                    <div className="text-left">
+                                        <h3 className="text-xl font-semibold mb-1">Việc chỉnh sửa hồ sơ của bạn chưa hoàn tất.</h3>
+                                        <p className="text-sm opacity-90">Hoàn thiện việc chỉnh sửa hồ sơ của bạn và xây dựng Sơ yếu lý lịch tùy chỉnh của bạn</p>
+                                    </div>
+                                    <Link to="/employee/settings" className="bg-white font-medium px-4 py-2 rounded-lg flex items-center">
+                                        <span style={{ color: '#E05151' }}>Chỉnh Sửa Hồ Sơ</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="#E05151">
+                                            <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </Link>
+                                </div>
+                            </div>
+                        ) : null}
 
                         {/* Recent Jobs Section */}
                         <div className="mb-8">
