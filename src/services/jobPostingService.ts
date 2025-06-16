@@ -88,4 +88,24 @@ export class JobPostingService {
         const response = await axios.get(url, this.getAuthHeaders());
         return response.data;
     }
+
+    static async closeJobPosting(jobId: number): Promise<boolean> {
+        try {
+            await axios.put(`${API_BASE_URL}/api/jobposting/${jobId}/close`, {}, this.getAuthHeaders());
+            return true;
+        } catch (error) {
+            console.error('Error closing job posting:', error);
+            return false;
+        }
+    }
+
+    static async rejectJobPosting(jobId: number): Promise<boolean> {
+        try {
+            await axios.put(`${API_BASE_URL}/api/jobposting/${jobId}/reject`, {}, this.getAuthHeaders());
+            return true;
+        } catch (error) {
+            console.error('Error rejecting job posting:', error);
+            return false;
+        }
+    }
 } 

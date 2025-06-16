@@ -83,22 +83,72 @@ const OverviewContent: React.FC = () => {
     };
 
     // Determine job status
-    const getJobStatus = (job: JobPostingListItem): 'active' | 'completed' | 'expired' => {
+    const getJobStatus = (job: JobPostingListItem): 'active' | 'completed' | 'expired' | 'pending' => {
         const now = new Date();
         const expiresAt = job.expiresAt ? new Date(job.expiresAt) : null;
 
-        // Check if expired by date
-        if (expiresAt && now > expiresAt) {
-            return 'expired';
-        }
-
-        // Check by status
-        if (job.status === 'APPROVED') {
+        // Check by status first
+        if (job.status === 'PENDING') {
+            return 'pending';
+        } else if (job.status === 'APPROVED') {
+            // Check if expired by date for approved jobs
+            if (expiresAt && now > expiresAt) {
+                return 'expired';
+            }
             return 'active';
         } else if (job.status === 'CLOSED') {
             return 'completed';
+        } else if (job.status === 'REJECTED') {
+            return 'expired';
         } else {
-            return 'expired'; // For PENDING, REJECT, etc.
+            return 'expired'; // For unknown statuses
+        }
+    };
+
+    // Handle job status actions
+    const handleCloseJob = async (jobId: number) => {
+        try {
+            const success = await JobPostingService.closeJobPosting(jobId);
+            if (success) {
+                // Refresh the job list
+                const employerProfile = await SubscriptionService.getEmployerProfile();
+                if (employerProfile?.employerId) {
+                    const jobPostings = await JobPostingService.getJobPostingsByEmployer(employerProfile.employerId);
+                    const sortedJobs = jobPostings
+                        .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime())
+                        .slice(0, 5);
+                    setRecentJobs(sortedJobs);
+                }
+                setOpenDropdownId(null);
+            } else {
+                alert('Có lỗi xảy ra khi kết thúc công việc');
+            }
+        } catch (error) {
+            console.error('Error closing job:', error);
+            alert('Có lỗi xảy ra khi kết thúc công việc');
+        }
+    };
+
+    const handleRejectJob = async (jobId: number) => {
+        try {
+            const success = await JobPostingService.rejectJobPosting(jobId);
+            if (success) {
+                // Refresh the job list
+                const employerProfile = await SubscriptionService.getEmployerProfile();
+                if (employerProfile?.employerId) {
+                    const jobPostings = await JobPostingService.getJobPostingsByEmployer(employerProfile.employerId);
+                    const sortedJobs = jobPostings
+                        .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime())
+                        .slice(0, 5);
+                    setRecentJobs(sortedJobs);
+                }
+                setOpenDropdownId(null);
+            } else {
+                alert('Có lỗi xảy ra khi đóng công việc');
+            }
+        } catch (error) {
+            console.error('Error rejecting job:', error);
+            alert('Có lỗi xảy ra khi đóng công việc');
         }
     };
 
@@ -164,6 +214,7 @@ const OverviewContent: React.FC = () => {
                         recentJobs.map((job, index) => (
                             <JobItem
                                 key={job.id}
+                                job={job}
                                 title={job.title}
                                 timeSlot={job.startTime && job.endTime ? `${formatTime(job.startTime)}-${formatTime(job.endTime)}` : 'Không xác định'}
                                 additionalInfo={calculateRemainingTime(job.expiresAt)}
@@ -172,6 +223,8 @@ const OverviewContent: React.FC = () => {
                                 isDropdownOpen={openDropdownId === job.id}
                                 toggleDropdown={() => toggleDropdown(job.id)}
                                 isLastItem={index === recentJobs.length - 1}
+                                onCloseJob={handleCloseJob}
+                                onRejectJob={handleRejectJob}
                             />
                         ))
                     )}
@@ -182,17 +235,21 @@ const OverviewContent: React.FC = () => {
 };
 
 interface JobItemProps {
+    job: JobPostingListItem;
     title: string;
     timeSlot: string;
     additionalInfo: string;
-    status: 'active' | 'completed' | 'expired';
+    status: 'active' | 'completed' | 'expired' | 'pending';
     applications: number;
     isDropdownOpen: boolean;
     toggleDropdown: () => void;
     isLastItem: boolean;
+    onCloseJob: (jobId: number) => Promise<void>;
+    onRejectJob: (jobId: number) => Promise<void>;
 }
 
 const JobItem: React.FC<JobItemProps> = ({
+    job,
     title,
     timeSlot,
     additionalInfo,
@@ -200,7 +257,9 @@ const JobItem: React.FC<JobItemProps> = ({
     applications,
     isDropdownOpen,
     toggleDropdown,
-    isLastItem
+    isLastItem,
+    onCloseJob,
+    onRejectJob
 }) => {
     // Status badge styling
     let statusBadge;
@@ -220,6 +279,15 @@ const JobItem: React.FC<JobItemProps> = ({
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600 border border-blue-200">
                     <span className="w-2 h-2 bg-blue-600 rounded-full mr-1.5"></span>
                     Đã kết thúc
+                </span>
+            </div>
+        );
+    } else if (status === 'pending') {
+        statusBadge = (
+            <div className="flex items-center justify-center">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 border border-yellow-200">
+                    <span className="w-2 h-2 bg-yellow-600 rounded-full mr-1.5"></span>
+                    Chờ xử lý
                 </span>
             </div>
         );
@@ -261,29 +329,42 @@ const JobItem: React.FC<JobItemProps> = ({
                             style={{ width: '200px' }}
                         >
                             <div className="py-1">
-                                <div className="flex items-center px-4 py-2 text-[#309689] hover:bg-[#EBF5F4] cursor-pointer"
-                                    onClick={() => toggleDropdown()}>
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    <span>Đăng tuyển dụng</span>
-                                </div>
+                                {/* Đăng tuyển dụng - show if status is completed (CLOSED) or expired */}
+                                {(status === 'completed' || status === 'expired') && (
+                                    <div className="flex items-center px-4 py-2 text-[#309689] hover:bg-[#EBF5F4] cursor-pointer"
+                                        onClick={() => toggleDropdown()}>
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                        <span>Đăng tuyển dụng</span>
+                                    </div>
+                                )}
 
-                                <div className="flex items-center px-4 py-2 text-[#309689] hover:bg-[#EBF5F4] cursor-pointer"
-                                    onClick={() => toggleDropdown()}>
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    <span>Kết thúc công việc</span>
-                                </div>
+                                {/* Kết thúc công việc - show if status is active (APPROVED) */}
+                                {status === 'active' && (
+                                    <div className="flex items-center px-4 py-2 text-[#309689] hover:bg-[#EBF5F4] cursor-pointer"
+                                        onClick={() => {
+                                            onCloseJob(job.id);
+                                        }}>
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span>Kết thúc công việc</span>
+                                    </div>
+                                )}
 
-                                <div className="flex items-center px-4 py-2 text-[#309689] hover:bg-[#EBF5F4] cursor-pointer"
-                                    onClick={() => toggleDropdown()}>
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    <span>Đóng công việc</span>
-                                </div>
+                                {/* Đóng công việc - show if status is NOT expired and NOT pending (active or completed) */}
+                                {(status !== 'expired' && status !== 'pending') && (
+                                    <div className="flex items-center px-4 py-2 text-[#309689] hover:bg-[#EBF5F4] cursor-pointer"
+                                        onClick={() => {
+                                            onRejectJob(job.id);
+                                        }}>
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        <span>Đóng công việc</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

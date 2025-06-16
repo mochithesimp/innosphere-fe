@@ -8,8 +8,7 @@ import { BsFileEarmarkText } from 'react-icons/bs';
 import { BiWorld } from 'react-icons/bi';
 import { IoSettingsOutline } from 'react-icons/io5';
 import CVModal from '../../components/Employee/CVModal';
-import { WorkerService, WorkerProfileModel, SocialLinkModel } from '../../services';
-import { getUserIdFromToken, debugTokenClaims } from '../../utils/auth';
+import { ResumeService, ResumeModel, WorkerProfileResponse } from '../../services/resumeService';
 
 
 const settingStyles = `
@@ -365,40 +364,53 @@ const EmployeeSettings: React.FC = () => {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // Form data state
-    const [formData, setFormData] = useState<WorkerProfileModel>({
-        fullName: '',
-        avatarUrl: '',
-        address: '',
-        phoneNumber: '',
-        skills: '',
-        bio: '',
-        education: '',
-        experience: '',
-        socialLinks: []
-    });
+    // Resume state
+    const [resumes, setResumes] = useState<ResumeModel[]>([]);
+    const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
+    const [isLoadingResumes, setIsLoadingResumes] = useState(false);
 
-    const [loading, setLoading] = useState(false);
-    const [userId, setUserId] = useState<string>('');
+    // Load worker profile and resumes on component mount
+    useEffect(() => {
+        loadWorkerData();
+    }, []);
 
-    // Social links state
-    const [socialLinks, setSocialLinks] = useState({
-        facebook: '',
-        twitter: '',
-        instagram: '',
-        youtube: ''
-    });
+    const loadWorkerData = async () => {
+        try {
+            setIsLoadingResumes(true);
+
+            // Get worker profile
+            const profile = await ResumeService.getWorkerProfile();
+            setWorkerProfile(profile);
+
+            // Get resumes using workerId
+            if (profile.workerId) {
+                const resumesData = await ResumeService.getResumesByWorker(profile.workerId);
+                setResumes(resumesData);
+            }
+        } catch (error) {
+            console.error('Error loading worker data:', error);
+        } finally {
+            setIsLoadingResumes(false);
+        }
+    };
 
     const handleFileUpload = () => {
         fileInputRef.current?.click();
     };
 
-    const handleAddCV = (name: string, file: File | null) => {
-        // Here you would typically handle the CV upload to a server
-        console.log('Adding CV:', name, file);
-        // Close the modal
-        setIsCVModalOpen(false);
-        // You might want to refresh the CVs list or show a success message
+    const handleResumeAdded = () => {
+        // Refresh the resumes list after adding a new one
+        loadWorkerData();
+    };
+
+    const handleDeleteResume = async (resumeId: number) => {
+        try {
+            await ResumeService.deleteResume(resumeId);
+            // Refresh the list
+            loadWorkerData();
+        } catch (error) {
+            console.error('Error deleting resume:', error);
+        }
     };
 
     const toggleProfilePrivacy = () => {
@@ -420,167 +432,6 @@ const EmployeeSettings: React.FC = () => {
 
     const toggleConfirmPasswordVisibility = () => {
         setShowConfirmPassword(!showConfirmPassword);
-    };
-
-    // Load worker profile data on component mount
-    useEffect(() => {
-        const loadWorkerProfile = async () => {
-            setLoading(true);
-
-            // ALWAYS try to get user ID from token first, regardless of profile loading
-            try {
-                // Debug: Log all token claims (remove this in production)
-                debugTokenClaims();
-
-                // Get user ID from token
-                const userIdFromToken = getUserIdFromToken();
-                console.log('🔍 Raw userIdFromToken result:', userIdFromToken);
-                console.log('🔍 userIdFromToken type:', typeof userIdFromToken);
-                console.log('🔍 userIdFromToken length:', userIdFromToken?.length);
-                console.log('🔍 userIdFromToken === null:', userIdFromToken === null);
-                console.log('🔍 userIdFromToken === "":', userIdFromToken === '');
-
-                if (userIdFromToken) {
-                    setUserId(userIdFromToken);
-                    console.log('✅ Successfully extracted and set user ID:', userIdFromToken);
-                } else {
-                    console.warn('❌ Could not extract user ID from token');
-                }
-            } catch (error) {
-                console.error('Error extracting user ID from token:', error);
-            }
-
-            // Then try to load the profile (this might fail, but userId should still be set)
-            try {
-                const profile = await WorkerService.getWorkerProfile();
-                if (profile) {
-                    setFormData(profile);
-                    // Extract social links for form display
-                    const socialLinksMap = {
-                        facebook: '',
-                        twitter: '',
-                        instagram: '',
-                        youtube: ''
-                    };
-                    profile.socialLinks.forEach((link: SocialLinkModel) => {
-                        const platform = link.platform.toLowerCase() as keyof typeof socialLinksMap;
-                        socialLinksMap[platform] = link.url;
-                    });
-                    setSocialLinks(socialLinksMap);
-                }
-            } catch (error) {
-                console.error('Error loading worker profile:', error);
-                // Don't let profile loading errors prevent userId from being set
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadWorkerProfile();
-    }, []);
-
-    // Handle form input changes
-    const handleInputChange = (field: keyof WorkerProfileModel, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
-
-    // Handle social link changes
-    const handleSocialLinkChange = (platform: keyof typeof socialLinks, value: string) => {
-        setSocialLinks(prev => ({
-            ...prev,
-            [platform]: value
-        }));
-    };
-
-    // Create social links array from form state
-    const createSocialLinksArray = (): SocialLinkModel[] => {
-        console.log('🔗 Creating social links array...');
-        console.log('🔗 Current userId state:', userId);
-        console.log('🔗 Current socialLinks state:', socialLinks);
-
-        // Get fresh userId from token to ensure we have the latest value
-        const freshUserId = getUserIdFromToken();
-        console.log('🔗 Fresh userId from token:', freshUserId);
-
-        const links: SocialLinkModel[] = [];
-        Object.entries(socialLinks).forEach(([platform, url]) => {
-            console.log(`🔗 Processing platform: ${platform}, url: ${url}`);
-            if (url.trim()) {
-                // Map platform names to match the API expectations
-                const platformMap: { [key: string]: SocialLinkModel['platform'] } = {
-                    facebook: 'Facebook',
-                    twitter: 'Twitter',
-                    instagram: 'Instagram',
-                    youtube: 'Youtube'
-                };
-
-                const newLink = {
-                    userId: freshUserId || '', // Use fresh userId from token
-                    platform: platformMap[platform],
-                    url: url.trim()
-                };
-                console.log(`🔗 Created link for ${platform}:`, newLink);
-                links.push(newLink);
-            }
-        });
-        console.log('🔗 Final social links array:', links);
-        return links;
-    };
-
-    // Handle form submission
-    const handleSaveProfile = async () => {
-        console.log('🎯 Save Profile button clicked');
-        console.log('📊 Current userId state:', userId);
-        console.log('📊 userId type:', typeof userId);
-        console.log('📊 userId length:', userId?.length);
-        console.log('📊 Current formData:', formData);
-        console.log('📊 Current socialLinks state:', socialLinks);
-
-        // Test getUserIdFromToken again right before saving
-        const freshUserId = getUserIdFromToken();
-        console.log('🔄 Fresh getUserIdFromToken() call result:', freshUserId);
-        console.log('🔄 Fresh userId type:', typeof freshUserId);
-        console.log('🔄 Fresh userId === state userId:', freshUserId === userId);
-
-        // Use fresh userId instead of state userId
-        if (!freshUserId) {
-            console.error('❌ No user ID found in token');
-            alert('User ID not found in token. Please try logging in again.');
-            return;
-        }
-
-        // Update the state userId if it's different
-        if (freshUserId !== userId) {
-            console.log('🔄 Updating userId state from', userId, 'to', freshUserId);
-            setUserId(freshUserId);
-        }
-
-        setLoading(true);
-        try {
-            const socialLinksArray = createSocialLinksArray();
-            console.log('📋 Created social links array:', socialLinksArray);
-
-            const profileData: WorkerProfileModel = {
-                ...formData,
-                socialLinks: socialLinksArray
-            };
-
-            console.log('📦 Profile data BEFORE sending to service:', JSON.stringify(profileData, null, 2));
-
-            const result = await WorkerService.createOrUpdateWorkerProfile(profileData);
-
-            console.log('📦 Profile data AFTER service processing (result):', result);
-            console.log('✅ Profile creation/update result:', result);
-            alert('Profile saved successfully!');
-        } catch (error) {
-            console.error('❌ Error saving profile:', error);
-            alert('Failed to save profile. Please try again.');
-        } finally {
-            setLoading(false);
-        }
     };
 
     return (
@@ -720,8 +571,6 @@ const EmployeeSettings: React.FC = () => {
                                                     id="fullName"
                                                     className="input-field"
                                                     placeholder="Nhập họ tên của bạn"
-                                                    value={formData.fullName}
-                                                    onChange={(e) => handleInputChange('fullName', e.target.value)}
                                                 />
                                             </div>
                                             <div>
@@ -746,8 +595,6 @@ const EmployeeSettings: React.FC = () => {
                                                         type="tel"
                                                         className="flex-1 px-3 py-[9px] border border-l-0 border-gray-300 rounded-r-md focus:outline-none text-gray-500"
                                                         placeholder="Phone number.."
-                                                        value={formData.phoneNumber}
-                                                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -758,34 +605,24 @@ const EmployeeSettings: React.FC = () => {
                                                 <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1 text-left">
                                                     Kinh nghiệm
                                                 </label>
-                                                <select
-                                                    id="experience"
-                                                    className="select-field"
-                                                    value={formData.experience}
-                                                    onChange={(e) => handleInputChange('experience', e.target.value)}
-                                                >
-                                                    <option value="">Chọn...</option>
-                                                    <option value="Dưới 1 năm">Dưới 1 năm</option>
-                                                    <option value="1-2 năm">1-2 năm</option>
-                                                    <option value="3-5 năm">3-5 năm</option>
-                                                    <option value="Trên 5 năm">Trên 5 năm</option>
+                                                <select id="experience" className="select-field">
+                                                    <option>Chọn...</option>
+                                                    <option>Dưới 1 năm</option>
+                                                    <option>1-2 năm</option>
+                                                    <option>3-5 năm</option>
+                                                    <option>Trên 5 năm</option>
                                                 </select>
                                             </div>
                                             <div>
                                                 <label htmlFor="education" className="block text-sm font-medium text-gray-700 mb-1 text-left">
                                                     Học vấn
                                                 </label>
-                                                <select
-                                                    id="education"
-                                                    className="select-field"
-                                                    value={formData.education}
-                                                    onChange={(e) => handleInputChange('education', e.target.value)}
-                                                >
-                                                    <option value="">Chọn...</option>
-                                                    <option value="Trung học">Trung học</option>
-                                                    <option value="Cao đẳng">Cao đẳng</option>
-                                                    <option value="Đại học">Đại học</option>
-                                                    <option value="Sau đại học">Sau đại học</option>
+                                                <select id="education" className="select-field">
+                                                    <option>Chọn...</option>
+                                                    <option>Trung học</option>
+                                                    <option>Cao đẳng</option>
+                                                    <option>Đại học</option>
+                                                    <option>Sau đại học</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -803,8 +640,6 @@ const EmployeeSettings: React.FC = () => {
                                                     id="website"
                                                     className="input-field input-with-icon"
                                                     placeholder="Website url..."
-                                                    value={formData.address}
-                                                    onChange={(e) => handleInputChange('address', e.target.value)}
                                                     style={{
                                                         color: "#9ca3af",
                                                         letterSpacing: "0.01em"
@@ -813,7 +648,11 @@ const EmployeeSettings: React.FC = () => {
                                             </div>
                                         </div>
 
-
+                                        <div className="pt-4">
+                                            <button className="apply-button">
+                                                Lưu Thay Đổi
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -821,191 +660,92 @@ const EmployeeSettings: React.FC = () => {
                                 <div className="mt-8">
                                     <h2 className="text-lg font-medium text-gray-800 mb-4 text-left">CV/Sơ yếu lý lịch của bạn</h2>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {/* CV Item 1 */}
-                                        <div className="bg-white border border-gray-200 rounded-lg p-4 relative group">
-                                            <div className="flex items-start">
-                                                <div className="mr-3 text-left">
-                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M14 2V8H20" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M16 13H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M16 17H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M10 9H9H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-sm font-medium text-gray-800">Sơ yếu lý lịch chuyên nghiệp</p>
-                                                    <p className="text-xs text-gray-500 mt-1">3.5 MB</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Actions Menu - Show on Click */}
-                                            <div className="absolute top-2 right-2 text-gray-400">
-                                                <div className="relative">
-                                                    <button
-                                                        className="cursor-pointer focus:outline-none"
-                                                        onClick={(e) => {
-                                                            e.currentTarget.nextElementSibling?.classList.toggle('hidden');
-                                                        }}
-                                                    >
-                                                        <div className="flex space-x-0.5">
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
+                                    {isLoadingResumes ? (
+                                        <div className="col-span-full flex justify-center items-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#309689]"></div>
+                                            <span className="ml-2 text-gray-600">Đang tải CV/Resume...</span>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {/* Dynamic Resume Items */}
+                                            {resumes.map((resume) => (
+                                                <div key={resume.id} className="bg-white border border-gray-200 rounded-lg p-4 relative group">
+                                                    <div className="flex items-start">
+                                                        <div className="mr-3 text-left">
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M14 2V8H20" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M16 13H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M16 17H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M10 9H9H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
                                                         </div>
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    <div className="hidden absolute right-0 mt-1 bg-white shadow-lg rounded-md border border-gray-100 w-28 z-10">
-                                                        <div className="py-1">
-                                                            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
-                                                                <svg className="h-3.5 w-3.5 mr-2 text-[#309689]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                                </svg>
-                                                                Chỉnh sửa
-                                                            </a>
-                                                            <a href="#" className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-gray-100 text-left">
-                                                                <svg className="h-3.5 w-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                                Xoá
-                                                            </a>
+                                                        <div className="text-left">
+                                                            <p className="text-sm font-medium text-gray-800">{resume.title}</p>
+                                                            <p className="text-xs text-gray-500 mt-1">{ResumeService.formatFileSize(resume.fileSize)}</p>
                                                         </div>
+                                                    </div>
+
+                                                    {/* Actions Menu */}
+                                                    <div className="absolute top-2 right-2 text-gray-400">
+                                                        <div className="relative">
+                                                            <button
+                                                                className="cursor-pointer focus:outline-none"
+                                                                onClick={(e) => {
+                                                                    e.currentTarget.nextElementSibling?.classList.toggle('hidden');
+                                                                }}
+                                                            >
+                                                                <div className="flex space-x-0.5">
+                                                                    <div className="w-1 h-1 rounded-full bg-black"></div>
+                                                                    <div className="w-1 h-1 rounded-full bg-black"></div>
+                                                                    <div className="w-1 h-1 rounded-full bg-black"></div>
+                                                                </div>
+                                                            </button>
+
+                                                            {/* Dropdown Menu */}
+                                                            <div className="hidden absolute right-0 mt-1 bg-white shadow-lg rounded-md border border-gray-100 w-28 z-10">
+                                                                <div className="py-1">
+                                                                    <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
+                                                                        <svg className="h-3.5 w-3.5 mr-2 text-[#309689]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                                        </svg>
+                                                                        Chỉnh sửa
+                                                                    </a>
+                                                                    <button
+                                                                        onClick={() => handleDeleteResume(resume.id)}
+                                                                        className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-gray-100 text-left w-full"
+                                                                    >
+                                                                        <svg className="h-3.5 w-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                        Xoá
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {/* Add CV Button */}
+                                            <div
+                                                className="border-2 border-dashed border-gray-200 p-4 rounded-lg flex items-start cursor-pointer hover:bg-gray-50 relative"
+                                                onClick={() => setIsCVModalOpen(true)}
+                                            >
+                                                <div className="flex items-start">
+                                                    <div className="mr-3">
+                                                        <div className="h-6 w-6 rounded-full bg-[#E8F5F3] flex items-center justify-center">
+                                                            <FiPlus className="h-4 w-4 text-[#309689]" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="text-sm font-medium text-gray-800">Thêm CV/Resume</p>
+                                                        <p className="text-xs text-gray-500 mt-1">Duyệt tập tin hoặc thả vào đây!</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* CV Item 2 */}
-                                        <div className="bg-white border border-gray-200 rounded-lg p-4 relative group">
-                                            <div className="flex items-start">
-                                                <div className="mr-3 text-left">
-                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M14 2V8H20" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M16 13H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M16 17H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M10 9H9H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-sm font-medium text-gray-800">Nhà thiết kế sản phẩm</p>
-                                                    <p className="text-xs text-gray-500 mt-1">4.7 MB</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Actions Menu */}
-                                            <div className="absolute top-2 right-2 text-gray-400">
-                                                <div className="relative">
-                                                    <button
-                                                        className="cursor-pointer focus:outline-none"
-                                                        onClick={(e) => {
-                                                            e.currentTarget.nextElementSibling?.classList.toggle('hidden');
-                                                        }}
-                                                    >
-                                                        <div className="flex space-x-0.5">
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                        </div>
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    <div className="hidden absolute right-0 mt-1 bg-white shadow-lg rounded-md border border-gray-100 w-28 z-10">
-                                                        <div className="py-1">
-                                                            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
-                                                                <svg className="h-3.5 w-3.5 mr-2 text-[#309689]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                                </svg>
-                                                                Chỉnh sửa
-                                                            </a>
-                                                            <a href="#" className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-gray-100 text-left">
-                                                                <svg className="h-3.5 w-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                                Xoá
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* CV Item 3 */}
-                                        <div className="bg-white border border-gray-200 rounded-lg p-4 relative group">
-                                            <div className="flex items-start">
-                                                <div className="mr-3 text-left">
-                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M14 2V8H20" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M16 13H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M16 17H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M10 9H9H8" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-sm font-medium text-gray-800">Nhà thiết kế hình ảnh</p>
-                                                    <p className="text-xs text-gray-500 mt-1">1.3 MB</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Actions Menu */}
-                                            <div className="absolute top-2 right-2 text-gray-400">
-                                                <div className="relative">
-                                                    <button
-                                                        className="cursor-pointer focus:outline-none"
-                                                        onClick={(e) => {
-                                                            e.currentTarget.nextElementSibling?.classList.toggle('hidden');
-                                                        }}
-                                                    >
-                                                        <div className="flex space-x-0.5">
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                            <div className="w-1 h-1 rounded-full bg-black"></div>
-                                                        </div>
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    <div className="hidden absolute right-0 mt-1 bg-white shadow-lg rounded-md border border-gray-100 w-28 z-10">
-                                                        <div className="py-1">
-                                                            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
-                                                                <svg className="h-3.5 w-3.5 mr-2 text-[#309689]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                                </svg>
-                                                                Chỉnh sửa
-                                                            </a>
-                                                            <a href="#" className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-gray-100 text-left">
-                                                                <svg className="h-3.5 w-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                                Xoá
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Add CV Button */}
-                                        <div
-                                            className="border-2 border-dashed border-gray-200 p-4 rounded-lg flex items-start cursor-pointer hover:bg-gray-50 relative"
-                                            onClick={() => setIsCVModalOpen(true)}
-                                        >
-                                            <div className="flex items-start">
-                                                <div className="mr-3">
-                                                    <div className="h-6 w-6 rounded-full bg-[#E8F5F3] flex items-center justify-center">
-                                                        <FiPlus className="h-4 w-4 text-[#309689]" />
-                                                    </div>
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-sm font-medium text-gray-800">Thêm CV/Resume</p>
-                                                    <p className="text-xs text-gray-500 mt-1">Duyệt tập tin hoặc thả vào đây!</p>
-                                                    <p className="text-xs text-gray-400 mt-1">Chi.pdf</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1021,13 +761,51 @@ const EmployeeSettings: React.FC = () => {
                                             Quốc tịch
                                         </label>
                                         <div className="relative">
-                                            <input
-                                                type="text"
-                                                className="input-field text-left"
-                                                value="Việt Nam"
-                                                readOnly
-                                                style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
-                                            />
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="VN">Việt Nam</option>
+                                                <option value="US">Hoa Kỳ</option>
+                                                <option value="KR">Hàn Quốc</option>
+                                                <option value="JP">Nhật Bản</option>
+                                                <option value="SG">Singapore</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Ngày sinh
+                                        </label>
+                                        <input
+                                            type="date"
+                                            className="input-field text-left"
+                                            placeholder="dd/mm/yyyy"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Giới tính
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="male">Nam</option>
+                                                <option value="female">Nữ</option>
+                                                <option value="other">Khác</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                                            Tình trạng hôn nhân
+                                        </label>
+                                        <div className="relative">
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="single">Độc thân</option>
+                                                <option value="married">Đã kết hôn</option>
+                                                <option value="divorced">Đã ly hôn</option>
+                                                <option value="widowed">Góa phụ</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div>
@@ -1035,14 +813,14 @@ const EmployeeSettings: React.FC = () => {
                                             Học vấn
                                         </label>
                                         <div className="relative">
-                                            <input
-                                                type="text"
-                                                className="input-field text-left"
-                                                value={formData.education}
-                                                readOnly
-                                                style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
-                                                placeholder="Được đồng bộ từ phần Cá nhân"
-                                            />
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="high-school">Trung học phổ thông</option>
+                                                <option value="college">Cao đẳng</option>
+                                                <option value="bachelor">Cử nhân</option>
+                                                <option value="master">Thạc sĩ</option>
+                                                <option value="phd">Tiến sĩ</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div>
@@ -1050,14 +828,14 @@ const EmployeeSettings: React.FC = () => {
                                             Kinh nghiệm
                                         </label>
                                         <div className="relative">
-                                            <input
-                                                type="text"
-                                                className="input-field text-left"
-                                                value={formData.experience}
-                                                readOnly
-                                                style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
-                                                placeholder="Được đồng bộ từ phần Cá nhân"
-                                            />
+                                            <select className="select-field text-left">
+                                                <option value="" disabled selected>Chọn...</option>
+                                                <option value="0">Chưa có kinh nghiệm</option>
+                                                <option value="1">Dưới 1 năm</option>
+                                                <option value="2">1-2 năm</option>
+                                                <option value="3">3-5 năm</option>
+                                                <option value="5">Trên 5 năm</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -1069,8 +847,6 @@ const EmployeeSettings: React.FC = () => {
                                     <textarea
                                         className="input-field h-40 text-left"
                                         placeholder="Viết tiểu sử của bạn ở đây. Hãy cho nhà tuyển dụng biết bạn là ai..."
-                                        value={formData.bio}
-                                        onChange={(e) => handleInputChange('bio', e.target.value)}
                                     ></textarea>
 
                                     <div className="flex items-center mt-2 text-gray-500 text-xs">
@@ -1099,7 +875,11 @@ const EmployeeSettings: React.FC = () => {
                                     </div>
                                 </div>
 
-
+                                <div className="pt-4 text-left">
+                                    <button className="apply-button">
+                                        Lưu Thay Đổi
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -1135,8 +915,6 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
-                                                        value={socialLinks.facebook}
-                                                        onChange={(e) => handleSocialLinkChange('facebook', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1177,8 +955,6 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
-                                                        value={socialLinks.twitter}
-                                                        onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1219,8 +995,6 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
-                                                        value={socialLinks.instagram}
-                                                        onChange={(e) => handleSocialLinkChange('instagram', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1261,8 +1035,6 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
-                                                        value={socialLinks.youtube}
-                                                        onChange={(e) => handleSocialLinkChange('youtube', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1291,12 +1063,8 @@ const EmployeeSettings: React.FC = () => {
 
                                     {/* Save Button */}
                                     <div className="mt-6 text-left">
-                                        <button
-                                            className="apply-button"
-                                            onClick={handleSaveProfile}
-                                            disabled={loading}
-                                        >
-                                            {loading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                                        <button className="apply-button">
+                                            Lưu Thay Đổi
                                         </button>
                                     </div>
                                 </div>
@@ -1672,7 +1440,8 @@ const EmployeeSettings: React.FC = () => {
             <CVModal
                 isOpen={isCVModalOpen}
                 onClose={() => setIsCVModalOpen(false)}
-                onSubmit={handleAddCV}
+                workerId={workerProfile?.workerId || 0}
+                onResumeAdded={handleResumeAdded}
             />
         </div>
     );

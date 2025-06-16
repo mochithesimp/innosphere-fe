@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { FiX, FiUpload } from 'react-icons/fi';
+import { FiX, FiUpload, FiFile } from 'react-icons/fi';
+import { CreateResumeModel, ResumeService } from '../../services/resumeService';
 
 interface CVModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (name: string, file: File | null) => void;
+    workerId: number;
+    onResumeAdded: () => void;
 }
 
 // Define button styles separately just like in EmployeeFavorites
@@ -47,14 +49,17 @@ const buttonStyles = `
     }
 `;
 
-const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAdded }) => {
     const [cvName, setCvName] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             setSelectedFile(e.target.files[0]);
+            setError('');
         }
     };
 
@@ -62,6 +67,7 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
         e.preventDefault();
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             setSelectedFile(e.dataTransfer.files[0]);
+            setError('');
         }
     };
 
@@ -69,17 +75,75 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
         e.preventDefault();
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const formatFileSize = (bytes: number): string => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    const getFileType = (filename: string): string => {
+        const extension = filename.split('.').pop();
+        return extension ? extension.toUpperCase() : 'UNKNOWN';
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(cvName, selectedFile);
-        // Reset form
-        setCvName('');
-        setSelectedFile(null);
+
+        if (!cvName.trim()) {
+            setError('Vui lòng nhập tên CV/Resume');
+            return;
+        }
+
+        if (!selectedFile) {
+            setError('Vui lòng chọn file');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError('');
+
+        try {
+            const resumeData: CreateResumeModel = {
+                workerId: workerId,
+                title: cvName.trim(),
+                urlCvs: "url", // Hard coded as requested
+                fileType: "PDF", // Always set as PDF
+                fileSize: selectedFile.size
+            };
+
+            console.log('📄 Thêm Resume - Data being sent to API:');
+            console.log(JSON.stringify(resumeData, null, 2));
+
+            await ResumeService.createResume(resumeData);
+
+            // Reset form
+            setCvName('');
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+
+            // Close modal and refresh data
+            onClose();
+            onResumeAdded();
+
+        } catch (error) {
+            console.error('Error creating resume:', error);
+            setError('Có lỗi xảy ra khi thêm CV/Resume. Vui lòng thử lại.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCancel = () => {
         setCvName('');
         setSelectedFile(null);
+        setError('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
         onClose();
     };
 
@@ -125,7 +189,7 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
                                 Tải lên CV/Resume của bạn
                             </label>
                             <div
-                                className="border-2 border-dashed border-gray-200 rounded-md p-8 text-center cursor-pointer"
+                                className="border-2 border-dashed border-gray-200 rounded-md p-8 text-center cursor-pointer hover:border-[#309689] hover:bg-gray-50 transition-colors"
                                 onClick={() => fileInputRef.current?.click()}
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
@@ -134,7 +198,7 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
                                     type="file"
                                     ref={fileInputRef}
                                     className="hidden"
-                                    accept=".pdf"
+                                    accept=".pdf,.doc,.docx"
                                     onChange={handleFileChange}
                                 />
                                 <div className="flex flex-col items-center justify-center">
@@ -142,15 +206,46 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
                                         <FiUpload size={36} />
                                     </div>
                                     <p className="text-sm font-medium text-gray-700">Chọn File hoặc thả vào đây</p>
-                                    <p className="text-xs text-gray-500 mt-1">Chỉ có định dạng PDF. Kích thước tệp tối đa là 12 MB.</p>
-                                    {selectedFile && (
-                                        <div className="mt-3 text-sm text-gray-600">
-                                            {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
-                                        </div>
-                                    )}
+                                    <p className="text-xs text-gray-500 mt-1">Hỗ trợ: PDF, DOC, DOCX</p>
                                 </div>
                             </div>
+
+                            {/* Selected File Display */}
+                            {selectedFile && (
+                                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                                    <div className="flex items-center">
+                                        <FiFile className="h-5 w-5 text-[#309689] mr-3" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-800">
+                                                {selectedFile.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {getFileType(selectedFile.name)} • {formatFileSize(selectedFile.size)}
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedFile(null);
+                                                if (fileInputRef.current) {
+                                                    fileInputRef.current.value = '';
+                                                }
+                                            }}
+                                            className="text-gray-400 hover:text-red-500 ml-2"
+                                        >
+                                            <FiX className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                <p className="text-sm text-red-600">{error}</p>
+                            </div>
+                        )}
 
                         <div className="flex justify-between">
                             <div className="cancel-button" onClick={handleCancel}>
@@ -159,9 +254,9 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, onSubmit }) => {
                             <button
                                 type="submit"
                                 className="add-button"
-                                disabled={!cvName || !selectedFile}
+                                disabled={!cvName || !selectedFile || isSubmitting}
                             >
-                                Thêm CV/Resume
+                                {isSubmitting ? 'Đang thêm...' : 'Thêm CV/Resume'}
                             </button>
                         </div>
                     </form>
