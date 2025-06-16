@@ -369,6 +369,16 @@ const EmployeeSettings: React.FC = () => {
     const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
     const [isLoadingResumes, setIsLoadingResumes] = useState(false);
 
+    // Form state for profile data
+    const [formData, setFormData] = useState({
+        fullName: '',
+        phoneNumber: '',
+        experience: '',
+        education: '',
+        website: '',
+        bio: ''
+    });
+
     // Load worker profile and resumes on component mount
     useEffect(() => {
         loadWorkerData();
@@ -378,9 +388,26 @@ const EmployeeSettings: React.FC = () => {
         try {
             setIsLoadingResumes(true);
 
+            console.log('🔄 Calling API: GET https://localhost:7085/api/worker/profile');
+
             // Get worker profile
             const profile = await ResumeService.getWorkerProfile();
+            console.log('✅ Worker Profile API Response:', profile);
+
             setWorkerProfile(profile);
+
+            // Populate form data with API response, leave empty if null
+            const formDataToSet = {
+                fullName: profile.fullName || '',
+                phoneNumber: profile.phoneNumber || '',
+                experience: profile.experience || '',
+                education: profile.education || '',
+                website: '', // Not available in API, keeping empty
+                bio: profile.bio || ''
+            };
+
+            console.log('📝 Populating form fields with data:', formDataToSet);
+            setFormData(formDataToSet);
 
             // Get resumes using workerId
             if (profile.workerId) {
@@ -388,7 +415,21 @@ const EmployeeSettings: React.FC = () => {
                 setResumes(resumesData);
             }
         } catch (error) {
-            console.error('Error loading worker data:', error);
+            console.error('❌ Error loading worker data:', error);
+
+            // Handle 404 response - leave form fields empty
+            const errorResponse = error as { response?: { status?: number } };
+            if (errorResponse.response?.status === 404) {
+                console.log('⚠️ Worker profile not found (404). Leaving form fields empty.');
+                setFormData({
+                    fullName: '',
+                    phoneNumber: '',
+                    experience: '',
+                    education: '',
+                    website: '',
+                    bio: ''
+                });
+            }
         } finally {
             setIsLoadingResumes(false);
         }
@@ -411,6 +452,13 @@ const EmployeeSettings: React.FC = () => {
         } catch (error) {
             console.error('Error deleting resume:', error);
         }
+    };
+
+    const handleFormChange = (field: keyof typeof formData, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
     const toggleProfilePrivacy = () => {
@@ -571,6 +619,8 @@ const EmployeeSettings: React.FC = () => {
                                                     id="fullName"
                                                     className="input-field"
                                                     placeholder="Nhập họ tên của bạn"
+                                                    value={formData.fullName}
+                                                    onChange={(e) => handleFormChange('fullName', e.target.value)}
                                                 />
                                             </div>
                                             <div>
@@ -595,6 +645,8 @@ const EmployeeSettings: React.FC = () => {
                                                         type="tel"
                                                         className="flex-1 px-3 py-[9px] border border-l-0 border-gray-300 rounded-r-md focus:outline-none text-gray-500"
                                                         placeholder="Phone number.."
+                                                        value={formData.phoneNumber}
+                                                        onChange={(e) => handleFormChange('phoneNumber', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -605,24 +657,34 @@ const EmployeeSettings: React.FC = () => {
                                                 <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1 text-left">
                                                     Kinh nghiệm
                                                 </label>
-                                                <select id="experience" className="select-field">
-                                                    <option>Chọn...</option>
-                                                    <option>Dưới 1 năm</option>
-                                                    <option>1-2 năm</option>
-                                                    <option>3-5 năm</option>
-                                                    <option>Trên 5 năm</option>
+                                                <select
+                                                    id="experience"
+                                                    className="select-field"
+                                                    value={formData.experience}
+                                                    onChange={(e) => handleFormChange('experience', e.target.value)}
+                                                >
+                                                    <option value="">Chọn...</option>
+                                                    <option value="Dưới 1 năm">Dưới 1 năm</option>
+                                                    <option value="1-2 năm">1-2 năm</option>
+                                                    <option value="3-5 năm">3-5 năm</option>
+                                                    <option value="Trên 5 năm">Trên 5 năm</option>
                                                 </select>
                                             </div>
                                             <div>
                                                 <label htmlFor="education" className="block text-sm font-medium text-gray-700 mb-1 text-left">
                                                     Học vấn
                                                 </label>
-                                                <select id="education" className="select-field">
-                                                    <option>Chọn...</option>
-                                                    <option>Trung học</option>
-                                                    <option>Cao đẳng</option>
-                                                    <option>Đại học</option>
-                                                    <option>Sau đại học</option>
+                                                <select
+                                                    id="education"
+                                                    className="select-field"
+                                                    value={formData.education}
+                                                    onChange={(e) => handleFormChange('education', e.target.value)}
+                                                >
+                                                    <option value="">Chọn...</option>
+                                                    <option value="Trung học">Trung học</option>
+                                                    <option value="Cao đẳng">Cao đẳng</option>
+                                                    <option value="Đại học">Đại học</option>
+                                                    <option value="Sau đại học">Sau đại học</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -640,6 +702,8 @@ const EmployeeSettings: React.FC = () => {
                                                     id="website"
                                                     className="input-field input-with-icon"
                                                     placeholder="Website url..."
+                                                    value={formData.website}
+                                                    onChange={(e) => handleFormChange('website', e.target.value)}
                                                     style={{
                                                         color: "#9ca3af",
                                                         letterSpacing: "0.01em"
@@ -847,6 +911,8 @@ const EmployeeSettings: React.FC = () => {
                                     <textarea
                                         className="input-field h-40 text-left"
                                         placeholder="Viết tiểu sử của bạn ở đây. Hãy cho nhà tuyển dụng biết bạn là ai..."
+                                        value={formData.bio}
+                                        onChange={(e) => handleFormChange('bio', e.target.value)}
                                     ></textarea>
 
                                     <div className="flex items-center mt-2 text-gray-500 text-xs">
