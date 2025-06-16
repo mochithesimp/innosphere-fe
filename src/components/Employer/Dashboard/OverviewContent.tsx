@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RiBriefcaseLine, RiUserLine, RiTimeLine, RiMoreLine } from 'react-icons/ri';
+import { JobPostingService, JobPostingListItem } from '../../../services/jobPostingService';
+import { SubscriptionService } from '../../../services/subscriptionService';
 
 const OverviewContent: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const [recentJobs, setRecentJobs] = useState<JobPostingListItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
     // Function to toggle dropdown
     const toggleDropdown = (id: number) => {
@@ -13,6 +17,88 @@ const OverviewContent: React.FC = () => {
         } else {
             // Otherwise, open this one and close any other
             setOpenDropdownId(id);
+        }
+    };
+
+    // Fetch recent job postings
+    useEffect(() => {
+        const fetchRecentJobs = async () => {
+            try {
+                setLoading(true);
+
+                // Get employer profile to get employerId
+                const employerProfile = await SubscriptionService.getEmployerProfile();
+                if (!employerProfile || !employerProfile.employerId) {
+                    console.error('Could not get employer profile');
+                    return;
+                }
+
+                // Get job postings for this employer
+                const jobPostings = await JobPostingService.getJobPostingsByEmployer(employerProfile.employerId);
+
+                // Sort by posted date (most recent first) and take only 5
+                const sortedJobs = jobPostings
+                    .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime())
+                    .slice(0, 5);
+
+                setRecentJobs(sortedJobs);
+            } catch (error) {
+                console.error('Error fetching recent jobs:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecentJobs();
+    }, []);
+
+    // Format time from datetime string to "HHh00" format (e.g., "7h00", "15h00")
+    const formatTime = (dateTimeString?: string) => {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        const hours = date.getHours();
+        return `${hours}h00`;
+    };
+
+    // Calculate remaining time
+    const calculateRemainingTime = (expiresAt?: string) => {
+        if (!expiresAt) return 'Không xác định';
+
+        const now = new Date();
+        const expiry = new Date(expiresAt);
+        const diffInMilliseconds = expiry.getTime() - now.getTime();
+
+        if (diffInMilliseconds <= 0) {
+            return 'Còn lại 0 giờ';
+        }
+
+        const diffInHours = Math.ceil(diffInMilliseconds / (1000 * 60 * 60));
+
+        if (diffInHours < 24) {
+            return `Còn lại ${diffInHours} giờ`;
+        } else {
+            const diffInDays = Math.ceil(diffInHours / 24);
+            return `Còn lại ${diffInDays} ngày`;
+        }
+    };
+
+    // Determine job status
+    const getJobStatus = (job: JobPostingListItem): 'active' | 'completed' | 'expired' => {
+        const now = new Date();
+        const expiresAt = job.expiresAt ? new Date(job.expiresAt) : null;
+
+        // Check if expired by date
+        if (expiresAt && now > expiresAt) {
+            return 'expired';
+        }
+
+        // Check by status
+        if (job.status === 'APPROVED') {
+            return 'active';
+        } else if (job.status === 'CLOSED') {
+            return 'completed';
+        } else {
+            return 'expired'; // For PENDING, REJECT, etc.
         }
     };
 
@@ -66,61 +152,29 @@ const OverviewContent: React.FC = () => {
                         <div className="col-span-2 text-center">ACTIONS</div>
                     </div>
 
-                    {/* Job listing items */}
-                    <JobItem
-                        title="Nhân viên chạy bàn"
-                        timeSlot="7h00-15h00"
-                        additionalInfo="Còn lại 10 giờ"
-                        status="active"
-                        applications={798}
-                        isDropdownOpen={openDropdownId === 1}
-                        toggleDropdown={() => toggleDropdown(1)}
-                        isLastItem={false}
-                    />
-
-                    <JobItem
-                        title="Nhân viên phục vụ"
-                        timeSlot="12h00-17h00"
-                        additionalInfo="Còn lại 8 giờ"
-                        status="completed"
-                        applications={185}
-                        isDropdownOpen={openDropdownId === 2}
-                        toggleDropdown={() => toggleDropdown(2)}
-                        isLastItem={false}
-                    />
-
-                    <JobItem
-                        title="Phụ giúp việc nhà"
-                        timeSlot="8h00-18h00"
-                        additionalInfo="Còn lại 1 giờ"
-                        status="active"
-                        applications={556}
-                        isDropdownOpen={openDropdownId === 3}
-                        toggleDropdown={() => toggleDropdown(3)}
-                        isLastItem={false}
-                    />
-
-                    <JobItem
-                        title="Hỗ trợ sự kiện"
-                        timeSlot="7h00-15h00"
-                        additionalInfo="Còn lại 20 phút"
-                        status="completed"
-                        applications={583}
-                        isDropdownOpen={openDropdownId === 4}
-                        toggleDropdown={() => toggleDropdown(4)}
-                        isLastItem={true}
-                    />
-
-                    <JobItem
-                        title="Hỗ trợ sự kiện"
-                        timeSlot="13h00-22h00"
-                        additionalInfo="Còn lại 1 ngày"
-                        status="expired"
-                        applications={740}
-                        isDropdownOpen={openDropdownId === 5}
-                        toggleDropdown={() => toggleDropdown(5)}
-                        isLastItem={true}
-                    />
+                    {loading ? (
+                        <div className="py-8 text-center text-gray-500">
+                            Đang tải dữ liệu...
+                        </div>
+                    ) : recentJobs.length === 0 ? (
+                        <div className="py-8 text-center text-gray-500">
+                            Chưa có bài đăng công việc nào
+                        </div>
+                    ) : (
+                        recentJobs.map((job, index) => (
+                            <JobItem
+                                key={job.id}
+                                title={job.title}
+                                timeSlot={job.startTime && job.endTime ? `${formatTime(job.startTime)}-${formatTime(job.endTime)}` : 'Không xác định'}
+                                additionalInfo={calculateRemainingTime(job.expiresAt)}
+                                status={getJobStatus(job)}
+                                applications={job.applicationsCount}
+                                isDropdownOpen={openDropdownId === job.id}
+                                toggleDropdown={() => toggleDropdown(job.id)}
+                                isLastItem={index === recentJobs.length - 1}
+                            />
+                        ))
+                    )}
                 </div>
             </div>
         </div>

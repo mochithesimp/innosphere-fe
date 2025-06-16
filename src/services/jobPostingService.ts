@@ -32,6 +32,38 @@ export interface JobPostingResponse {
     createdAt: string;
 }
 
+export interface JobPostingListItem {
+    id: number;
+    employerId: number;
+    companyName?: string;
+    companyLogoUrl?: string;
+    businessTypeId?: number;
+    businessTypeName?: string;
+    subscriptionId: number;
+    cityId?: number;
+    cityName?: string;
+    title: string;
+    description?: string;
+    location: string;
+    startTime?: string;
+    endTime?: string;
+    hourlyRate?: number;
+    jobType: string;
+    requirements?: string;
+    postedAt: string;
+    expiresAt?: string;
+    status: string;
+    isUrgent: boolean;
+    isHighlighted: boolean;
+    viewsCount: number;
+    applicationsCount: number;
+    jobTags: Array<{
+        id: number;
+        name: string;
+        description?: string;
+    }>;
+}
+
 export class JobPostingService {
     private static getAuthHeaders() {
         const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
@@ -45,6 +77,15 @@ export class JobPostingService {
 
     static async createJobPosting(jobData: CreateJobPostingModel): Promise<JobPostingResponse> {
         const response = await axios.post(`${API_BASE_URL}/api/jobposting`, jobData, this.getAuthHeaders());
+        return response.data;
+    }
+
+    static async getJobPostingsByEmployer(employerId: number, status?: string): Promise<JobPostingListItem[]> {
+        const url = status
+            ? `${API_BASE_URL}/api/jobposting/employer/${employerId}?status=${status}`
+            : `${API_BASE_URL}/api/jobposting/employer/${employerId}`;
+
+        const response = await axios.get(url, this.getAuthHeaders());
         return response.data;
     }
 } 
