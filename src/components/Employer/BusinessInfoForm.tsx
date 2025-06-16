@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { RiUploadCloudLine } from 'react-icons/ri';
 import { BiBold, BiItalic, BiUnderline, BiStrikethrough, BiLink, BiListUl, BiListOl } from 'react-icons/bi';
 
 const BusinessInfoForm: React.FC = () => {
+    const location = useLocation();
     const [companyName, setCompanyName] = useState('');
     const [companyDescription, setCompanyDescription] = useState('');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
+
+    // Restore form data when navigating back
+    useEffect(() => {
+        if (location.state) {
+            setCompanyName(location.state.companyName || '');
+            setCompanyDescription(location.state.companyDescription || '');
+        }
+    }, [location.state]);
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -149,6 +158,7 @@ const BusinessInfoForm: React.FC = () => {
                 <Link
                     to="/employer/establishment-info"
                     className="bg-[#309689] hover:bg-[#277b70] text-white font-medium py-2.5 px-6 rounded-md inline-flex items-center"
+                    state={{ companyName, companyDescription }}
                 >
                     Lưu & Tiếp Tục
                     <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -1,13 +1,44 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaTrash } from 'react-icons/fa';
 import { IoMdAdd } from 'react-icons/io';
+import { getUserIdFromToken } from '../../utils/jwtHelper';
+
+interface SocialLink {
+    id: number;
+    type: 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube';
+    url: string;
+}
 
 const SocialMediaInfoForm: React.FC = () => {
-    const [socialLinks, setSocialLinks] = useState([
-        { id: 1, type: 'facebook', url: '' },
-        { id: 2, type: 'twitter', url: '' }
+    const location = useLocation();
+    const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
+        { id: 1, type: 'Facebook', url: '' },
+        { id: 2, type: 'Twitter', url: '' }
     ]);
+
+    // Get data from previous steps
+    const [formData, setFormData] = useState({
+        companyName: '',
+        companyDescription: '',
+        businessTypeId: undefined as number | undefined,
+        newBusinessTypeName: '',
+        newBusinessTypeDescription: '',
+        companyAddress: ''
+    });
+
+    useEffect(() => {
+        if (location.state) {
+            setFormData({
+                companyName: location.state.companyName || '',
+                companyDescription: location.state.companyDescription || '',
+                businessTypeId: location.state.businessTypeId,
+                newBusinessTypeName: location.state.newBusinessTypeName || '',
+                newBusinessTypeDescription: location.state.newBusinessTypeDescription || '',
+                companyAddress: location.state.companyAddress || ''
+            });
+        }
+    }, [location.state]);
 
     const handleUrlChange = (id: number, value: string) => {
         setSocialLinks(links => links.map(link =>
@@ -15,7 +46,7 @@ const SocialMediaInfoForm: React.FC = () => {
         ));
     };
 
-    const handleTypeChange = (id: number, type: string) => {
+    const handleTypeChange = (id: number, type: 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube') => {
         setSocialLinks(links => links.map(link =>
             link.id === id ? { ...link, type } : link
         ));
@@ -28,23 +59,35 @@ const SocialMediaInfoForm: React.FC = () => {
     const addNewLink = () => {
         if (socialLinks.length >= 4) return; // Limit to maximum 4 links
         const newId = Math.max(...socialLinks.map(link => link.id), 0) + 1;
-        setSocialLinks([...socialLinks, { id: newId, type: 'facebook', url: '' }]);
+        setSocialLinks([...socialLinks, { id: newId, type: 'Facebook', url: '' }]);
     };
 
     // Get the icon component based on platform type
     const getSocialIcon = (type: string) => {
         switch (type) {
-            case 'facebook':
+            case 'Facebook':
                 return <FaFacebookF className="h-5 w-5 text-[#1877F2]" />;
-            case 'twitter':
+            case 'Twitter':
                 return <FaTwitter className="h-5 w-5 text-[#1DA1F2]" />;
-            case 'instagram':
+            case 'Instagram':
                 return <FaInstagram className="h-5 w-5 text-[#E4405F]" />;
-            case 'youtube':
+            case 'Youtube':
                 return <FaYoutube className="h-5 w-5 text-[#FF0000]" />;
             default:
                 return <FaFacebookF className="h-5 w-5 text-[#1877F2]" />;
         }
+    };
+
+    // Prepare social links for API (only non-empty URLs)
+    const prepareSocialLinksForAPI = () => {
+        const userId = getUserIdFromToken(localStorage.getItem('token') || '');
+        return socialLinks
+            .filter(link => link.url.trim() !== '')
+            .map(link => ({
+                userId: userId || '',
+                platform: link.type,
+                url: link.url.trim()
+            }));
     };
 
     return (
@@ -59,12 +102,12 @@ const SocialMediaInfoForm: React.FC = () => {
                             <select
                                 className="appearance-none bg-white border border-gray-300 hover:border-gray-400 pl-10 pr-8 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] text-gray-500"
                                 value={link.type}
-                                onChange={(e) => handleTypeChange(link.id, e.target.value)}
+                                onChange={(e) => handleTypeChange(link.id, e.target.value as 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube')}
                             >
-                                <option value="facebook">Facebook</option>
-                                <option value="twitter">Twitter</option>
-                                <option value="instagram">Instagram</option>
-                                <option value="youtube">Youtube</option>
+                                <option value="Facebook">Facebook</option>
+                                <option value="Twitter">Twitter</option>
+                                <option value="Instagram">Instagram</option>
+                                <option value="Youtube">Youtube</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                 {getSocialIcon(link.type)}
@@ -113,12 +156,24 @@ const SocialMediaInfoForm: React.FC = () => {
                 <Link
                     to="/employer/establishment-info"
                     className="bg-[#EBF5F4] hover:bg-[#daeae8] text-gray-700 font-medium py-2.5 px-6 rounded-md inline-flex items-center border border-[#E4E5E8]"
+                    state={{
+                        companyName: formData.companyName,
+                        companyDescription: formData.companyDescription,
+                        businessTypeId: formData.businessTypeId,
+                        newBusinessTypeName: formData.newBusinessTypeName,
+                        newBusinessTypeDescription: formData.newBusinessTypeDescription,
+                        companyAddress: formData.companyAddress
+                    }}
                 >
                     Trang Trước
                 </Link>
                 <Link
                     to="/employer/contact-info"
                     className="bg-[#309689] hover:bg-[#277b70] text-white font-medium py-2.5 px-6 rounded-md inline-flex items-center"
+                    state={{
+                        ...formData,
+                        socialLinks: prepareSocialLinksForAPI()
+                    }}
                 >
                     Lưu & Tiếp Tục
                     <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
