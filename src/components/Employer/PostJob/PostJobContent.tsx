@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaCheck, FaTimes, FaCreditCard } from 'react-icons/fa';
-import JobPromotionPopup from './JobPromotionPopup';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
+import { getUserIdFromToken } from '../../../utils/auth';
+import { SubscriptionService } from '../../../services/subscriptionService';
 
 interface PlanDetails {
     name: string;
     price: string;
     formattedPrice: string;
+    subscriptionPackageId: number;
 }
 
 const PostJobContent: React.FC = () => {
@@ -13,7 +16,78 @@ const PostJobContent: React.FC = () => {
     const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
     const [useExistingCard, setUseExistingCard] = useState(true);
-    const [showPromotionPopup, setShowPromotionPopup] = useState(false);
+
+    const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
+
+    // Check if user has valid subscription on component mount
+    useEffect(() => {
+        checkUserSubscription();
+    }, []);
+
+    const checkUserSubscription = async () => {
+        try {
+            // Get user authentication
+            const userId = getUserIdFromToken();
+            if (!userId) {
+                console.error('User not authenticated');
+                setIsCheckingSubscription(false);
+                return;
+            }
+
+            // Get employer profile to get employerId
+            const employerProfile = await SubscriptionService.getEmployerProfile();
+            if (!employerProfile || !employerProfile.employerId) {
+                console.error('Could not get employer profile');
+                setIsCheckingSubscription(false);
+                return;
+            }
+
+            // Check if user has valid subscription
+            const subscriptions = await SubscriptionService.getSubscriptionsByEmployer(employerProfile.employerId);
+
+            if (subscriptions && subscriptions.length > 0) {
+                // User has subscription, redirect to create-job
+                console.log('User has valid subscription, redirecting to create-job');
+                window.location.href = '/employer/create-job';
+                return;
+            }
+
+            // No valid subscription, stay on current page
+            console.log('User has no valid subscription, staying on post-job page');
+            setIsCheckingSubscription(false);
+
+        } catch {
+            // If error (like 404), user doesn't have subscription
+            console.log('No subscription found (404 or error), staying on post-job page');
+            setIsCheckingSubscription(false);
+        }
+    };
+
+    // PayPal configuration
+    const paypalOptions = {
+        clientId: "AbYoH5JdRKNeJ_x46blNYUZnSaxLGAS4mqYfhIx65TlQVu2xEiUCFVHyuaEYFOTfFE4ND7At-F_WcLQc",
+        currency: "USD",
+        intent: "capture"
+    };
+
+    // Currency conversion function (VND to USD)
+    const convertVNDToUSD = (vndAmount: number): string => {
+        const USD_TO_VND_RATE = 24000; // Approximate rate, in production you'd use a real-time API
+        const usdAmount = vndAmount / USD_TO_VND_RATE;
+        return usdAmount.toFixed(2);
+    };
+
+    // Get subscription duration based on package ID
+    const getSubscriptionDuration = (packageId: number): number => {
+        return packageId === 3 ? 3 : 1; // 3 months for Doanh Nghiệp, 1 month for others
+    };
+
+    // Calculate end date based on start date and duration
+    const getEndDate = (startDate: Date, durationInMonths: number): Date => {
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + durationInMonths);
+        return endDate;
+    };
 
     const handleSelectPlan = (plan: PlanDetails) => {
         setSelectedPlan(plan);
@@ -22,6 +96,83 @@ const PostJobContent: React.FC = () => {
 
     const closeModal = () => {
         setShowPaymentModal(false);
+    };
+
+    // Handle successful PayPal payment
+    // @ts-expect-error - PayPal types can be complex, using any for actions parameter
+    const handlePayPalApprove = async (data: unknown, actions: any) => {
+        try {
+            const order = await actions.order.capture();
+            const transactionId = order.id;
+
+            // Get user ID from token
+            const userId = getUserIdFromToken();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            if (!selectedPlan) {
+                throw new Error('No plan selected');
+            }
+
+            // Get employer profile to get the actual employerId
+            const employerProfile = await SubscriptionService.getEmployerProfile();
+            if (!employerProfile || !employerProfile.employerId) {
+                throw new Error('Could not get employer profile or employerId');
+            }
+
+            const employerId = employerProfile.employerId;
+
+            // Prepare subscription API payload
+            const startDate = new Date();
+            const duration = getSubscriptionDuration(selectedPlan.subscriptionPackageId);
+            const endDate = getEndDate(startDate, duration);
+
+            const subscriptionData = {
+                employerId: employerId,
+                subscriptionPackageId: selectedPlan.subscriptionPackageId,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                amountPaid: parseFloat(selectedPlan.price),
+                paymentStatus: "PAID",
+                transactionId: transactionId
+            };
+
+            // Call the subscription purchase API
+            const response = await SubscriptionService.purchaseSubscription(subscriptionData);
+
+            if (response) {
+                // Success - close modal and navigate to create-job
+                setShowPaymentModal(false);
+                window.location.href = '/employer/create-job';
+            }
+        } catch (error) {
+            console.error('❌ Error processing payment:', error);
+
+            // Log detailed error information in JSON format
+            if ((error as any).response) {
+                // API responded with an error status
+                const apiError = (error as any).response;
+                console.error('🔍 API Error Details:', JSON.stringify({
+                    status: apiError.status,
+                    statusText: apiError.statusText,
+                    responseData: apiError.data,
+                    responseHeaders: apiError.headers
+                }, null, 2));
+
+                // Show user-friendly error message
+                const errorMessage = apiError.data?.message || apiError.data || 'Unknown API error';
+                alert(`Payment failed (${apiError.status}): ${errorMessage}`);
+            } else if ((error as any).request) {
+                // Request was made but no response received
+                console.error('🌐 Network Error - No response received:', JSON.stringify((error as any).request, null, 2));
+                alert('Network error: Unable to reach the server. Please check your connection.');
+            } else {
+                // Something else happened
+                console.error('🔧 Other Error:', JSON.stringify({ message: (error as any).message }, null, 2));
+                alert(`Payment processing failed: ${(error as any).message}`);
+            }
+        }
     };
 
     // Create HTML for standard button
@@ -107,7 +258,8 @@ const PostJobContent: React.FC = () => {
             handleSelectPlan({
                 name: 'Tiêu chuẩn',
                 price: '1000000',
-                formattedPrice: '1.000.000VNĐ'
+                formattedPrice: '1.000.000VNĐ',
+                subscriptionPackageId: 1
             });
         };
 
@@ -116,7 +268,8 @@ const PostJobContent: React.FC = () => {
             handleSelectPlan({
                 name: 'Cao cấp',
                 price: '1350000',
-                formattedPrice: '1.350.000VNĐ'
+                formattedPrice: '1.350.000VNĐ',
+                subscriptionPackageId: 2
             });
         };
 
@@ -125,15 +278,16 @@ const PostJobContent: React.FC = () => {
             handleSelectPlan({
                 name: 'Doanh Nghiệp',
                 price: '3000000',
-                formattedPrice: '3.000.000VNĐ'
+                formattedPrice: '3.000.000VNĐ',
+                subscriptionPackageId: 3
             });
         };
 
         // @ts-expect-error - Adding custom method to Window interface
         window.handlePayment = () => {
             setShowPaymentModal(false);
-            // Show promotion popup before navigating to job creation page
-            setShowPromotionPopup(true);
+            // Navigate directly to job creation page
+            window.location.href = '/employer/create-job';
         };
 
         return () => {
@@ -149,11 +303,19 @@ const PostJobContent: React.FC = () => {
         };
     }, []);
 
-    // Add the navigation function for the promotion popup
-    const handlePromotionComplete = () => {
-        setShowPromotionPopup(false);
-        window.location.href = '/employer/create-job';
-    };
+
+
+    // Show loading state while checking subscription
+    if (isCheckingSubscription) {
+        return (
+            <div className="flex-1 flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#309689] mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang kiểm tra đăng ký của bạn...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1">
@@ -169,17 +331,7 @@ const PostJobContent: React.FC = () => {
                 </div>
             </div>
 
-            {/* FOR TESTING: Direct link to job posting form */}
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-yellow-800 mb-2 font-medium">For Testing Purposes Only</p>
-                <p className="text-yellow-700 mb-3">This direct link bypasses the payment requirement and is only for development testing.</p>
-                <a
-                    href="/employer/create-job"
-                    className="inline-block bg-yellow-500 text-white font-medium px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
-                >
-                    Skip to Job Posting Form →
-                </a>
-            </div>
+
 
             {/* Pricing plans */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pr-4 md:pr-16 mb-20">
@@ -424,12 +576,31 @@ const PostJobContent: React.FC = () => {
                                             </div>
                                             <p className="text-gray-600 mb-4">You will be redirected to PayPal after submitting</p>
                                             <div className="mt-4 w-2/3">
-                                                <button
-                                                    className="bg-[#0070BA] text-white py-3 px-6 rounded-md w-full flex items-center justify-center"
-                                                >
-                                                    <span className="mr-2">Continue with</span>
-                                                    <span className="font-bold">PayPal</span>
-                                                </button>
+                                                <PayPalScriptProvider options={paypalOptions}>
+                                                    <PayPalButtons
+                                                        style={{
+                                                            layout: 'vertical',
+                                                            color: 'gold',
+                                                            shape: 'rect',
+                                                            label: 'paypal',
+                                                            height: 40
+                                                        }}
+                                                        createOrder={(data, actions) => {
+                                                            return actions.order.create({
+                                                                intent: 'CAPTURE',
+                                                                purchase_units: [
+                                                                    {
+                                                                        amount: {
+                                                                            value: convertVNDToUSD(parseInt(selectedPlan.price)),
+                                                                            currency_code: 'USD'
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            });
+                                                        }}
+                                                        onApprove={handlePayPalApprove}
+                                                    />
+                                                </PayPalScriptProvider>
                                             </div>
                                         </div>
                                     )}
@@ -446,7 +617,7 @@ const PostJobContent: React.FC = () => {
                                         </div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-gray-600">Duration:</span>
-                                            <span className="font-medium text-gray-800">1 tháng</span>
+                                            <span className="font-medium text-gray-800">{selectedPlan.subscriptionPackageId === 3 ? '3 months' : '1 month'}</span>
                                         </div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-gray-600">VAT (10%):</span>
@@ -456,7 +627,12 @@ const PostJobContent: React.FC = () => {
 
                                     <div className="flex justify-between items-center text-lg font-semibold mb-6">
                                         <span>Total:</span>
-                                        <span className="text-[#309689]">{selectedPlan.formattedPrice}</span>
+                                        <div className="text-right">
+                                            <span className="text-[#309689] block">{selectedPlan.formattedPrice}</span>
+                                            {paymentMethod === 'paypal' && (
+                                                <span className="text-sm text-gray-500">(${convertVNDToUSD(parseInt(selectedPlan.price))} USD)</span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div dangerouslySetInnerHTML={createPremiumButtonHtml('Thanh Toán', 'window.handlePayment()')} />
@@ -479,11 +655,7 @@ const PostJobContent: React.FC = () => {
                 </div>
             )}
 
-            {/* Promotion Popup */}
-            <JobPromotionPopup
-                isOpen={showPromotionPopup}
-                onClose={handlePromotionComplete}
-            />
+
         </div>
     );
 };
