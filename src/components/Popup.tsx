@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Popup.css';
+import { ResumeService, ResumeModel } from '../services/resumeService';
+import { JobApplicationService, CreateJobApplicationModel } from '../services/jobApplicationService';
 
 // Text Editor Component
 const TextEditor: React.FC<{
@@ -97,10 +99,110 @@ interface PopupProps {
     show: boolean;
     onClose: () => void;
     jobTitle: string;
+    jobPostingId: number;
 }
 
-const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle }) => {
-    const [editorValue, setEditorValue] = React.useState("");
+const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) => {
+    const [editorValue, setEditorValue] = useState("");
+    const [resumes, setResumes] = useState<ResumeModel[]>([]);
+    const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+    const [isLoadingResumes, setIsLoadingResumes] = useState(false);
+
+    // Fetch resumes when popup opens
+    useEffect(() => {
+        if (show) {
+            fetchResumes();
+        }
+    }, [show]);
+
+    const fetchResumes = async () => {
+        try {
+            setIsLoadingResumes(true);
+
+            console.log('🔄 Popup opened - Calling API: GET https://localhost:7085/api/worker/profile');
+
+            // First get worker profile to get workerId
+            const profile = await ResumeService.getWorkerProfile();
+            console.log('✅ Worker Profile API Response:', profile);
+
+            if (profile.workerId) {
+                console.log(`🔄 Calling API: GET https://localhost:7085/api/resume/worker/${profile.workerId}`);
+
+                // Then get resumes using workerId
+                const resumesData = await ResumeService.getResumesByWorker(profile.workerId);
+                console.log('✅ Resumes API Response:', resumesData);
+                console.log(`📊 Found ${resumesData.length} resume(s) for dropdown`);
+
+                setResumes(resumesData);
+
+                // Auto-select first resume if available
+                if (resumesData.length > 0) {
+                    setSelectedResumeId(resumesData[0].id.toString());
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error fetching resumes:', error);
+
+            // Handle 404 or other errors
+            const errorResponse = error as { response?: { status?: number } };
+            if (errorResponse.response?.status === 404) {
+                console.log('⚠️ Worker profile not found (404). No resumes available.');
+            }
+            setResumes([]);
+        } finally {
+            setIsLoadingResumes(false);
+        }
+    };
+
+    const handleApply = async () => {
+        const selectedResume = resumes.find(resume => resume.id.toString() === selectedResumeId);
+
+        if (!selectedResume) {
+            console.log('⚠️ No resume selected for application');
+            alert('Vui lòng chọn một CV để ứng tuyển');
+            return;
+        }
+
+        if (!editorValue.trim()) {
+            console.log('⚠️ No cover note provided');
+            alert('Vui lòng nhập giới thiệu bản thân');
+            return;
+        }
+
+        try {
+            const applicationData: CreateJobApplicationModel = {
+                jobPostingId: jobPostingId,
+                resumeId: selectedResume.id,
+                coverNote: editorValue.trim()
+            };
+
+            console.log('📝 Submitting job application with data:');
+            console.log(JSON.stringify(applicationData, null, 2));
+            console.log('🔄 Calling API: POST https://localhost:7085/api/jobapplication/apply');
+
+            const response = await JobApplicationService.applyForJob(applicationData);
+
+            console.log('✅ Job Application API Response:', response);
+            console.log('🎉 Application submitted successfully!');
+
+            alert('Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.');
+            onClose(); // Close the popup after successful application
+
+        } catch (error) {
+            console.error('❌ Error submitting job application:', error);
+
+            const errorResponse = error as { response?: { status?: number; data?: unknown } };
+            if (errorResponse.response?.status === 400) {
+                console.log('⚠️ Bad request - may have already applied');
+                alert('Có lỗi xảy ra. Bạn có thể đã ứng tuyển công việc này rồi.');
+            } else if (errorResponse.response?.status === 401) {
+                console.log('⚠️ Unauthorized - please login');
+                alert('Vui lòng đăng nhập để ứng tuyển.');
+            } else {
+                alert('Có lỗi xảy ra khi ứng tuyển. Vui lòng thử lại.');
+            }
+        }
+    };
 
     if (!show) return null;
 
@@ -126,8 +228,30 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle }) => {
                     <div className="mb-5">
                         <label className="block text-gray-700 font-medium mb-2 text-left">Chọn CV</label>
                         <div className="relative">
-                            <select className="w-full p-3 pr-8 border border-gray-300 rounded-md bg-white text-gray-500 appearance-none">
-                                <option>Chọn...</option>
+                            <select
+                                className="w-full p-3 pr-8 border border-gray-300 rounded-md bg-white text-gray-700 appearance-none"
+                                value={selectedResumeId}
+                                onChange={(e) => setSelectedResumeId(e.target.value)}
+                                disabled={isLoadingResumes}
+                                style={{
+                                    maxHeight: '120px', // Show about 3 items (40px each)
+                                    overflowY: 'auto'
+                                }}
+                            >
+                                {isLoadingResumes ? (
+                                    <option value="">Đang tải CV...</option>
+                                ) : resumes.length === 0 ? (
+                                    <option value="">Không có CV nào</option>
+                                ) : (
+                                    <>
+                                        <option value="">Chọn CV...</option>
+                                        {resumes.map((resume) => (
+                                            <option key={resume.id} value={resume.id.toString()}>
+                                                {resume.title}
+                                            </option>
+                                        ))}
+                                    </>
+                                )}
                             </select>
                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,6 +259,9 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle }) => {
                                 </svg>
                             </div>
                         </div>
+                        {resumes.length > 3 && (
+                            <p className="text-xs text-gray-500 mt-1">Có {resumes.length} CV - cuộn để xem thêm</p>
+                        )}
                     </div>
 
                     <div className="mb-5">
@@ -153,7 +280,7 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle }) => {
                         >
                             Hủy Bỏ
                         </button>
-                        <button className="apply-button">
+                        <button className="apply-button" onClick={handleApply}>
                             Ứng Tuyển Ngay!
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"

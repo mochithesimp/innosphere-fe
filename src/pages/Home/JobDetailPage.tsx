@@ -630,6 +630,7 @@ const JobDetailPage: React.FC = () => {
                 show={showModal}
                 onClose={closeModal}
                 jobTitle={jobData.title}
+                jobPostingId={jobData.id}
             />
 
             <Footer />
