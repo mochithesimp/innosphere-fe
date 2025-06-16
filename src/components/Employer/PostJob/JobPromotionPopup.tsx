@@ -5,9 +5,18 @@ import { IoMdClose } from 'react-icons/io';
 interface JobPromotionPopupProps {
     isOpen: boolean;
     onClose: () => void;
+    jobTitle?: string;
+    onJobPost?: (isUrgent: boolean, isHighlighted: boolean) => Promise<void>;
+    isSubmitting?: boolean;
 }
 
-const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }) => {
+const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({
+    isOpen,
+    onClose,
+    jobTitle = 'Nhà thiết kế UI/UX',
+    onJobPost,
+    isSubmitting = false
+}) => {
     const [promotionType, setPromotionType] = useState<'top' | 'highlight'>('top');
 
     // Add button styles using CSS
@@ -30,6 +39,11 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
             
             .post-job-btn:hover {
                 background-color: #257b6f !important;
+            }
+
+            .post-job-btn:disabled {
+                background-color: #9CA3AF !important;
+                cursor: not-allowed !important;
             }
             
             .skip-now-btn {
@@ -54,6 +68,14 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
         };
     }, []);
 
+    const handlePostJob = async () => {
+        if (onJobPost) {
+            const isUrgent = promotionType === 'top';
+            const isHighlighted = promotionType === 'highlight';
+            await onJobPost(isUrgent, isHighlighted);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -62,6 +84,7 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                    disabled={isSubmitting}
                 >
                     <IoMdClose size={24} />
                 </button>
@@ -86,13 +109,13 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
                     <hr className="my-6" />
 
                     <div className="mb-4 text-left">
-                        <h3 className="text-lg font-medium mb-4">Quảng bá công việc: Nhà thiết kế UI/UX</h3>
+                        <h3 className="text-lg font-medium mb-4">Quảng bá công việc: {jobTitle}</h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* First option - Top position */}
                             <div
-                                className={`border ${promotionType === 'top' ? 'border-teal-600 border-2' : 'border-gray-300'} rounded-md p-4 relative cursor-pointer transition-all`}
-                                onClick={() => setPromotionType('top')}
+                                className={`border ${promotionType === 'top' ? 'border-teal-600 border-2' : 'border-gray-300'} rounded-md p-4 relative cursor-pointer transition-all ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
+                                onClick={() => !isSubmitting && setPromotionType('top')}
                             >
                                 <div className="bg-white">
                                     <h4 className="text-sm font-medium mb-4 uppercase text-left">ALWAYS ON THE TOP</h4>
@@ -147,8 +170,8 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
 
                             {/* Second option - Highlight with color */}
                             <div
-                                className={`border ${promotionType === 'highlight' ? 'border-teal-600 border-2' : 'border-gray-300'} rounded-md p-4 relative cursor-pointer transition-all`}
-                                onClick={() => setPromotionType('highlight')}
+                                className={`border ${promotionType === 'highlight' ? 'border-teal-600 border-2' : 'border-gray-300'} rounded-md p-4 relative cursor-pointer transition-all ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
+                                onClick={() => !isSubmitting && setPromotionType('highlight')}
                             >
                                 <div className="bg-white">
                                     <h4 className="text-sm font-medium mb-4 uppercase text-left">HIGHLIGHT JOB WITH COLOR</h4>
@@ -203,18 +226,33 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({ isOpen, onClose }
                         </div>
                     </div>
 
-                    <div className="flex justify-between mt-8">
+                    <div className="mt-6 flex justify-between items-center">
                         <button
                             className="skip-now-btn"
                             onClick={onClose}
+                            disabled={isSubmitting}
                         >
-                            Skip Now
+                            Bỏ qua ngay bây giờ
                         </button>
                         <button
                             className="post-job-btn"
-                            onClick={onClose}
+                            onClick={handlePostJob}
+                            disabled={isSubmitting}
                         >
-                            Đăng Việc <FiArrowRight className="ml-2" />
+                            {isSubmitting ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Đang đăng...
+                                </>
+                            ) : (
+                                <>
+                                    Đăng việc
+                                    <FiArrowRight className="ml-2" />
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>

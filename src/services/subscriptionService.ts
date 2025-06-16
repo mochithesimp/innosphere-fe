@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://localhost:7085/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7085';
 
-export interface CreateSubscriptionModel {
-    employerId: number | string; // Allow both number and string to handle GUID/int mismatch
+export interface SubscriptionData {
+    employerId: number;
     subscriptionPackageId: number;
     startDate: string;
     endDate: string;
@@ -12,16 +12,30 @@ export interface CreateSubscriptionModel {
     transactionId: string;
 }
 
-export interface SubscriptionResponse {
+export interface EmployerProfile {
+    employerId: number;
+    userId: string;
+    companyName: string;
+    description: string;
+    website: string;
+    industry: string;
+    companySize: string;
+    location: string;
+    contactEmail: string;
+    contactPhone: string;
+    isVerified: boolean;
+}
+
+export interface Subscription {
     id: number;
     employerId: number;
     subscriptionPackageId: number;
     startDate: string;
     endDate: string;
+    isActive: boolean;
     amountPaid: number;
     paymentStatus: string;
     transactionId: string;
-    isActive: boolean;
 }
 
 export class SubscriptionService {
@@ -35,23 +49,23 @@ export class SubscriptionService {
         };
     }
 
-    static async getEmployerProfile(): Promise<any> {
-        const response = await axios.get(`${API_BASE_URL}/employer/profile`, this.getAuthHeaders());
+    static async getEmployerProfile(): Promise<EmployerProfile | null> {
+        const response = await axios.get(`${API_BASE_URL}/api/employer/profile`, this.getAuthHeaders());
         return response.data;
     }
 
-    static async purchaseSubscription(subscriptionData: CreateSubscriptionModel): Promise<SubscriptionResponse> {
-        const response = await axios.post(`${API_BASE_URL}/subscription/purchase`, subscriptionData, this.getAuthHeaders());
+    static async purchaseSubscription(subscriptionData: SubscriptionData): Promise<Subscription> {
+        const response = await axios.post(`${API_BASE_URL}/api/subscription/purchase`, subscriptionData, this.getAuthHeaders());
         return response.data;
     }
 
-    static async getSubscriptionsByEmployer(employerId: number): Promise<SubscriptionResponse[]> {
-        const response = await axios.get(`${API_BASE_URL}/subscription/employer/${employerId}`, this.getAuthHeaders());
+    static async getSubscriptionsByEmployer(employerId: number): Promise<Subscription[]> {
+        const response = await axios.get(`${API_BASE_URL}/api/subscription/employer/${employerId}`, this.getAuthHeaders());
         return response.data;
     }
 
-    static async canPost(employerId: number): Promise<boolean> {
-        const response = await axios.get(`${API_BASE_URL}/subscription/employer/${employerId}/canpost`, this.getAuthHeaders());
+    static async canEmployerPost(employerId: number): Promise<boolean> {
+        const response = await axios.get(`${API_BASE_URL}/api/subscription/employer/${employerId}/canpost`, this.getAuthHeaders());
         return response.data;
     }
 } 

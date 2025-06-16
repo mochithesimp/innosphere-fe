@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://localhost:7085/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7085';
 
 export interface CreateSocialLinkModel {
     userId: string;
@@ -51,17 +51,17 @@ export class EmployerService {
     }
 
     static async getProfile(): Promise<EmployerProfileResponse> {
-        const response = await axios.get(`${API_BASE_URL}/employer/profile`, this.getAuthHeaders());
+        const response = await axios.get(`${API_BASE_URL}/api/employer/profile`, this.getAuthHeaders());
         return response.data;
     }
 
     static async createProfile(profileData: EmployerEditModel): Promise<EmployerProfileResponse> {
-        const response = await axios.post(`${API_BASE_URL}/employer/profile`, profileData, this.getAuthHeaders());
+        const response = await axios.post(`${API_BASE_URL}/api/employer/profile`, profileData, this.getAuthHeaders());
         return response.data;
     }
 
     static async updateProfile(profileData: EmployerEditModel): Promise<EmployerProfileResponse> {
-        const response = await axios.put(`${API_BASE_URL}/employer/profile`, profileData, this.getAuthHeaders());
+        const response = await axios.put(`${API_BASE_URL}/api/employer/profile`, profileData, this.getAuthHeaders());
         return response.data;
     }
 } 

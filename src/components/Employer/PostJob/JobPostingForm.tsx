@@ -1,15 +1,150 @@
 import React, { useState } from 'react';
+import { getUserIdFromToken } from '../../../utils/auth';
+import { SubscriptionService } from '../../../services/subscriptionService';
+import { JobPostingService } from '../../../services/jobPostingService';
 import JobPromotionPopup from './JobPromotionPopup';
 
 const JobPostingForm: React.FC = () => {
-    const [salaryRangeFrom, setSalaryRangeFrom] = useState('');
+    // Form state
+    const [title, setTitle] = useState('');
+    const [jobType, setJobType] = useState('');
     const [salaryRangeTo, setSalaryRangeTo] = useState('');
+    const [salaryType, setSalaryType] = useState('');
+    const [education, setEducation] = useState('');
+    const [experience, setExperience] = useState('');
+    const [workType, setWorkType] = useState('');
+    const [location, setLocation] = useState('');
+    const [expirationDate, setExpirationDate] = useState('');
+    const [description, setDescription] = useState('');
+    const [responsibilities, setResponsibilities] = useState('');
     const [applicationType, setApplicationType] = useState<'internal' | 'external' | 'email'>('internal');
-    const [showPromotionPopup, setShowPromotionPopup] = useState(false);
 
+    // Popup state
+    const [showPromotionPopup, setShowPromotionPopup] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // City mapping
+    const getCityData = (locationValue: string) => {
+        switch (locationValue) {
+            case 'ho-chi-minh':
+                return { cityId: 1, location: 'Hồ Chí Minh' };
+            case 'da-nang':
+                return { cityId: 2, location: 'Đà Nẵng' };
+            case 'ha-noi':
+                return { cityId: 3, location: 'Hà Nội' };
+            default:
+                return { cityId: 1, location: 'Hồ Chí Minh' };
+        }
+    };
+
+    // Handle form submission
     const handleSubmit = (e: React.MouseEvent) => {
         e.preventDefault();
+
+        // Basic validation
+        if (!title.trim()) {
+            alert('Vui lòng nhập tiêu đề công việc');
+            return;
+        }
+        if (!jobType) {
+            alert('Vui lòng chọn vai trò công việc');
+            return;
+        }
+        if (!salaryRangeTo.trim()) {
+            alert('Vui lòng nhập mức lương tối đa');
+            return;
+        }
+        if (!expirationDate) {
+            alert('Vui lòng chọn ngày hết hạn');
+            return;
+        }
+
         setShowPromotionPopup(true);
+    };
+
+    // Handle job posting API call
+    const handleJobPosting = async (isUrgent: boolean, isHighlighted: boolean) => {
+        setIsSubmitting(true);
+
+        try {
+            // Get user authentication
+            const userId = getUserIdFromToken();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            // Get employer profile to get employerId
+            const employerProfile = await SubscriptionService.getEmployerProfile();
+            if (!employerProfile || !employerProfile.employerId) {
+                throw new Error('Could not get employer profile');
+            }
+
+            // Get user's subscription
+            const subscriptions = await SubscriptionService.getSubscriptionsByEmployer(employerProfile.employerId);
+            if (!subscriptions || subscriptions.length === 0) {
+                throw new Error('No active subscription found');
+            }
+
+            // Use the first active subscription
+            const activeSubscription = subscriptions[0];
+
+            // Prepare data
+            const cityData = getCityData(location);
+            const currentDate = new Date();
+            const expDate = new Date(expirationDate);
+
+            // Combine requirements
+            const requirements = [
+                education ? `Học vấn: ${education}` : '',
+                experience ? `Kinh nghiệm: ${experience}` : '',
+                workType ? `Loại công việc: ${workType}` : ''
+            ].filter(Boolean).join(' - ');
+
+            // Combine description and responsibilities
+            const combinedDescription = [
+                description ? `Mô tả: ${description}` : '',
+                responsibilities ? `Trách nhiệm: ${responsibilities}` : ''
+            ].filter(Boolean).join(' - ');
+
+            // Prepare API payload
+            const jobData = {
+                employerId: employerProfile.employerId,
+                subscriptionId: activeSubscription.id,
+                cityId: cityData.cityId,
+                title: title.trim(),
+                description: combinedDescription,
+                location: cityData.location,
+                startTime: currentDate.toISOString(),
+                endTime: expDate.toISOString(),
+                hourlyRate: parseFloat(salaryRangeTo) || 0,
+                jobType: jobType,
+                requirements: requirements,
+                expiresAt: expDate.toISOString(),
+                isUrgent: isUrgent,
+                isHighlighted: isHighlighted,
+                tagIds: [0] // Include at least one element as per your example
+            };
+
+            // Log the API payload in JSON format
+            console.log('🚀 API Payload being sent to /api/jobposting:');
+            console.log(JSON.stringify(jobData, null, 2));
+
+            // Call the API
+            const response = await JobPostingService.createJobPosting(jobData);
+
+            if (response) {
+                // Success - redirect to dashboard or show success message
+                alert('Công việc đã được đăng thành công!');
+                window.location.href = '/employer/dashboard';
+            }
+
+        } catch (error) {
+            console.error('Error posting job:', error);
+            alert('Có lỗi xảy ra khi đăng công việc. Vui lòng thử lại.');
+        } finally {
+            setIsSubmitting(false);
+            setShowPromotionPopup(false);
+        }
     };
 
     return (
@@ -51,6 +186,8 @@ const JobPostingForm: React.FC = () => {
                             type="text"
                             placeholder="Thêm danh hiệu công việc, vai trò, vị trí tuyển dụng, v.v..."
                             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689]"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                         />
                     </div>
 
@@ -70,11 +207,13 @@ const JobPostingForm: React.FC = () => {
                                 <div className="relative">
                                     <select
                                         className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                        value={jobType}
+                                        onChange={(e) => setJobType(e.target.value)}
                                     >
                                         <option value="">Chọn...</option>
-                                        <option value="full-time">Full-time</option>
-                                        <option value="part-time">Part-time</option>
-                                        <option value="contract">Contract</option>
+                                        <option value="FullTime">Full-time</option>
+                                        <option value="PartTime">Part-time</option>
+                                        <option value="Contract">Contract</option>
                                     </select>
                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -96,9 +235,8 @@ const JobPostingForm: React.FC = () => {
                                     <input
                                         type="text"
                                         placeholder="Lương tối thiểu..."
-                                        className="w-full p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689]"
-                                        value={salaryRangeFrom}
-                                        onChange={(e) => setSalaryRangeFrom(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] opacity-50"
+                                        disabled
                                     />
                                     <div className="bg-gray-100 flex items-center justify-center px-4 border-t border-r border-b border-gray-300 rounded-r-md">
                                         <span className="text-gray-600">VNĐ</span>
@@ -110,7 +248,7 @@ const JobPostingForm: React.FC = () => {
                                 <h3 className="text-sm text-gray-600 mb-2 text-left font-medium">Mức lương tối đa</h3>
                                 <div className="flex">
                                     <input
-                                        type="text"
+                                        type="number"
                                         placeholder="Lương tối đa..."
                                         className="w-full p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689]"
                                         value={salaryRangeTo}
@@ -127,6 +265,8 @@ const JobPostingForm: React.FC = () => {
                                 <div className="relative">
                                     <select
                                         className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                        value={salaryType}
+                                        onChange={(e) => setSalaryType(e.target.value)}
                                     >
                                         <option value="">Chọn...</option>
                                         <option value="monthly">Hàng tháng</option>
@@ -150,11 +290,13 @@ const JobPostingForm: React.FC = () => {
                             <div className="relative">
                                 <select
                                     className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                    value={jobType}
+                                    onChange={(e) => setJobType(e.target.value)}
                                 >
                                     <option value="">Chọn...</option>
-                                    <option value="full-time">Full-time</option>
-                                    <option value="part-time">Part-time</option>
-                                    <option value="contract">Contract</option>
+                                    <option value="FullTime">Full-time</option>
+                                    <option value="PartTime">Part-time</option>
+                                    <option value="Contract">Contract</option>
                                 </select>
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                     <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,6 +311,8 @@ const JobPostingForm: React.FC = () => {
                             <div className="relative">
                                 <select
                                     className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                    value={salaryType}
+                                    onChange={(e) => setSalaryType(e.target.value)}
                                 >
                                     <option value="">Chọn...</option>
                                     <option value="monthly">Hàng tháng</option>
@@ -195,13 +339,15 @@ const JobPostingForm: React.FC = () => {
                                 <div className="relative">
                                     <select
                                         className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                        value={education}
+                                        onChange={(e) => setEducation(e.target.value)}
                                     >
                                         <option value="">Chọn...</option>
-                                        <option value="high-school">THPT</option>
-                                        <option value="associate">Cao đẳng</option>
-                                        <option value="bachelor">Đại học</option>
-                                        <option value="master">Thạc sĩ</option>
-                                        <option value="phd">Tiến sĩ</option>
+                                        <option value="THPT">THPT</option>
+                                        <option value="Cao đẳng">Cao đẳng</option>
+                                        <option value="Đại học">Đại học</option>
+                                        <option value="Thạc sĩ">Thạc sĩ</option>
+                                        <option value="Tiến sĩ">Tiến sĩ</option>
                                     </select>
                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -216,12 +362,15 @@ const JobPostingForm: React.FC = () => {
                                 <div className="relative">
                                     <select
                                         className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                        value={experience}
+                                        onChange={(e) => setExperience(e.target.value)}
                                     >
                                         <option value="">Chọn...</option>
-                                        <option value="entry">Mới đi làm</option>
-                                        <option value="1-2">1-2 năm</option>
-                                        <option value="3-5">3-5 năm</option>
-                                        <option value="5-plus">Trên 5 năm</option>
+                                        <option value="Mới đi làm">Mới đi làm</option>
+                                        <option value="1 năm">1 năm</option>
+                                        <option value="2 năm">2 năm</option>
+                                        <option value="3-5 năm">3-5 năm</option>
+                                        <option value="Trên 5 năm">Trên 5 năm</option>
                                     </select>
                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,12 +385,14 @@ const JobPostingForm: React.FC = () => {
                                 <div className="relative">
                                     <select
                                         className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                        value={workType}
+                                        onChange={(e) => setWorkType(e.target.value)}
                                     >
                                         <option value="">Chọn...</option>
-                                        <option value="full-time">Toàn thời gian</option>
-                                        <option value="part-time">Bán thời gian</option>
-                                        <option value="contract">Hợp đồng</option>
-                                        <option value="remote">Từ xa</option>
+                                        <option value="Hợp đồng">Hợp đồng</option>
+                                        <option value="Toàn thời gian">Toàn thời gian</option>
+                                        <option value="Bán thời gian">Bán thời gian</option>
+                                        <option value="Từ xa">Từ xa</option>
                                     </select>
                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,19 +403,20 @@ const JobPostingForm: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Second row - Vị trí, Ngày hết hạn, Trình độ công việc */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Second row - Vị trí, Ngày hết hạn */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <h3 className="text-sm text-gray-600 mb-2 text-left font-medium">Vị trí</h3>
                                 <div className="relative">
                                     <select
                                         className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
                                     >
                                         <option value="">Chọn...</option>
                                         <option value="ho-chi-minh">Hồ Chí Minh</option>
                                         <option value="ha-noi">Hà Nội</option>
                                         <option value="da-nang">Đà Nẵng</option>
-                                        <option value="remote">Remote</option>
                                     </select>
                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -278,29 +430,10 @@ const JobPostingForm: React.FC = () => {
                                 <h3 className="text-sm text-gray-600 mb-2 text-left font-medium">Ngày hết hạn</h3>
                                 <input
                                     type="date"
-                                    placeholder="DD/MM/YYYY"
                                     className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689]"
+                                    value={expirationDate}
+                                    onChange={(e) => setExpirationDate(e.target.value)}
                                 />
-                            </div>
-
-                            <div>
-                                <h3 className="text-sm text-gray-600 mb-2 text-left font-medium">Trình độ công việc</h3>
-                                <div className="relative">
-                                    <select
-                                        className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] appearance-none"
-                                    >
-                                        <option value="">Chọn...</option>
-                                        <option value="entry">Entry Level</option>
-                                        <option value="mid">Mid Level</option>
-                                        <option value="senior">Senior Level</option>
-                                        <option value="director">Director</option>
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -324,17 +457,9 @@ const JobPostingForm: React.FC = () => {
                                                 <div className="w-2 h-2 bg-white rounded-full"></div>
                                             )}
                                         </div>
-                                        <input
-                                            id="internal"
-                                            name="application-method"
-                                            type="radio"
-                                            checked={applicationType === 'internal'}
-                                            onChange={() => setApplicationType('internal')}
-                                            className="sr-only" // Hide but keep for accessibility
-                                        />
                                     </div>
                                     <div className="text-left">
-                                        <label htmlFor="internal" className="font-medium text-gray-800 block text-left">Nền tảng</label>
+                                        <label className="font-medium text-gray-800 block text-left">Nền tảng</label>
                                         <p className="text-gray-500 text-sm mt-1 text-left">
                                             Ứng viên sẽ nộp đơn xin việc bằng Nền tảng và tất cả các ứng dụng sẽ hiển thị trên bảng điều khiển của bạn.
                                         </p>
@@ -357,17 +482,9 @@ const JobPostingForm: React.FC = () => {
                                                 <div className="w-2 h-2 bg-white rounded-full"></div>
                                             )}
                                         </div>
-                                        <input
-                                            id="external"
-                                            name="application-method"
-                                            type="radio"
-                                            checked={applicationType === 'external'}
-                                            onChange={() => setApplicationType('external')}
-                                            className="sr-only" // Hide but keep for accessibility
-                                        />
                                     </div>
                                     <div className="text-left">
-                                        <label htmlFor="external" className="font-medium text-gray-800 block text-left">Nền tảng bên ngoài</label>
+                                        <label className="font-medium text-gray-800 block text-left">Nền tảng bên ngoài</label>
                                         <p className="text-gray-500 text-sm mt-1 text-left">
                                             Ứng viên nộp đơn xin việc trên trang web của bạn, tất cả các ứng dụng sẽ hiển thị trên trang web của riêng bạn.
                                         </p>
@@ -390,17 +507,9 @@ const JobPostingForm: React.FC = () => {
                                                 <div className="w-2 h-2 bg-white rounded-full"></div>
                                             )}
                                         </div>
-                                        <input
-                                            id="email"
-                                            name="application-method"
-                                            type="radio"
-                                            checked={applicationType === 'email'}
-                                            onChange={() => setApplicationType('email')}
-                                            className="sr-only" // Hide but keep for accessibility
-                                        />
                                     </div>
                                     <div className="text-left">
-                                        <label htmlFor="email" className="font-medium text-gray-800 block text-left">Trên email của bạn</label>
+                                        <label className="font-medium text-gray-800 block text-left">Trên email của bạn</label>
                                         <p className="text-gray-500 text-sm mt-1 text-left">
                                             Ứng viên nộp đơn xin việc tới địa chỉ email của bạn và tất cả các ứng dụng sẽ hiển thị trong email của bạn.
                                         </p>
@@ -415,84 +524,22 @@ const JobPostingForm: React.FC = () => {
                         <h2 className="text-base font-medium mb-2 text-left">Mô tả & Trách nhiệm</h2>
                         <div className="mb-4">
                             <h3 className="text-sm text-gray-600 mb-2 text-left font-medium">Mô tả</h3>
-                            <div className="border border-gray-300 rounded-md overflow-hidden">
-                                <textarea
-                                    placeholder="Thêm mô tả công việc của bạn..."
-                                    className="w-full p-3 border-none focus:outline-none focus:ring-0 min-h-[120px] resize-none"
-                                ></textarea>
-                                <div className="flex items-center border-t border-gray-300 p-2 bg-white">
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Bold">
-                                        <span className="font-bold">B</span>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Italic">
-                                        <span className="italic">I</span>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Underline">
-                                        <span className="underline">U</span>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Strikethrough">
-                                        <span className="line-through">S</span>
-                                    </button>
-                                    <div className="h-5 w-px bg-gray-300 mx-2"></div>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Link">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                                        </svg>
-                                    </button>
-                                    <div className="h-5 w-px bg-gray-300 mx-2"></div>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Bullet List">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path>
-                                        </svg>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Numbered List">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                            <textarea
+                                placeholder="Thêm mô tả công việc của bạn..."
+                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] min-h-[120px] resize-vertical"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            />
                         </div>
 
                         <div>
                             <h3 className="text-sm text-gray-600 mb-2 text-left font-medium">Trách nhiệm</h3>
-                            <div className="border border-gray-300 rounded-md overflow-hidden">
-                                <textarea
-                                    placeholder="Thêm trách nhiệm công việc của bạn..."
-                                    className="w-full p-3 border-none focus:outline-none focus:ring-0 min-h-[120px] resize-none"
-                                ></textarea>
-                                <div className="flex items-center border-t border-gray-300 p-2 bg-white">
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Bold">
-                                        <span className="font-bold">B</span>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Italic">
-                                        <span className="italic">I</span>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Underline">
-                                        <span className="underline">U</span>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Strikethrough">
-                                        <span className="line-through">S</span>
-                                    </button>
-                                    <div className="h-5 w-px bg-gray-300 mx-2"></div>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Link">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                                        </svg>
-                                    </button>
-                                    <div className="h-5 w-px bg-gray-300 mx-2"></div>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Bullet List">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path>
-                                        </svg>
-                                    </button>
-                                    <button className="p-2 hover:bg-gray-100 rounded-md" title="Numbered List">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                            <textarea
+                                placeholder="Thêm trách nhiệm công việc của bạn..."
+                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689] min-h-[120px] resize-vertical"
+                                value={responsibilities}
+                                onChange={(e) => setResponsibilities(e.target.value)}
+                            />
                         </div>
                     </div>
 
@@ -534,10 +581,13 @@ const JobPostingForm: React.FC = () => {
                 </div>
             </div>
 
-            {/* Promotion Popup */}
+            {/* Promotion Popup with job title */}
             <JobPromotionPopup
                 isOpen={showPromotionPopup}
                 onClose={() => setShowPromotionPopup(false)}
+                jobTitle={title || 'Nhà thiết kế UI/UX'}
+                onJobPost={handleJobPosting}
+                isSubmitting={isSubmitting}
             />
         </>
     );
