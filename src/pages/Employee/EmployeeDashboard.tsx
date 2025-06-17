@@ -6,6 +6,7 @@ import { FiBell } from "react-icons/fi";
 
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
+import JobDetailModal from '../../components/Employee/JobDetailModal';
 import { WorkerService } from '../../services';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../services/jobApplicationService';
 
@@ -32,6 +33,7 @@ interface JobItem {
     companyInitial: string;
     companyColor: string;
     isFromAPI: boolean;
+    jobPostingId?: number; // Add this to store the job posting ID for modal
 }
 
 const EmployeeDashboard: React.FC = () => {
@@ -41,6 +43,31 @@ const EmployeeDashboard: React.FC = () => {
     // State for job applications data
     const [apiJobApplications, setApiJobApplications] = useState<JobItem[]>([]);
     const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+
+    // Modal state management
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [apiData, setApiData] = useState<WorkerJobApplicationsResponse | null>(null);
+    const [selectedJobApplication, setSelectedJobApplication] = useState<WorkerJobApplicationsResponse['applications'][0] | null>(null);
+
+    // Function to open job detail modal
+    const openJobDetailModal = (jobPostingId: number) => {
+        console.log('🔍 Opening job detail modal for job posting ID:', jobPostingId);
+
+        // Find the job application by jobPostingId
+        if (apiData) {
+            const jobApp = apiData.applications.find(app => app.jobPosting.id === jobPostingId);
+            if (jobApp) {
+                setSelectedJobApplication(jobApp);
+                setIsModalOpen(true);
+            }
+        }
+    };
+
+    // Function to close modal
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setSelectedJobApplication(null);
+    };
 
     // Static job data (keeping original static data)
     const staticJobData: JobItem[] = [
@@ -162,7 +189,7 @@ const EmployeeDashboard: React.FC = () => {
             };
         } else if (applicationStatus === 'REJECTED') {
             return {
-                text: 'Từ chối',
+                text: 'Đã từ chối',
                 style: 'bg-red-100 text-red-600 border border-red-200',
                 color: '#dc2626'
             };
@@ -234,7 +261,8 @@ const EmployeeDashboard: React.FC = () => {
                 action,
                 companyInitial: companyInfo.initial,
                 companyColor: companyInfo.color,
-                isFromAPI: true
+                isFromAPI: true,
+                jobPostingId: app.jobPosting.id
             };
         });
     };
@@ -264,23 +292,25 @@ const EmployeeDashboard: React.FC = () => {
         checkWorkerProfile();
     }, []);
 
+    // Function to fetch job applications (extracted for reuse)
+    const fetchJobApplications = async () => {
+        try {
+            setIsLoadingJobs(true);
+
+            const apiData = await JobApplicationService.getWorkerApplications();
+            setApiData(apiData); // Store the API data for modal use
+            const convertedAPIData = convertAPIDataToJobItems(apiData);
+            setApiJobApplications(convertedAPIData);
+        } catch (err) {
+            console.error('Error fetching job applications:', err);
+            setApiJobApplications([]); // Set empty array on error
+        } finally {
+            setIsLoadingJobs(false);
+        }
+    };
+
     // Fetch API data for jobs
     useEffect(() => {
-        const fetchJobApplications = async () => {
-            try {
-                setIsLoadingJobs(true);
-
-                const apiData = await JobApplicationService.getWorkerApplications();
-                const convertedAPIData = convertAPIDataToJobItems(apiData);
-                setApiJobApplications(convertedAPIData);
-            } catch (err) {
-                console.error('Error fetching job applications:', err);
-                setApiJobApplications([]); // Set empty array on error
-            } finally {
-                setIsLoadingJobs(false);
-            }
-        };
-
         fetchJobApplications();
     }, []);
 
@@ -395,7 +425,7 @@ const EmployeeDashboard: React.FC = () => {
                             {/* Style for buttons - separate from tailwind */}
                             <style dangerouslySetInnerHTML={{
                                 __html: `
-                                    .detail-button {
+                                    button.detail-button {
                                         background-color: #EBF5F4 !important;
                                         color: #309689 !important;
                                         padding: 6px 16px !important;
@@ -405,9 +435,16 @@ const EmployeeDashboard: React.FC = () => {
                                         font-weight: 500 !important;
                                         cursor: pointer !important;
                                         display: inline-block !important;
+                                        text-decoration: none !important;
                                     }
-                                    .detail-button:hover {
+                                    button.detail-button:hover {
                                         background-color: #dfeeed !important;
+                                        color: #309689 !important;
+                                    }
+                                    button.detail-button:focus {
+                                        background-color: #EBF5F4 !important;
+                                        color: #309689 !important;
+                                        outline: none !important;
                                     }
                                 `
                             }} />
@@ -467,9 +504,12 @@ const EmployeeDashboard: React.FC = () => {
                                                         {job.action.text}
                                                     </button>
                                                 ) : (
-                                                    <a href="#" className="detail-button">
+                                                    <button
+                                                        className="detail-button"
+                                                        onClick={() => job.jobPostingId && openJobDetailModal(job.jobPostingId)}
+                                                    >
                                                         {job.action.text}
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -480,6 +520,14 @@ const EmployeeDashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Job Detail Modal */}
+            <JobDetailModal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                jobApplication={selectedJobApplication}
+                onStatusUpdate={fetchJobApplications}
+            />
 
             {/* Footer with top border that spans full width */}
             <footer className="bg-white p-4 text-center text-gray-500 text-sm border-t border-gray-300 w-full">

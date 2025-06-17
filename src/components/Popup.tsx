@@ -188,6 +188,11 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) 
             alert('Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.');
             onClose(); // Close the popup after successful application
 
+            // Navigate to employee dashboard after successful application
+            setTimeout(() => {
+                window.location.href = '/employee/dashboard';
+            }, 500); // Small delay to ensure popup closes smoothly
+
         } catch (error) {
             console.error('❌ Error submitting job application:', error);
 

@@ -138,14 +138,27 @@ const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
                             </div>
                         </div>
 
-                        <button
+                        <div
+                            style={{
+                                height: '36px',
+                                borderRadius: '6px',
+                                overflow: 'hidden',
+                                display: 'inline-block',
+                                cursor: 'pointer'
+                            }}
                             onClick={() => {
                                 window.location.href = `/job-detail?id=${job.id}`;
                             }}
-                            className="inline-block bg-[#309689] hover:bg-[#277a6e] text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors"
                         >
-                            Chi Tiết
-                        </button>
+                            <img
+                                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSIzNiI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgcng9IjYiIGZpbGw9IiMzMDk2ODkiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9IjUwMCI+Q2hpIFRp4bq/dDwvdGV4dD48L3N2Zz4="
+                                alt="Chi Tiết"
+                                style={{
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

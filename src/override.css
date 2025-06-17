@@ -19,7 +19,12 @@ html, body, #root {
     color: black !important;
   }
   
-  input, button, select, textarea {
+  input, select, textarea {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  button:not(.chi-tiet-button):not(.rating-button-fixed):not(.apply-button):not(.cancel-button):not(.detail-button):not(.view-profile-btn):not([style*="background-color"]) {
     background-color: white !important;
     color: black !important;
   }
@@ -28,4 +33,44 @@ html, body, #root {
 .dark-override {
   background-color: white !important;
   color: black !important;
+}
+
+/* Specific styling for Chi Tiết buttons */
+.chi-tiet-button {
+  background-color: #37A594 !important;
+  color: white !important;
+}
+
+.chi-tiet-button:hover {
+  background-color: #277a6e !important;
+  color: white !important;
+}
+
+/* Specific styling for detail buttons in employee dashboard */
+.detail-button {
+  background-color: #EBF5F4 !important;
+  color: #309689 !important;
+  border: 1px solid #d0e6e3 !important;
+}
+
+.detail-button:hover {
+  background-color: #dfeeed !important;
+  color: #309689 !important;
+}
+
+/* Specific styling for view profile buttons in employer dashboard */
+.view-profile-btn {
+  background-color: #EBF5F4 !important;
+  color: #309689 !important;
+  padding: 4px 12px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+}
+
+.view-profile-btn:hover {
+  background-color: #309689 !important;
+  color: white !important;
 } 

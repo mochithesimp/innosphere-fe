@@ -21,7 +21,7 @@ const MyJobsContent: React.FC = () => {
         // Add style to head
         const style = document.createElement('style');
         style.textContent = `
-            .view-profile-btn {
+            button.view-profile-btn {
                 background-color: #EBF5F4 !important;
                 color: #309689 !important;
                 padding: 4px 12px !important;
@@ -31,11 +31,19 @@ const MyJobsContent: React.FC = () => {
                 border: none !important;
                 font-weight: 500 !important;
                 font-size: 14px !important;
+                text-decoration: none !important;
+                outline: none !important;
             }
             
-            .view-profile-btn:hover {
+            button.view-profile-btn:hover {
                 background-color: #309689 !important;
                 color: white !important;
+            }
+
+            button.view-profile-btn:focus {
+                background-color: #EBF5F4 !important;
+                color: #309689 !important;
+                outline: none !important;
             }
 
             .dropdown-menu {

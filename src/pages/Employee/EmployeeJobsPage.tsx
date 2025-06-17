@@ -5,6 +5,7 @@ import { IoLocationOutline } from "react-icons/io5";
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
 import RatingModal from '../../components/Employee/RatingModal';
+import JobDetailModal from '../../components/Employee/JobDetailModal';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../services/jobApplicationService';
 
 // Job item interface for unified data structure
@@ -77,10 +78,15 @@ const EmployeeJobsPage: React.FC = () => {
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
     const [selectedJob, setSelectedJob] = useState({ title: '', employer: '' });
 
+    // State for job detail modal
+    const [isJobDetailModalOpen, setIsJobDetailModalOpen] = useState(false);
+    const [selectedJobApplication, setSelectedJobApplication] = useState<WorkerJobApplicationsResponse['applications'][0] | null>(null);
+
     // State for job applications data
     const [apiJobApplications, setApiJobApplications] = useState<JobItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [fullApiData, setFullApiData] = useState<WorkerJobApplicationsResponse | null>(null);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -249,7 +255,7 @@ const EmployeeJobsPage: React.FC = () => {
             };
         } else if (applicationStatus === 'REJECTED') {
             return {
-                text: 'Từ chối',
+                text: 'Đã từ chối',
                 style: 'bg-red-100 text-red-600',
                 color: '#dc2626'
             };
@@ -326,25 +332,28 @@ const EmployeeJobsPage: React.FC = () => {
         });
     };
 
+    // Function to fetch job applications (extracted for reuse)
+    const fetchJobApplications = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const apiData = await JobApplicationService.getWorkerApplications();
+            setFullApiData(apiData); // Store the full API data
+            const convertedAPIData = convertAPIDataToJobItems(apiData);
+            setApiJobApplications(convertedAPIData);
+        } catch (err) {
+            console.error('Error fetching job applications:', err);
+            setError('Failed to fetch job applications');
+            setApiJobApplications([]); // Set empty array on error
+            setFullApiData(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // Fetch API data
     useEffect(() => {
-        const fetchJobApplications = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-
-                const apiData = await JobApplicationService.getWorkerApplications();
-                const convertedAPIData = convertAPIDataToJobItems(apiData);
-                setApiJobApplications(convertedAPIData);
-            } catch (err) {
-                console.error('Error fetching job applications:', err);
-                setError('Failed to fetch job applications');
-                setApiJobApplications([]); // Set empty array on error
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchJobApplications();
     }, []);
 
@@ -362,6 +371,19 @@ const EmployeeJobsPage: React.FC = () => {
     const openRatingModal = (jobTitle: string, employerName: string) => {
         setSelectedJob({ title: jobTitle, employer: employerName });
         setIsRatingModalOpen(true);
+    };
+
+    // Function to open job detail modal
+    const openJobDetailModal = (jobId: string) => {
+        if (fullApiData) {
+            // Find the job application by its ID (remove 'api-' prefix)
+            const applicationId = parseInt(jobId.replace('api-', ''));
+            const application = fullApiData.applications.find(app => app.id === applicationId);
+            if (application) {
+                setSelectedJobApplication(application);
+                setIsJobDetailModalOpen(true);
+            }
+        }
     };
 
     // Function to handle page change
@@ -480,19 +502,26 @@ const EmployeeJobsPage: React.FC = () => {
                                                         {job.action.text}
                                                     </button>
                                                 ) : (
-                                                    <a href="#" className="detail-button" style={{
-                                                        backgroundColor: '#F1F2F4',
-                                                        color: '#309689',
-                                                        padding: '6px 16px',
-                                                        borderRadius: '6px',
-                                                        border: '1px solid #e0e1e3',
-                                                        fontSize: '14px',
-                                                        fontWeight: '500',
-                                                        display: 'inline-block',
-                                                        textDecoration: 'none'
-                                                    }}>
+                                                    <button
+                                                        onClick={() => openJobDetailModal(job.id)}
+                                                        className="rating-button-fixed"
+                                                        style={{
+                                                            backgroundColor: '#F1F2F4 !important',
+                                                            color: '#309689 !important',
+                                                            padding: '6px 16px !important',
+                                                            borderRadius: '6px !important',
+                                                            border: '1px solid #e0e1e3 !important',
+                                                            fontSize: '14px !important',
+                                                            fontWeight: '500 !important',
+                                                            display: 'inline-block !important',
+                                                            cursor: 'pointer !important',
+                                                            textDecoration: 'none !important',
+                                                            outline: 'none !important',
+                                                            boxShadow: 'none !important'
+                                                        }}
+                                                    >
                                                         {job.action.text}
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -604,6 +633,14 @@ const EmployeeJobsPage: React.FC = () => {
                 onClose={() => setIsRatingModalOpen(false)}
                 jobTitle={selectedJob.title}
                 employerName={selectedJob.employer}
+            />
+
+            {/* Job Detail Modal */}
+            <JobDetailModal
+                isOpen={isJobDetailModalOpen}
+                onClose={() => setIsJobDetailModalOpen(false)}
+                jobApplication={selectedJobApplication}
+                onStatusUpdate={fetchJobApplications}
             />
         </div>
     );

@@ -126,6 +126,11 @@ export class JobApplicationService {
         await axios.delete(`${API_BASE_URL}/api/jobapplication/${id}`, this.getAuthHeaders());
     }
 
+    static async cancelJobApplication(id: number): Promise<JobApplicationResponse> {
+        const response = await axios.put(`${API_BASE_URL}/api/jobapplication/${id}/cancel`, {}, this.getAuthHeaders());
+        return response.data;
+    }
+
     // New method to get worker applications
     static async getWorkerApplications(): Promise<WorkerJobApplicationsResponse> {
         const response = await axios.get(`${API_BASE_URL}/api/jobapplication/worker`, this.getAuthHeaders());
