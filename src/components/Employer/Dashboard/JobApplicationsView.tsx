@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RiHome2Line, RiEditLine, RiDeleteBinLine, RiMoreFill } from 'react-icons/ri';
+import { RiHome2Line, RiEditLine, RiDeleteBinLine, RiMoreFill, RiCloseLine } from 'react-icons/ri';
 import ApplicantPopup from './ApplicantPopup';
+import { JobApplicationService, WorkerJobApplicationsResponse } from '../../../services/jobApplicationService';
 
 // Define the Applicant type
 interface Applicant {
@@ -11,9 +12,35 @@ interface Applicant {
     experience: string;
     education: string;
     applicationDate: string;
+    coverNote?: string;
+    // Enhanced API worker profile data (optional - fallback to hardcoded if null/empty)
+    workerProfile?: {
+        fullName?: string;
+        bio?: string;
+        dateOfBirth?: string;
+        nationality?: string;
+        maritalStatus?: string;
+        gender?: string;
+        personalWebsite?: string;
+        contactLocation?: string;
+        phoneNumber?: string;
+        email?: string;
+        experience?: string;
+        education?: string;
+    };
+    resumeTitle?: string;
+    isFromAPI?: boolean; // Flag to identify API data
+    applicationId?: number; // Job application ID for API calls
+    applicationStatus?: string; // Current application status
 }
 
-const JobApplicationsView: React.FC = () => {
+// Props interface for JobApplicationsView
+interface JobApplicationsViewProps {
+    jobId?: number;
+    onClose?: () => void;
+}
+
+const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClose }) => {
     const [sortOption, setSortOption] = useState<string>('Mới nhất');
     const [filterActive, setFilterActive] = useState<boolean>(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -21,6 +48,71 @@ const JobApplicationsView: React.FC = () => {
     const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
     const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+    const [apiApplicants, setApiApplicants] = useState<Applicant[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Function to format date from API format to display format
+    const formatDate = (dateStr: string): string => {
+        const date = new Date(dateStr);
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = date.getDate();
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+
+        return `${month} ${day}, ${year}`;
+    };
+
+    // Function to convert API data to Applicant format
+    const convertAPIDataToApplicants = (apiData: WorkerJobApplicationsResponse): Applicant[] => {
+        return apiData.applications.map((app) => ({
+            id: app.id,
+            name: app.workerName,
+            position: app.jobTitle,
+            experience: app.workerProfile?.experience || 'Không có kinh nghiệm',
+            education: app.workerProfile?.education || 'Không có học vấn',
+            applicationDate: formatDate(app.appliedAt),
+            coverNote: app.coverNote,
+            resumeTitle: app.resumeTitle,
+            isFromAPI: true,
+            applicationId: app.id, // Job application ID for API calls
+            applicationStatus: app.status, // Current application status
+            workerProfile: app.workerProfile ? {
+                fullName: app.workerProfile.fullName,
+                bio: app.workerProfile.bio,
+                dateOfBirth: app.workerProfile.dateOfBirth ? formatDate(app.workerProfile.dateOfBirth) : undefined,
+                nationality: app.workerProfile.nationality,
+                maritalStatus: app.workerProfile.maritalStatus,
+                gender: app.workerProfile.gender,
+                personalWebsite: app.workerProfile.personalWebsite,
+                contactLocation: app.workerProfile.contactLocation,
+                phoneNumber: app.workerProfile.phoneNumber,
+                email: app.workerProfile.email,
+                experience: app.workerProfile.experience,
+                education: app.workerProfile.education,
+            } : undefined
+        }));
+    };
+
+    // Fetch API data when jobId is provided
+    useEffect(() => {
+        if (jobId) {
+            const fetchJobApplications = async () => {
+                try {
+                    setLoading(true);
+                    const apiData = await JobApplicationService.getEmployerJobApplications(jobId);
+                    const convertedAPIData = convertAPIDataToApplicants(apiData);
+                    setApiApplicants(convertedAPIData);
+                } catch (err) {
+                    console.error('Error fetching job applications:', err);
+                    setApiApplicants([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchJobApplications();
+        }
+    }, [jobId]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -126,6 +218,9 @@ const JobApplicationsView: React.FC = () => {
         }
     ];
 
+    // Combine API data (on top) with static data for "Tất cả" column
+    const combinedApplicants = [...apiApplicants, ...allApplicants];
+
     // Render applicant card in the Tất cả column
     const renderApplicantCard = (applicant: Applicant) => {
         return (
@@ -152,11 +247,19 @@ const JobApplicationsView: React.FC = () => {
                 {/* Divider */}
                 <div className="border-t border-gray-200"></div>
 
-                {/* Experience & Details */}
+                {/* Experience & Details - Modified to show coverNote for API data */}
                 <div className="p-4 text-left">
                     <ul className="text-sm text-gray-500 space-y-1 text-left">
-                        <li className="text-left">• Kinh nghiệm: {applicant.experience}</li>
-                        <li className="text-left">• {applicant.education}</li>
+                        {applicant.coverNote ? (
+                            // API data - show coverNote with bullet points
+                            <li className="text-left">• {applicant.coverNote}</li>
+                        ) : (
+                            // Static data - show traditional format
+                            <>
+                                <li className="text-left">• Kinh nghiệm: {applicant.experience}</li>
+                                <li className="text-left">• {applicant.education}</li>
+                            </>
+                        )}
                         <li className="text-left">• Ngày nộp: {applicant.applicationDate}</li>
                     </ul>
 
@@ -234,21 +337,24 @@ const JobApplicationsView: React.FC = () => {
         </div>
     );
 
-    return (
+    // Create the main content
+    const mainContent = (
         <div className="w-full">
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center text-sm text-gray-500 mb-4">
-                <div className="flex items-center">
-                    <RiHome2Line className="mr-1" />
-                    <Link to="/" className="hover:text-[#309689]">Home</Link>
+            {/* Breadcrumb Navigation - only show when not in popup mode */}
+            {!onClose && (
+                <div className="flex items-center text-sm text-gray-500 mb-4">
+                    <div className="flex items-center">
+                        <RiHome2Line className="mr-1" />
+                        <Link to="/" className="hover:text-[#309689]">Home</Link>
+                    </div>
+                    <div className="mx-2">/</div>
+                    <div><Link to="/job" className="hover:text-[#309689]">Job</Link></div>
+                    <div className="mx-2">/</div>
+                    <div><Link to="/senior-uiux-designer" className="hover:text-[#309689]">Senior UI/UX Designer</Link></div>
+                    <div className="mx-2">/</div>
+                    <div className="text-[#309689]">Applications</div>
                 </div>
-                <div className="mx-2">/</div>
-                <div><Link to="/job" className="hover:text-[#309689]">Job</Link></div>
-                <div className="mx-2">/</div>
-                <div><Link to="/senior-uiux-designer" className="hover:text-[#309689]">Senior UI/UX Designer</Link></div>
-                <div className="mx-2">/</div>
-                <div className="text-[#309689]">Applications</div>
-            </div>
+            )}
 
             {/* Page Header */}
             <div className="flex justify-between items-center mb-6">
@@ -347,7 +453,13 @@ const JobApplicationsView: React.FC = () => {
                             </div>
                         </div>
                         <div className="p-4">
-                            {allApplicants.map(applicant => renderApplicantCard(applicant))}
+                            {loading ? (
+                                <div className="py-8 text-center text-gray-500">
+                                    Đang tải dữ liệu...
+                                </div>
+                            ) : (
+                                combinedApplicants.map(applicant => renderApplicantCard(applicant))
+                            )}
                         </div>
                     </div>
                 </div>
@@ -386,6 +498,35 @@ const JobApplicationsView: React.FC = () => {
             />
         </div>
     );
+
+    // Return popup version or regular version
+    if (onClose) {
+        return (
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                onClick={onClose}
+            >
+                <div
+                    className="bg-white rounded-lg w-[90%] max-w-6xl max-h-[90vh] overflow-auto relative"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+                    >
+                        <RiCloseLine size={24} />
+                    </button>
+
+                    <div className="p-6">
+                        {mainContent}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return mainContent;
 };
 
 export default JobApplicationsView; 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { RiMore2Line, RiAddCircleLine, RiCloseLine, RiCheckLine, RiTimeLine, RiUserLine } from 'react-icons/ri';
-import { useNavigate } from 'react-router-dom';
 import { JobPostingService, JobPostingListItem } from '../../../services/jobPostingService';
 import { SubscriptionService } from '../../../services/subscriptionService';
+import JobApplicationsView from './JobApplicationsView';
 
 const MyJobsContent: React.FC = () => {
     const [selectedJobStatus, setSelectedJobStatus] = useState<string>('All Jobs');
@@ -11,7 +11,8 @@ const MyJobsContent: React.FC = () => {
     const [allJobs, setAllJobs] = useState<JobPostingListItem[]>([]);
     const [filteredJobs, setFilteredJobs] = useState<JobPostingListItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+    const [showApplicationsPopup, setShowApplicationsPopup] = useState(false);
+    const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
     const ITEMS_PER_PAGE = 9;
 
@@ -288,8 +289,9 @@ const MyJobsContent: React.FC = () => {
         setCurrentPage(page);
     };
 
-    const handleViewApplications = () => {
-        navigate('/employer/job-applications');
+    const handleViewApplications = (jobId: number) => {
+        setSelectedJobId(jobId);
+        setShowApplicationsPopup(true);
     };
 
     // Check if dropdown should appear above instead of below
@@ -487,7 +489,7 @@ const MyJobsContent: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-left flex items-center">
                                         <button
                                             className="view-profile-btn mr-3"
-                                            onClick={handleViewApplications}
+                                            onClick={() => handleViewApplications(job.id)}
                                         >
                                             Xem Hồ Sơ
                                         </button>
@@ -540,6 +542,10 @@ const MyJobsContent: React.FC = () => {
                         </svg>
                     </div>
                 </div>
+            )}
+
+            {showApplicationsPopup && selectedJobId && (
+                <JobApplicationsView jobId={selectedJobId} onClose={() => setShowApplicationsPopup(false)} />
             )}
         </div>
     );

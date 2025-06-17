@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { IoMdClose } from 'react-icons/io';
 import { RiStarLine, RiMailLine, RiUserReceived2Line, RiToggleLine, RiToggleFill } from 'react-icons/ri';
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYoutube, FaStar } from 'react-icons/fa';
+import { JobApplicationService } from '../../../services/jobApplicationService';
 
-// Use the same Applicant interface as in JobApplicationsView
+// Enhanced Applicant interface to support API data
 interface Applicant {
     id: number;
     name: string;
@@ -11,6 +12,26 @@ interface Applicant {
     experience: string;
     education: string;
     applicationDate: string;
+    coverNote?: string;
+    // Enhanced API worker profile data (optional - fallback to hardcoded if null/empty)
+    workerProfile?: {
+        fullName?: string;
+        bio?: string;
+        dateOfBirth?: string;
+        nationality?: string;
+        maritalStatus?: string;
+        gender?: string;
+        personalWebsite?: string;
+        contactLocation?: string;
+        phoneNumber?: string;
+        email?: string;
+        experience?: string;
+        education?: string;
+    };
+    resumeTitle?: string;
+    isFromAPI?: boolean; // Flag to identify API data
+    applicationId?: number; // Job application ID for API calls
+    applicationStatus?: string; // Current application status
 }
 
 interface ApplicantPopupProps {
@@ -170,8 +191,25 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant })
 const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applicant }) => {
     const [isRatingMode, setIsRatingMode] = useState(false);
     const [isRatingPopupOpen, setIsRatingPopupOpen] = useState(false);
+    const [isHired, setIsHired] = useState(applicant?.applicationStatus === 'ACCEPTED');
+    const [isHiring, setIsHiring] = useState(false);
 
     if (!isOpen || !applicant) return null;
+
+    const handleHireApplicant = async () => {
+        if (!applicant.applicationId || isHiring || isHired) return;
+
+        try {
+            setIsHiring(true);
+            await JobApplicationService.updateJobApplicationStatus(applicant.applicationId, 'ACCEPTED');
+            setIsHired(true);
+        } catch (error) {
+            console.error('Error hiring applicant:', error);
+            alert('Có lỗi xảy ra khi thuê ứng viên');
+        } finally {
+            setIsHiring(false);
+        }
+    };
 
     const toggleRatingMode = () => {
         setIsRatingMode(!isRatingMode);
@@ -202,7 +240,9 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                         <div className="flex items-center">
                             <div className="w-16 h-16 bg-gray-400 rounded-full mr-4 flex-shrink-0"></div>
                             <div className="text-left">
-                                <h2 className="text-2xl font-semibold text-gray-800">{applicant.name}</h2>
+                                <h2 className="text-2xl font-semibold text-gray-800">
+                                    {applicant.workerProfile?.fullName || applicant.name}
+                                </h2>
                                 <p className="text-gray-600">{applicant.position}</p>
                             </div>
                         </div>
@@ -235,10 +275,30 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                     <span>Đánh Giá Ứng Viên</span>
                                 </a>
                             ) : (
-                                <a href="#" className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md">
-                                    <RiUserReceived2Line />
-                                    <span>Thuê Ứng Viên</span>
-                                </a>
+                                isHired ? (
+                                    <a
+                                        href="#"
+                                        onClick={(e) => e.preventDefault()}
+                                        className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md cursor-not-allowed pointer-events-none"
+                                    >
+                                        <RiUserReceived2Line />
+                                        <span>Đã thuê</span>
+                                    </a>
+                                ) : (
+                                    <a
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (!isHiring) {
+                                                handleHireApplicant();
+                                            }
+                                        }}
+                                        className={`w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md ${isHiring ? 'opacity-75 cursor-not-allowed pointer-events-none' : ''}`}
+                                    >
+                                        <RiUserReceived2Line />
+                                        <span>{isHiring ? 'Đang thuê...' : 'Thuê Ứng Viên'}</span>
+                                    </a>
+                                )
                             )}
                         </div>
                     </div>
@@ -251,7 +311,9 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                             <div className="mb-6">
                                 <h3 className="text-lg font-medium mb-3 text-left">Tiêu sử</h3>
                                 <p className="text-gray-600 text-left">
-                                    Tôi đã đam mê thiết kế đồ họa và nghệ thuật kỹ thuật số từ khi còn nhỏ với mối quan tâm sâu sắc đến Giao diện người dùng trang web và ứng dụng di động. Tôi có thể tạo ra các thiết kế chất lượng cao và thẩm mỹ trong thời gian quay vòng nhanh chóng. Kiểm tra phần danh mục đầu tư trong hồ sơ của tôi để xem các mẫu tác phẩm của tôi và vui lòng thảo luận về nhu cầu thiết kế của bạn. Tôi chủ yếu sử dụng Adobe Photoshop, Illustrator, XD và Figma. * Thiết kế giao diện và trải nghiệm người dùng trang web (UI/UX) - dành cho tất cả các loại trang web Chuyên nghiệp và Cá nhân. * Trải nghiệm người dùng ứng dụng di động và thiết kế giao diện - cho tất cả các loại iOS / Android và Ứng dụng di động lại. * Thiết kế khung dây.
+                                    {(applicant.workerProfile?.bio && applicant.workerProfile.bio.trim() !== '')
+                                        ? applicant.workerProfile.bio
+                                        : 'Tôi đã đam mê thiết kế đồ họa và nghệ thuật kỹ thuật số từ khi còn nhỏ với mối quan tâm sâu sắc đến Giao diện người dùng trang web và ứng dụng di động. Tôi có thể tạo ra các thiết kế chất lượng cao và thẩm mỹ trong thời gian quay vòng nhanh chóng. Kiểm tra phần danh mục đầu tư trong hồ sơ của tôi để xem các mẫu tác phẩm của tôi và vui lòng thảo luận về nhu cầu thiết kế của bạn. Tôi chủ yếu sử dụng Adobe Photoshop, Illustrator, XD và Figma. * Thiết kế giao diện và trải nghiệm người dùng trang web (UI/UX) - dành cho tất cả các loại trang web Chuyên nghiệp và Cá nhân. * Trải nghiệm người dùng ứng dụng di động và thiết kế giao diện - cho tất cả các loại iOS / Android và Ứng dụng di động lại. * Thiết kế khung dây.'}
                                 </p>
                             </div>
 
@@ -263,13 +325,13 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                 <h3 className="text-lg font-medium mb-3 text-left">Đơn xin việc</h3>
                                 <p className="text-gray-600 mb-4 text-left">Kính thưa,</p>
                                 <p className="text-gray-600 mb-4 text-left">
-                                    Tôi viết thư để bày tỏ sự quan tâm của mình đối với vị trí giảng dạy lớp bốn hiện có trong Hệ thống Trường Công đồng Fort Wayne. Tôi biết về việc mở cửa thông qua một thông báo được đăng trên JobZone, có số dữ liệu việc làm của IPFW. Tôi tự tin rằng nền tảng học vấn và kỹ năng phát triển chương trình giảng dạy của mình sẽ được sử dụng thành công ở vị trí giảng dạy này.
+                                    {applicant.coverNote || 'Tôi viết thư để bày tỏ sự quan tâm của mình đối với vị trí giảng dạy lớp bốn hiện có trong Hệ thống Trường Công đồng Fort Wayne. Tôi biết về việc mở cửa thông qua một thông báo được đăng trên JobZone, có số dữ liệu việc làm của IPFW. Tôi tự tin rằng nền tảng học vấn và kỹ năng phát triển chương trình giảng dạy của mình sẽ được sử dụng thành công ở vị trí giảng dạy này.'}
                                 </p>
                                 <p className="text-gray-600 mb-4 text-left">
-                                    Tôi vừa hoàn thành bằng Cử nhân Khoa học tại Harvard và đã hoàn thành xuất sắc Praxis I và Praxis II. Trong kinh nghiệm giảng dạy sinh viên của mình, tôi đã phát triển và khởi xướng một chuỗi chương trình giảng dạy kéo dài ba tuần về các loài động vật và tài nguyên trái đất. Đơn vị hợp tác này liên quan đến việc làm việc với ba giáo viên lớp ba khác trong nhóm của tôi và lên đến đỉnh điểm là một chuyến đi thực tế đến Đơn vị Nghiên cứu Động vật của Sở thú Indianapolis.
+                                    {applicant.coverNote ? '' : 'Tôi vừa hoàn thành bằng Cử nhân Khoa học tại Harvard và đã hoàn thành xuất sắc Praxis I và Praxis II. Trong kinh nghiệm giảng dạy sinh viên của mình, tôi đã phát triển và khởi xướng một chuỗi chương trình giảng dạy kéo dài ba tuần về các loài động vật và tài nguyên trái đất. Đơn vị hợp tác này liên quan đến việc làm việc với ba giáo viên lớp ba khác trong nhóm của tôi và lên đến đỉnh điểm là một chuyến đi thực tế đến Đơn vị Nghiên cứu Động vật của Sở thú Indianapolis.'}
                                 </p>
                                 <p className="text-gray-600 mb-1 text-left">Thân mến,</p>
-                                <p className="text-gray-600 text-left">29 Nov, 2003</p>
+                                <p className="text-gray-600 text-left">{applicant.applicationDate}</p>
                             </div>
 
                             {/* Divider */}
@@ -317,7 +379,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1 text-left">NGÀY SINH</span>
-                                        <p className="text-gray-700 font-bold text-left">29 Nov, 2003</p>
+                                        <p className="text-gray-700 font-bold text-left">
+                                            {(applicant.workerProfile?.dateOfBirth && applicant.workerProfile.dateOfBirth.trim() !== '')
+                                                ? applicant.workerProfile.dateOfBirth
+                                                : '29 Nov, 2003'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -334,7 +400,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1 text-left">QUỐC TỊCH</span>
-                                        <p className="text-gray-700 font-bold text-left">Vietnam</p>
+                                        <p className="text-gray-700 font-bold text-left">
+                                            {(applicant.workerProfile?.nationality && applicant.workerProfile.nationality.trim() !== '')
+                                                ? applicant.workerProfile.nationality
+                                                : 'Vietnam'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -348,7 +418,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1 text-left">TÌNH TRẠNG HÔN NHÂN</span>
-                                        <p className="text-gray-700 font-bold text-left">Độc Thân</p>
+                                        <p className="text-gray-700 font-bold text-left">
+                                            {(applicant.workerProfile?.maritalStatus && applicant.workerProfile.maritalStatus.trim() !== '')
+                                                ? applicant.workerProfile.maritalStatus
+                                                : 'Độc Thân'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -363,7 +437,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1">GIỚI TÍNH</span>
-                                        <p className="text-gray-700 font-bold">Nam</p>
+                                        <p className="text-gray-700 font-bold">
+                                            {(applicant.workerProfile?.gender && applicant.workerProfile.gender.trim() !== '')
+                                                ? applicant.workerProfile.gender
+                                                : 'Nam'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -378,7 +456,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1">KINH NGHIỆM</span>
-                                        <p className="text-gray-700 font-bold">{applicant.experience}</p>
+                                        <p className="text-gray-700 font-bold">
+                                            {(applicant.workerProfile && applicant.isFromAPI && applicant.workerProfile.experience && applicant.workerProfile.experience.trim() !== '')
+                                                ? applicant.workerProfile.experience
+                                                : applicant.experience}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -392,7 +474,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1">HỌC VẤN</span>
-                                        <p className="text-gray-700 font-bold">{applicant.education.replace('Học vấn: ', '')}</p>
+                                        <p className="text-gray-700 font-bold">
+                                            {(applicant.workerProfile && applicant.isFromAPI && applicant.workerProfile.education && applicant.workerProfile.education.trim() !== '')
+                                                ? applicant.workerProfile.education
+                                                : applicant.education.replace('Học vấn: ', '')}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -411,7 +497,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </div>
                                         <div className="flex flex-col items-start">
-                                            <p className="text-sm text-gray-600 font-bold">{applicant.name}</p>
+                                            <p className="text-sm text-gray-600 font-bold">
+                                                {(applicant.resumeTitle && applicant.resumeTitle.trim() !== '')
+                                                    ? applicant.resumeTitle
+                                                    : applicant.name}
+                                            </p>
                                             <p className="text-xs text-gray-500">PDF</p>
                                         </div>
                                     </div>
@@ -442,7 +532,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1 text-left">WEBSITE</span>
-                                        <p className="text-gray-700 font-bold text-left">www.mochithecuite.com</p>
+                                        <p className="text-gray-700 font-bold text-left">
+                                            {(applicant.workerProfile?.personalWebsite && applicant.workerProfile.personalWebsite.trim() !== '')
+                                                ? applicant.workerProfile.personalWebsite
+                                                : 'www.mochithecuite.com'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -459,7 +553,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1">ĐỊA CHỈ</span>
-                                        <p className="text-gray-700 font-bold">Landmark, L5</p>
+                                        <p className="text-gray-700 font-bold">
+                                            {(applicant.workerProfile?.contactLocation && applicant.workerProfile.contactLocation.trim() !== '')
+                                                ? applicant.workerProfile.contactLocation
+                                                : 'Landmark, L5'}
+                                        </p>
                                         <p className="text-gray-500 text-sm">Tower L5, HCM City</p>
                                     </div>
                                 </div>
@@ -476,9 +574,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1">LIÊN HỆ 1</span>
-                                        <p className="text-gray-700 font-bold">+84 0989783393</p>
-                                        <span className="text-xs text-gray-500 uppercase mt-3 mb-1">LIÊN HỆ 2</span>
-                                        <p className="text-gray-700 font-bold">+84 0989783393</p>
+                                        <p className="text-gray-700 font-bold">
+                                            {(applicant.workerProfile?.phoneNumber && applicant.workerProfile.phoneNumber.trim() !== '')
+                                                ? applicant.workerProfile.phoneNumber
+                                                : '+84 0989783393'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -495,7 +595,11 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             </svg>
                                         </span>
                                         <span className="text-xs text-gray-500 uppercase mb-1 text-left">EMAIL</span>
-                                        <p className="text-gray-700 font-bold text-left">vult2911@gmail.com</p>
+                                        <p className="text-gray-700 font-bold text-left">
+                                            {(applicant.workerProfile?.email && applicant.workerProfile.email.trim() !== '')
+                                                ? applicant.workerProfile.email
+                                                : 'vult2911@gmail.com'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -510,7 +614,7 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                 onClose={closeRatingPopup}
                 applicant={applicant}
             />
-        </div>
+        </div >
     );
 };
 

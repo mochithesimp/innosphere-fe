@@ -20,6 +20,33 @@ export interface JobApplicationResponse {
     updatedAt?: string;
 }
 
+// Interface for worker profile from API
+export interface WorkerProfileFromAPI {
+    userId: string;
+    skills?: string;
+    bio?: string;
+    education?: string;
+    experience?: string;
+    rating: number;
+    totalRatings: number;
+    verificationStatus: string;
+    isDeleted: boolean;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string;
+    contactLocation?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    maritalStatus?: string;
+    nationality?: string;
+    personalWebsite?: string;
+    fullName?: string;
+    email?: string;
+    phoneNumber?: string;
+    avatarUrl?: string;
+    address?: string;
+}
+
 // Interface for the worker applications response
 export interface WorkerJobApplicationsResponse {
     userName: string;
@@ -60,6 +87,7 @@ export interface WorkerJobApplicationsResponse {
         jobTitle: string;
         workerName: string;
         resumeTitle: string;
+        workerProfile?: WorkerProfileFromAPI;
     }[];
 }
 
@@ -101,6 +129,12 @@ export class JobApplicationService {
     // New method to get worker applications
     static async getWorkerApplications(): Promise<WorkerJobApplicationsResponse> {
         const response = await axios.get(`${API_BASE_URL}/api/jobapplication/worker`, this.getAuthHeaders());
+        return response.data;
+    }
+
+    // New method to get job applications for employer by job posting ID
+    static async getEmployerJobApplications(jobPostingId: number): Promise<WorkerJobApplicationsResponse> {
+        const response = await axios.get(`${API_BASE_URL}/api/jobapplication/employer?jobPostingId=${jobPostingId}`, this.getAuthHeaders());
         return response.data;
     }
 } 

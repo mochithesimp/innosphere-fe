@@ -3,11 +3,42 @@ import { Link } from 'react-router-dom';
 import { RiBriefcaseLine, RiUserLine, RiTimeLine, RiMoreLine } from 'react-icons/ri';
 import { JobPostingService, JobPostingListItem } from '../../../services/jobPostingService';
 import { SubscriptionService } from '../../../services/subscriptionService';
+import JobApplicationsView from './JobApplicationsView';
 
 const OverviewContent: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const [recentJobs, setRecentJobs] = useState<JobPostingListItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showJobApplications, setShowJobApplications] = useState(false);
+    const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+
+    // Add CSS styling for the view profile button
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            .view-profile-btn {
+                background-color: #EBF5F4 !important;
+                color: #309689 !important;
+                padding: 4px 12px !important;
+                border-radius: 4px !important;
+                transition: all 0.3s ease !important;
+                cursor: pointer !important;
+                border: none !important;
+                font-weight: 500 !important;
+                font-size: 14px !important;
+            }
+            
+            .view-profile-btn:hover {
+                background-color: #309689 !important;
+                color: white !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
 
     // Function to toggle dropdown
     const toggleDropdown = (id: number) => {
@@ -18,6 +49,18 @@ const OverviewContent: React.FC = () => {
             // Otherwise, open this one and close any other
             setOpenDropdownId(id);
         }
+    };
+
+    // Function to handle "Xem Chi Tiết" click
+    const handleViewDetails = (jobId: number) => {
+        setSelectedJobId(jobId);
+        setShowJobApplications(true);
+    };
+
+    // Function to close job applications popup
+    const handleCloseJobApplications = () => {
+        setShowJobApplications(false);
+        setSelectedJobId(null);
     };
 
     // Fetch recent job postings
@@ -225,11 +268,30 @@ const OverviewContent: React.FC = () => {
                                 isLastItem={index === recentJobs.length - 1}
                                 onCloseJob={handleCloseJob}
                                 onRejectJob={handleRejectJob}
+                                onViewDetails={handleViewDetails}
                             />
                         ))
                     )}
                 </div>
             </div>
+
+            {/* Job Applications Popup */}
+            {showJobApplications && selectedJobId && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    onClick={handleCloseJobApplications}
+                >
+                    <div
+                        className="bg-white rounded-lg w-full max-w-6xl h-[90vh] overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <JobApplicationsView
+                            jobId={selectedJobId}
+                            onClose={handleCloseJobApplications}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -246,6 +308,7 @@ interface JobItemProps {
     isLastItem: boolean;
     onCloseJob: (jobId: number) => Promise<void>;
     onRejectJob: (jobId: number) => Promise<void>;
+    onViewDetails: (jobId: number) => void;
 }
 
 const JobItem: React.FC<JobItemProps> = ({
@@ -259,7 +322,8 @@ const JobItem: React.FC<JobItemProps> = ({
     toggleDropdown,
     isLastItem,
     onCloseJob,
-    onRejectJob
+    onRejectJob,
+    onViewDetails
 }) => {
     // Status badge styling
     let statusBadge;
@@ -306,12 +370,12 @@ const JobItem: React.FC<JobItemProps> = ({
     const renderActions = () => {
         return (
             <div className="flex justify-center gap-2 items-center">
-                <Link
-                    to={`/employer/job-detail`}
-                    className="bg-[#EBF5F4] text-[#309689] hover:bg-[#309689] hover:text-white px-3 py-1.5 rounded text-sm font-medium border border-[#d0e6e3] transition-colors duration-150"
+                <button
+                    onClick={() => onViewDetails(job.id)}
+                    className="view-profile-btn"
                 >
                     Xem Chi Tiết
-                </Link>
+                </button>
                 <div className="relative">
                     <button
                         className="p-1.5 rounded-full hover:bg-gray-100"
