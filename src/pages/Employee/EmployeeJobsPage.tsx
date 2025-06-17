@@ -266,7 +266,7 @@ const EmployeeJobsPage: React.FC = () => {
                     style: 'bg-[#EBF5F4] text-[#309689]',
                     color: '#309689'
                 };
-            } else if (jobPostingStatus === 'COMPLETED') {
+            } else if (jobPostingStatus === 'COMPLETED' || jobPostingStatus === 'CLOSED') {
                 return {
                     text: 'Đã xong',
                     style: 'bg-[#EBF5F4] text-[#309689]',
