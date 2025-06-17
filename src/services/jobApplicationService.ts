@@ -20,6 +20,49 @@ export interface JobApplicationResponse {
     updatedAt?: string;
 }
 
+// Interface for the worker applications response
+export interface WorkerJobApplicationsResponse {
+    userName: string;
+    applications: {
+        id: number;
+        jobPostingId: number;
+        jobPosting: {
+            id: number;
+            employerId: number;
+            companyName: string;
+            companyLogoUrl?: string;
+            businessTypeId: number;
+            businessTypeName: string;
+            subscriptionId: number;
+            cityId: number;
+            cityName: string;
+            title: string;
+            description: string;
+            location: string;
+            startTime: string;
+            endTime: string;
+            hourlyRate: number;
+            jobType: string;
+            requirements: string;
+            postedAt: string;
+            expiresAt: string;
+            status: string;
+            isUrgent: boolean;
+            isHighlighted: boolean;
+            viewsCount: number;
+            applicationsCount: number;
+            jobTags: unknown[];
+        };
+        resumeId: number;
+        appliedAt: string;
+        status: string;
+        coverNote: string;
+        jobTitle: string;
+        workerName: string;
+        resumeTitle: string;
+    }[];
+}
+
 export class JobApplicationService {
     private static getAuthHeaders() {
         const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
@@ -53,5 +96,11 @@ export class JobApplicationService {
 
     static async deleteJobApplication(id: number): Promise<void> {
         await axios.delete(`${API_BASE_URL}/api/jobapplication/${id}`, this.getAuthHeaders());
+    }
+
+    // New method to get worker applications
+    static async getWorkerApplications(): Promise<WorkerJobApplicationsResponse> {
+        const response = await axios.get(`${API_BASE_URL}/api/jobapplication/worker`, this.getAuthHeaders());
+        return response.data;
     }
 } 

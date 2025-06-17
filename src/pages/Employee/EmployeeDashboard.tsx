@@ -7,12 +7,237 @@ import { FiBell } from "react-icons/fi";
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
 import { WorkerService } from '../../services';
+import { JobApplicationService, WorkerJobApplicationsResponse } from '../../services/jobApplicationService';
 
 import { IoLocationOutline } from "react-icons/io5";
+
+// Job item interface for unified data structure
+interface JobItem {
+    id: string;
+    title: string;
+    location: string;
+    hourlyRate: string;
+    timeRange: string;
+    date: string;
+    status: {
+        text: string;
+        style: string;
+        color: string;
+    };
+    action: {
+        type: 'detail' | 'rating';
+        text: string;
+        employerName?: string;
+    };
+    companyInitial: string;
+    companyColor: string;
+    isFromAPI: boolean;
+}
 
 const EmployeeDashboard: React.FC = () => {
     const [hasProfile, setHasProfile] = useState<boolean>(false);
     const [profileLoading, setProfileLoading] = useState<boolean>(true);
+
+    // State for job applications data
+    const [apiJobApplications, setApiJobApplications] = useState<JobItem[]>([]);
+    const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+
+    // Static job data (keeping original static data)
+    const staticJobData: JobItem[] = [
+        {
+            id: 'static-1',
+            title: 'Rửa chén',
+            location: 'HCM',
+            hourlyRate: '20.000/Giờ',
+            timeRange: '13h00-18h00',
+            date: '2 tháng 3, 2025 19:28',
+            status: {
+                text: 'Hoạt động',
+                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
+                color: '#309689'
+            },
+            action: {
+                type: 'detail',
+                text: 'Xem Chi Tiết'
+            },
+            companyInitial: 'Up',
+            companyColor: '#4CBB17',
+            isFromAPI: false
+        },
+        {
+            id: 'static-2',
+            title: 'Sửa ống nước',
+            location: 'HCM',
+            hourlyRate: '20.000/Giờ',
+            timeRange: '10h00-15h00',
+            date: '3 tháng 3, 2025 23:26',
+            status: {
+                text: 'Hoạt động',
+                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
+                color: '#309689'
+            },
+            action: {
+                type: 'detail',
+                text: 'Xem Chi Tiết'
+            },
+            companyInitial: 'S',
+            companyColor: '#FF69B4',
+            isFromAPI: false
+        },
+        {
+            id: 'static-3',
+            title: 'Làm thumbnail',
+            location: 'HCM',
+            hourlyRate: '25.000/Giờ',
+            timeRange: '7h00-13h00',
+            date: '12 tháng 3, 2025 19:28',
+            status: {
+                text: 'Hoạt động',
+                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
+                color: '#309689'
+            },
+            action: {
+                type: 'detail',
+                text: 'Xem Chi Tiết'
+            },
+            companyInitial: 'T',
+            companyColor: 'black',
+            isFromAPI: false
+        },
+        {
+            id: 'static-4',
+            title: 'Vẽ 3D',
+            location: 'HCM',
+            hourlyRate: '28.000/Giờ',
+            timeRange: '9h00-16h00',
+            date: '11 tháng 3, 2025 23:26',
+            status: {
+                text: 'Hoạt động',
+                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
+                color: '#309689'
+            },
+            action: {
+                type: 'detail',
+                text: 'Xem Chi Tiết'
+            },
+            companyInitial: 'V',
+            companyColor: '#ccc',
+            isFromAPI: false
+        }
+    ];
+
+    // Function to format time from API format to display format
+    const formatTime = (startTime: string, endTime: string): string => {
+        const formatSingleTime = (timeStr: string): string => {
+            const date = new Date(timeStr);
+            return date.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        };
+
+        return `${formatSingleTime(startTime)}-${formatSingleTime(endTime)}`;
+    };
+
+    // Function to format date from API format to display format
+    const formatDate = (dateStr: string): string => {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${day} tháng ${month}, ${year} ${hours}:${minutes}`;
+    };
+
+    // Function to get status info based on application and job posting status
+    const getStatusInfo = (applicationStatus: string, jobPostingStatus: string) => {
+        if (applicationStatus === 'PENDING') {
+            return {
+                text: 'Chờ xử lý',
+                style: 'bg-yellow-100 text-yellow-600 border border-yellow-200',
+                color: '#d97706'
+            };
+        } else if (applicationStatus === 'REJECTED') {
+            return {
+                text: 'Từ chối',
+                style: 'bg-red-100 text-red-600 border border-red-200',
+                color: '#dc2626'
+            };
+        } else if (applicationStatus === 'ACCEPTED') {
+            if (jobPostingStatus === 'APPROVED') {
+                return {
+                    text: 'Hoạt động',
+                    style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
+                    color: '#309689'
+                };
+            } else if (jobPostingStatus === 'COMPLETED') {
+                return {
+                    text: 'Đã xong',
+                    style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
+                    color: '#309689'
+                };
+            }
+        }
+
+        // Default fallback
+        return {
+            text: 'Chờ xử lý',
+            style: 'bg-yellow-100 text-yellow-600 border border-yellow-200',
+            color: '#d97706'
+        };
+    };
+
+    // Function to get company initial and color
+    const getCompanyInfo = (companyName: string) => {
+        const initial = companyName.charAt(0).toUpperCase();
+        const colors = ['#4CBB17', '#FF69B4', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#10B981'];
+        const colorIndex = companyName.charCodeAt(0) % colors.length;
+
+        return {
+            initial,
+            color: colors[colorIndex]
+        };
+    };
+
+    // Function to convert API data to JobItem format
+    const convertAPIDataToJobItems = (apiData: WorkerJobApplicationsResponse): JobItem[] => {
+        return apiData.applications.map((app) => {
+            const statusInfo = getStatusInfo(app.status, app.jobPosting.status);
+            const companyInfo = getCompanyInfo(app.jobPosting.companyName);
+
+            // Determine action based on status
+            let action: JobItem['action'];
+            if (statusInfo.text === 'Đã xong') {
+                action = {
+                    type: 'rating',
+                    text: 'Đánh Giá',
+                    employerName: app.jobPosting.companyName
+                };
+            } else {
+                action = {
+                    type: 'detail',
+                    text: 'Xem Chi Tiết'
+                };
+            }
+
+            return {
+                id: `api-${app.id}`,
+                title: app.jobPosting.title,
+                location: app.jobPosting.cityName,
+                hourlyRate: `${app.jobPosting.hourlyRate.toLocaleString('vi-VN')}/Giờ`,
+                timeRange: formatTime(app.jobPosting.startTime, app.jobPosting.endTime),
+                date: formatDate(app.jobPosting.startTime),
+                status: statusInfo,
+                action,
+                companyInitial: companyInfo.initial,
+                companyColor: companyInfo.color,
+                isFromAPI: true
+            };
+        });
+    };
 
     // Check if worker profile exists (just check if API doesn't return 404)
     useEffect(() => {
@@ -38,6 +263,30 @@ const EmployeeDashboard: React.FC = () => {
 
         checkWorkerProfile();
     }, []);
+
+    // Fetch API data for jobs
+    useEffect(() => {
+        const fetchJobApplications = async () => {
+            try {
+                setIsLoadingJobs(true);
+
+                const apiData = await JobApplicationService.getWorkerApplications();
+                const convertedAPIData = convertAPIDataToJobItems(apiData);
+                setApiJobApplications(convertedAPIData);
+            } catch (err) {
+                console.error('Error fetching job applications:', err);
+                setApiJobApplications([]); // Set empty array on error
+            } finally {
+                setIsLoadingJobs(false);
+            }
+        };
+
+        fetchJobApplications();
+    }, []);
+
+    // Combine API data (on top) with static data, limit to 4 items
+    const allJobData = [...apiJobApplications, ...staticJobData];
+    const displayedJobs = allJobData.slice(0, 4);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
@@ -165,149 +414,67 @@ const EmployeeDashboard: React.FC = () => {
 
                             {/* Job Items */}
                             <div className="bg-white rounded-b-lg shadow-sm">
-                                {/* Job Item 1 */}
-                                <div className="grid grid-cols-4 items-center py-4 px-4 border-b border-gray-100 hover:bg-gray-50 rounded-lg my-2">
-                                    <div className="flex items-center">
-                                        <div className="bg-[#4CBB17] p-3 rounded-lg mr-4 flex items-center justify-center w-12 h-12">
-                                            <span className="text-white font-bold text-lg">Up</span>
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-medium">Rửa chén</h3>
-                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">13h00-18h00</span>
+                                {isLoadingJobs ? (
+                                    <div className="py-8 text-center text-gray-500">
+                                        Đang tải dữ liệu...
+                                    </div>
+                                ) : displayedJobs.length === 0 ? (
+                                    <div className="py-8 text-center text-gray-500">
+                                        Không có công việc nào
+                                    </div>
+                                ) : (
+                                    displayedJobs.map((job, jobIndex) => (
+                                        <div key={job.id} className={`grid grid-cols-4 items-center py-4 px-4 hover:bg-gray-50 rounded-lg my-2 ${jobIndex < displayedJobs.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                            <div className="flex items-center">
+                                                <div
+                                                    className="p-3 rounded-lg mr-4 flex items-center justify-center w-12 h-12"
+                                                    style={{ backgroundColor: job.companyColor }}
+                                                >
+                                                    <span className="text-white font-bold text-lg">{job.companyInitial}</span>
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h3 className="font-medium">{job.title}</h3>
+                                                        <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">
+                                                            {job.timeRange}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-1 flex items-center">
+                                                        <IoLocationOutline className="mr-1" />
+                                                        <span>{job.location}</span>
+                                                        <span className="mx-2">•</span>
+                                                        <span className="flex items-center">
+                                                            <span>{job.hourlyRate}</span>
+                                                        </span>
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                                <IoLocationOutline className="mr-1" />
-                                                <span>HCM</span>
-                                                <span className="mx-2">•</span>
-                                                <span className="flex items-center">
-                                                    <span>20.000/Giờ</span>
+                                            <div className="text-sm text-gray-600">{job.date}</div>
+                                            <div>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${job.status.style}`}>
+                                                    <span
+                                                        className="w-2 h-2 rounded-full mr-1.5"
+                                                        style={{ backgroundColor: job.status.color }}
+                                                    ></span>
+                                                    {job.status.text}
                                                 </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm text-gray-600">2 tháng 3, 2025 19:28</div>
-                                    <div>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]">
-                                            <span className="w-2 h-2 bg-[#309689] rounded-full mr-1.5"></span>
-                                            Hoạt động
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <a href="#" className="detail-button">
-                                            Xem Chi Tiết
-                                        </a>
-                                    </div>
-                                </div>
-
-                                {/* Job Item 2 */}
-                                <div className="grid grid-cols-4 items-center py-4 px-4 border-b border-gray-100 hover:bg-gray-50 rounded-lg my-2">
-                                    <div className="flex items-center">
-                                        <div className="bg-[#FF69B4] p-3 rounded-lg mr-4 flex items-center justify-center w-12 h-12">
-                                            <svg className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                                            </svg>
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-medium">Sửa ống nước</h3>
-                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">10h00-15h00</span>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                                <IoLocationOutline className="mr-1" />
-                                                <span>HCM</span>
-                                                <span className="mx-2">•</span>
-                                                <span className="flex items-center">
-                                                    <span>20.000/Giờ</span>
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm text-gray-600">3 tháng 3, 2025 23:26</div>
-                                    <div>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]">
-                                            <span className="w-2 h-2 bg-[#309689] rounded-full mr-1.5"></span>
-                                            Hoạt động
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <a href="#" className="detail-button">
-                                            Xem Chi Tiết
-                                        </a>
-                                    </div>
-                                </div>
-
-                                {/* Job Item 3 */}
-                                <div className="grid grid-cols-4 items-center py-4 px-4 border-b border-gray-100 hover:bg-gray-50 rounded-lg my-2">
-                                    <div className="flex items-center">
-                                        <div className="bg-black p-3 rounded-lg mr-4 flex items-center justify-center w-12 h-12">
-                                            <svg className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-medium">Làm thumbnail</h3>
-                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">7h00-13h00</span>
+                                            <div>
+                                                {job.action.type === 'rating' ? (
+                                                    <button
+                                                        className="detail-button"
+                                                    >
+                                                        {job.action.text}
+                                                    </button>
+                                                ) : (
+                                                    <a href="#" className="detail-button">
+                                                        {job.action.text}
+                                                    </a>
+                                                )}
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                                <IoLocationOutline className="mr-1" />
-                                                <span>HCM</span>
-                                                <span className="mx-2">•</span>
-                                                <span className="flex items-center">
-                                                    <span>25.000/Giờ</span>
-                                                </span>
-                                            </p>
                                         </div>
-                                    </div>
-                                    <div className="text-sm text-gray-600">12 tháng 3, 2025 19:28</div>
-                                    <div>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]">
-                                            <span className="w-2 h-2 bg-[#309689] rounded-full mr-1.5"></span>
-                                            Hoạt động
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <a href="#" className="detail-button">
-                                            Xem Chi Tiết
-                                        </a>
-                                    </div>
-                                </div>
-
-                                {/* Job Item 4 */}
-                                <div className="grid grid-cols-4 items-center py-4 px-4 hover:bg-gray-50 rounded-lg my-2">
-                                    <div className="flex items-center">
-                                        <div className="bg-gray-200 p-3 rounded-lg mr-4 flex items-center justify-center w-12 h-12">
-                                            <img src="https://static.vecteezy.com/system/resources/previews/004/966/104/original/colorful-letter-s-logo-vector.jpg" alt="Microsoft" className="h-6 w-6" />
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-medium">Vẽ 3D</h3>
-                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">9h00-16h00</span>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                                <IoLocationOutline className="mr-1" />
-                                                <span>HCM</span>
-                                                <span className="mx-2">•</span>
-                                                <span className="flex items-center">
-                                                    <span>28.000/Giờ</span>
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm text-gray-600">11 tháng 3, 2025 23:26</div>
-                                    <div>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]">
-                                            <span className="w-2 h-2 bg-[#309689] rounded-full mr-1.5"></span>
-                                            Hoạt động
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <a href="#" className="detail-button">
-                                            Xem Chi Tiết
-                                        </a>
-                                    </div>
-                                </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
