@@ -32,6 +32,7 @@ interface Applicant {
     isFromAPI?: boolean; // Flag to identify API data
     applicationId?: number; // Job application ID for API calls
     applicationStatus?: string; // Current application status
+    jobPostingStatus?: string; // Job posting status (OPEN, CLOSED, etc.)
 }
 
 // Props interface for JobApplicationsView
@@ -76,6 +77,7 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
             isFromAPI: true,
             applicationId: app.id, // Job application ID for API calls
             applicationStatus: app.status, // Current application status
+            jobPostingStatus: app.jobPosting.status, // Job posting status
             workerProfile: app.workerProfile ? {
                 fullName: app.workerProfile.fullName,
                 bio: app.workerProfile.bio,
@@ -154,6 +156,37 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
         setSelectedApplicant(null);
     };
 
+    // Handle applicant hire action
+    const handleHireApplicant = async (applicantId: number) => {
+        // Update the local state to reflect the change immediately
+        setApiApplicants(prevApplicants =>
+            prevApplicants.map(applicant =>
+                applicant.id === applicantId
+                    ? { ...applicant, applicationStatus: 'ACCEPTED' }
+                    : applicant
+            )
+        );
+
+        // Also update the selected applicant if it matches
+        if (selectedApplicant && selectedApplicant.id === applicantId) {
+            setSelectedApplicant({
+                ...selectedApplicant,
+                applicationStatus: 'ACCEPTED'
+            });
+        }
+
+        // Optionally refresh data from server
+        if (jobId) {
+            try {
+                const apiData = await JobApplicationService.getEmployerJobApplications(jobId);
+                const convertedAPIData = convertAPIDataToApplicants(apiData);
+                setApiApplicants(convertedAPIData);
+            } catch (err) {
+                console.error('Error refreshing job applications:', err);
+            }
+        }
+    };
+
     // Sample data for applicants
     const allApplicants: Applicant[] = [
         {
@@ -223,6 +256,22 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
 
     // Render applicant card in the Tất cả column
     const renderApplicantCard = (applicant: Applicant) => {
+        const handleHireClick = async (e: React.MouseEvent) => {
+            e.stopPropagation(); // Prevent opening the popup
+            if (applicant.applicationId && applicant.applicationStatus !== 'ACCEPTED') {
+                await handleHireApplicant(applicant.id);
+            }
+        };
+
+        // Debug log for card rendering
+        if (applicant.isFromAPI) {
+            console.log(`Card - Applicant ${applicant.name}:`, {
+                applicationStatus: applicant.applicationStatus,
+                jobPostingStatus: applicant.jobPostingStatus,
+                showRatingButton: applicant.applicationStatus === 'ACCEPTED' && applicant.jobPostingStatus === 'CLOSED'
+            });
+        }
+
         return (
             <div
                 key={applicant.id}
@@ -263,14 +312,48 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                         <li className="text-left">• Ngày nộp: {applicant.applicationDate}</li>
                     </ul>
 
-                    <button className="mt-3 text-[#309689] text-sm font-medium flex items-center hover:underline text-left">
-                        <svg className="w-4 h-4 mr-1" style={{ color: "#309689" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 14V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M12 15L12 3" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M8 7L12 3L16 7" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="text-[#309689]">Download CV</span>
-                    </button>
+                    <div className="flex justify-between items-center mt-3">
+                        <button className="text-[#309689] text-sm font-medium flex items-center hover:underline text-left">
+                            <svg className="w-4 h-4 mr-1" style={{ color: "#309689" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 14V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M12 15L12 3" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M8 7L12 3L16 7" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <span className="text-[#309689]">Download CV</span>
+                        </button>
+
+                        {/* Status-based hire button for API applicants */}
+                        {applicant.isFromAPI && (
+                            <div>
+                                {applicant.applicationStatus === 'ACCEPTED' && applicant.jobPostingStatus === 'CLOSED' ? (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Handle rating action - you can implement this
+                                            console.log('Open rating for applicant:', applicant.id);
+                                        }}
+                                        className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-sm rounded-md transition-colors"
+                                    >
+                                        Đánh giá ứng viên
+                                    </button>
+                                ) : applicant.applicationStatus === 'ACCEPTED' ? (
+                                    <button
+                                        className="px-3 py-1 bg-teal-600 text-white text-sm rounded-md cursor-not-allowed"
+                                        disabled
+                                    >
+                                        Đã thuê
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleHireClick}
+                                        className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-sm rounded-md transition-colors"
+                                    >
+                                        Thuê ứng viên
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -278,6 +361,13 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
 
     // Render applicant card in the Chọn lọc column
     const renderSelectedApplicantCard = (applicant: Applicant) => {
+        const handleHireClick = async (e: React.MouseEvent) => {
+            e.stopPropagation(); // Prevent opening the popup
+            if (applicant.applicationId && applicant.applicationStatus !== 'ACCEPTED') {
+                await handleHireApplicant(applicant.id);
+            }
+        };
+
         return (
             <div
                 key={applicant.id}
@@ -310,14 +400,48 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                         <li className="text-left">• Ngày nộp: {applicant.applicationDate}</li>
                     </ul>
 
-                    <button className="mt-3 text-[#309689] text-sm font-medium flex items-center hover:underline text-left">
-                        <svg className="w-4 h-4 mr-1" style={{ color: "#309689" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 14V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M12 15L12 3" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M8 7L12 3L16 7" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="text-[#309689]">Download CV</span>
-                    </button>
+                    <div className="flex justify-between items-center mt-3">
+                        <button className="text-[#309689] text-sm font-medium flex items-center hover:underline text-left">
+                            <svg className="w-4 h-4 mr-1" style={{ color: "#309689" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 14V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M12 15L12 3" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M8 7L12 3L16 7" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <span className="text-[#309689]">Download CV</span>
+                        </button>
+
+                        {/* Status-based hire button for API applicants */}
+                        {applicant.isFromAPI && (
+                            <div>
+                                {applicant.applicationStatus === 'ACCEPTED' && applicant.jobPostingStatus === 'CLOSED' ? (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Handle rating action - you can implement this
+                                            console.log('Open rating for applicant:', applicant.id);
+                                        }}
+                                        className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-sm rounded-md transition-colors"
+                                    >
+                                        Đánh giá ứng viên
+                                    </button>
+                                ) : applicant.applicationStatus === 'ACCEPTED' ? (
+                                    <button
+                                        className="px-3 py-1 bg-teal-600 text-white text-sm rounded-md cursor-not-allowed"
+                                        disabled
+                                    >
+                                        Đã thuê
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleHireClick}
+                                        className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-sm rounded-md transition-colors"
+                                    >
+                                        Thuê ứng viên
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -495,6 +619,7 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                 isOpen={isPopupOpen}
                 onClose={handleClosePopup}
                 applicant={selectedApplicant}
+                onHire={handleHireApplicant}
             />
         </div>
     );

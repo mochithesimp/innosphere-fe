@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IoMdClose } from 'react-icons/io';
 import { RiStarLine, RiMailLine, RiUserReceived2Line, RiToggleLine, RiToggleFill } from 'react-icons/ri';
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYoutube, FaStar } from 'react-icons/fa';
@@ -32,12 +32,14 @@ interface Applicant {
     isFromAPI?: boolean; // Flag to identify API data
     applicationId?: number; // Job application ID for API calls
     applicationStatus?: string; // Current application status
+    jobPostingStatus?: string; // Job posting status (OPEN, CLOSED, etc.)
 }
 
 interface ApplicantPopupProps {
     isOpen: boolean;
     onClose: () => void;
     applicant: Applicant | null;
+    onHire?: (applicantId: number) => void; // Add callback for hire action
 }
 
 // Rating Popup Component
@@ -188,13 +190,23 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant })
     );
 };
 
-const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applicant }) => {
+const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applicant, onHire }) => {
     const [isRatingMode, setIsRatingMode] = useState(false);
     const [isRatingPopupOpen, setIsRatingPopupOpen] = useState(false);
-    const [isHired, setIsHired] = useState(applicant?.applicationStatus === 'ACCEPTED');
+    const [isHired, setIsHired] = useState(false);
     const [isHiring, setIsHiring] = useState(false);
 
+    // Update isHired state when applicant changes
+    useEffect(() => {
+        setIsHired(applicant?.applicationStatus === 'ACCEPTED');
+    }, [applicant]);
+
     if (!isOpen || !applicant) return null;
+
+    // Debug log to check status values
+    console.log('ApplicantPopup - Application Status:', applicant.applicationStatus);
+    console.log('ApplicantPopup - Job Posting Status:', applicant.jobPostingStatus);
+    console.log('ApplicantPopup - Is Hired:', isHired);
 
     const handleHireApplicant = async () => {
         if (!applicant.applicationId || isHiring || isHired) return;
@@ -203,6 +215,10 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
             setIsHiring(true);
             await JobApplicationService.updateJobApplicationStatus(applicant.applicationId, 'ACCEPTED');
             setIsHired(true);
+            // Call the callback to refresh data in parent component
+            if (onHire && applicant.id) {
+                onHire(applicant.id);
+            }
         } catch (error) {
             console.error('Error hiring applicant:', error);
             alert('Có lỗi xảy ra khi thuê ứng viên');
@@ -275,7 +291,18 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                     <span>Đánh Giá Ứng Viên</span>
                                 </a>
                             ) : (
-                                isHired ? (
+                                isHired && applicant.jobPostingStatus === 'CLOSED' ? (
+                                    <a
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            openRatingPopup();
+                                        }}
+                                        className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md"
+                                    >
+                                        <span>Đánh giá ứng viên</span>
+                                    </a>
+                                ) : isHired ? (
                                     <a
                                         href="#"
                                         onClick={(e) => e.preventDefault()}
