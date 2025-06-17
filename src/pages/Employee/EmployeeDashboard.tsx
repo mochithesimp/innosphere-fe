@@ -10,6 +10,7 @@ import JobDetailModal from '../../components/Employee/JobDetailModal';
 import RatingModal from '../../components/Employee/RatingModal';
 import { WorkerService } from '../../services';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../services/jobApplicationService';
+import { isJobApplicationRated } from '../../utils/ratingUtils';
 
 import { IoLocationOutline } from "react-icons/io5";
 
@@ -52,7 +53,13 @@ const EmployeeDashboard: React.FC = () => {
 
     // State for managing the rating modal
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-    const [selectedJob, setSelectedJob] = useState({ title: '', employer: '' });
+    const [selectedJob, setSelectedJob] = useState({
+        title: '',
+        employer: '',
+        jobApplicationId: 0,
+        employerId: 0
+    });
+    const [ratedJobApplications, setRatedJobApplications] = useState<number[]>([]);
 
     // Function to open job detail modal
     const openJobDetailModal = (jobPostingId: number) => {
@@ -74,9 +81,30 @@ const EmployeeDashboard: React.FC = () => {
         setSelectedJobApplication(null);
     };
 
+    // Load rated job applications from localStorage on component mount
+    useEffect(() => {
+        const ratedJobs = JSON.parse(localStorage.getItem('ratedJobApplications') || '[]');
+        setRatedJobApplications(ratedJobs);
+    }, []);
+
+    // Function to handle successful rating
+    const handleRatingSuccess = (jobApplicationId: number) => {
+        setRatedJobApplications(prev => {
+            if (!prev.includes(jobApplicationId)) {
+                return [...prev, jobApplicationId];
+            }
+            return prev;
+        });
+    };
+
     // Function to open rating modal with job details
-    const openRatingModal = (jobTitle: string, employerName: string) => {
-        setSelectedJob({ title: jobTitle, employer: employerName });
+    const openRatingModal = (jobTitle: string, employerName: string, jobApplicationId: number, employerId: number) => {
+        setSelectedJob({
+            title: jobTitle,
+            employer: employerName,
+            jobApplicationId: jobApplicationId,
+            employerId: employerId
+        });
         setIsRatingModalOpen(true);
     };
 
@@ -509,12 +537,55 @@ const EmployeeDashboard: React.FC = () => {
                                             </div>
                                             <div>
                                                 {job.action.type === 'rating' ? (
-                                                    <button
-                                                        className="detail-button"
-                                                        onClick={() => openRatingModal(job.title, job.action.employerName || 'Unknown')}
-                                                    >
-                                                        {job.action.text}
-                                                    </button>
+                                                    (() => {
+                                                        let jobApplicationId = 0;
+                                                        if (job.isFromAPI && apiData) {
+                                                            const applicationId = parseInt(job.id.replace('api-', ''));
+                                                            const application = apiData.applications.find(app => app.id === applicationId);
+                                                            jobApplicationId = application?.id || 0;
+                                                        }
+
+                                                        const isRated = ratedJobApplications.includes(jobApplicationId) || isJobApplicationRated(jobApplicationId);
+
+                                                        return (
+                                                            <button
+                                                                className="detail-button"
+                                                                onClick={() => {
+                                                                    if (!isRated) {
+                                                                        if (job.isFromAPI && apiData) {
+                                                                            const applicationId = parseInt(job.id.replace('api-', ''));
+                                                                            const application = apiData.applications.find(app => app.id === applicationId);
+                                                                            if (application) {
+                                                                                openRatingModal(
+                                                                                    job.title,
+                                                                                    job.action.employerName || 'Unknown',
+                                                                                    application.id,
+                                                                                    application.jobPosting.employerId
+                                                                                );
+                                                                            }
+                                                                        } else {
+                                                                            // For static data, we'll use placeholder values
+                                                                            openRatingModal(job.title, job.action.employerName || 'Unknown', 0, 0);
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                disabled={isRated}
+                                                                style={{
+                                                                    backgroundColor: isRated ? '#9CA3AF' : '#EBF5F4',
+                                                                    color: isRated ? '#6B7280' : '#309689',
+                                                                    cursor: isRated ? 'not-allowed' : 'pointer',
+                                                                    opacity: isRated ? 0.7 : 1,
+                                                                    padding: '6px 16px',
+                                                                    borderRadius: '6px',
+                                                                    border: `1px solid ${isRated ? '#9CA3AF' : '#d0e6e3'}`,
+                                                                    fontSize: '14px',
+                                                                    fontWeight: '500'
+                                                                }}
+                                                            >
+                                                                {isRated ? 'Đã đánh giá' : job.action.text}
+                                                            </button>
+                                                        );
+                                                    })()
                                                 ) : (
                                                     <button
                                                         className="detail-button"
@@ -547,6 +618,9 @@ const EmployeeDashboard: React.FC = () => {
                 onClose={() => setIsRatingModalOpen(false)}
                 jobTitle={selectedJob.title}
                 employerName={selectedJob.employer}
+                jobApplicationId={selectedJob.jobApplicationId}
+                employerId={selectedJob.employerId}
+                onRatingSuccess={handleRatingSuccess}
             />
 
             {/* Footer with top border that spans full width */}
