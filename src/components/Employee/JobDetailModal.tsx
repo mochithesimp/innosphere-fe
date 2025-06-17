@@ -77,6 +77,40 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
         }
     };
 
+    // Function to handle reapplying for job
+    const handleReapplyForJob = async () => {
+        if (!jobApplication) return;
+
+        try {
+            setIsUpdatingStatus(true);
+            console.log(`🔄 Reapplying for job posting ID: ${jobApplication.jobPosting.id}`);
+
+            // Create the application data for reapplying
+            const applicationData = {
+                jobPostingId: jobApplication.jobPosting.id,
+                resumeId: jobApplication.resumeId,
+                coverNote: jobApplication.coverNote || 'Ứng tuyển lại cho vị trí này'
+            };
+
+            await JobApplicationService.applyForJob(applicationData);
+
+            console.log('✅ Reapplied for job successfully');
+            alert('Đã ứng tuyển lại thành công!');
+
+            // Call the callback to refresh data
+            if (onStatusUpdate) {
+                onStatusUpdate();
+            }
+
+            onClose(); // Close the modal
+        } catch (error) {
+            console.error('❌ Error reapplying for job:', error);
+            alert('Có lỗi xảy ra khi ứng tuyển lại. Vui lòng thử lại.');
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
     if (!isOpen || !jobApplication) return null;
 
     const jobData = jobApplication.jobPosting;
@@ -210,20 +244,42 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
                                         Đã nhận việc
                                     </div>
                                 ) : jobApplication.status === 'REJECTED' ? (
-                                    <div
-                                        style={{
-                                            backgroundColor: '#EF4444',
-                                            borderRadius: '4px',
-                                            padding: '12px 0',
-                                            textAlign: 'center',
-                                            color: 'white',
-                                            fontWeight: '500',
-                                            width: '100%',
-                                            cursor: 'not-allowed',
-                                            opacity: 0.8
-                                        }}
-                                    >
-                                        Đã từ chối
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <div
+                                            style={{
+                                                backgroundColor: '#EF4444',
+                                                borderRadius: '4px',
+                                                padding: '8px 12px',
+                                                textAlign: 'center',
+                                                color: 'white',
+                                                fontWeight: '500',
+                                                flex: 1,
+                                                cursor: 'not-allowed',
+                                                opacity: 0.8,
+                                                fontSize: '13px'
+                                            }}
+                                        >
+                                            Đã từ chối
+                                        </div>
+                                        <button
+                                            style={{
+                                                backgroundColor: '#10B981',
+                                                borderRadius: '4px',
+                                                padding: '8px 12px',
+                                                textAlign: 'center',
+                                                color: 'white',
+                                                fontWeight: '500',
+                                                flex: 1,
+                                                cursor: isUpdatingStatus ? 'not-allowed' : 'pointer',
+                                                opacity: isUpdatingStatus ? 0.7 : 1,
+                                                fontSize: '13px',
+                                                border: 'none'
+                                            }}
+                                            onClick={handleReapplyForJob}
+                                            disabled={isUpdatingStatus}
+                                        >
+                                            {isUpdatingStatus ? 'Đang xử lý...' : 'Ứng tuyển lại'}
+                                        </button>
                                     </div>
                                 ) : (
                                     <div

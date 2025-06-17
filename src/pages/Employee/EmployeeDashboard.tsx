@@ -7,6 +7,7 @@ import { FiBell } from "react-icons/fi";
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
 import JobDetailModal from '../../components/Employee/JobDetailModal';
+import RatingModal from '../../components/Employee/RatingModal';
 import { WorkerService } from '../../services';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../services/jobApplicationService';
 
@@ -49,6 +50,10 @@ const EmployeeDashboard: React.FC = () => {
     const [apiData, setApiData] = useState<WorkerJobApplicationsResponse | null>(null);
     const [selectedJobApplication, setSelectedJobApplication] = useState<WorkerJobApplicationsResponse['applications'][0] | null>(null);
 
+    // State for managing the rating modal
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [selectedJob, setSelectedJob] = useState({ title: '', employer: '' });
+
     // Function to open job detail modal
     const openJobDetailModal = (jobPostingId: number) => {
         console.log('🔍 Opening job detail modal for job posting ID:', jobPostingId);
@@ -67,6 +72,12 @@ const EmployeeDashboard: React.FC = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedJobApplication(null);
+    };
+
+    // Function to open rating modal with job details
+    const openRatingModal = (jobTitle: string, employerName: string) => {
+        setSelectedJob({ title: jobTitle, employer: employerName });
+        setIsRatingModalOpen(true);
     };
 
     // Static job data (keeping original static data)
@@ -200,7 +211,7 @@ const EmployeeDashboard: React.FC = () => {
                     style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
                     color: '#309689'
                 };
-            } else if (jobPostingStatus === 'COMPLETED') {
+            } else if (jobPostingStatus === 'COMPLETED' || jobPostingStatus === 'CLOSED') {
                 return {
                     text: 'Đã xong',
                     style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
@@ -500,6 +511,7 @@ const EmployeeDashboard: React.FC = () => {
                                                 {job.action.type === 'rating' ? (
                                                     <button
                                                         className="detail-button"
+                                                        onClick={() => openRatingModal(job.title, job.action.employerName || 'Unknown')}
                                                     >
                                                         {job.action.text}
                                                     </button>
@@ -527,6 +539,14 @@ const EmployeeDashboard: React.FC = () => {
                 onClose={closeModal}
                 jobApplication={selectedJobApplication}
                 onStatusUpdate={fetchJobApplications}
+            />
+
+            {/* Rating Modal */}
+            <RatingModal
+                isOpen={isRatingModalOpen}
+                onClose={() => setIsRatingModalOpen(false)}
+                jobTitle={selectedJob.title}
+                employerName={selectedJob.employer}
             />
 
             {/* Footer with top border that spans full width */}
