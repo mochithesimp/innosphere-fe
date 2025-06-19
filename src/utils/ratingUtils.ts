@@ -42,4 +42,47 @@ export const clearRatingRecords = (): void => {
     } catch (error) {
         console.error('Error clearing rating records:', error);
     }
+};
+
+// Employer rating functions for rating workers
+/**
+ * Check if a worker has already been rated for a job application
+ * @param jobApplicationId - The ID of the job application
+ * @returns boolean - true if already rated, false otherwise
+ */
+export const isWorkerRated = (jobApplicationId: number): boolean => {
+    try {
+        const ratedWorkers = JSON.parse(localStorage.getItem('ratedWorkerJobApplications') || '[]');
+        return ratedWorkers.includes(jobApplicationId);
+    } catch (error) {
+        console.error('Error checking worker rating status:', error);
+        return false;
+    }
+};
+
+/**
+ * Mark a worker as rated for a job application
+ * @param jobApplicationId - The ID of the job application to mark as rated
+ */
+export const markWorkerAsRated = (jobApplicationId: number): void => {
+    try {
+        const ratedWorkers = JSON.parse(localStorage.getItem('ratedWorkerJobApplications') || '[]');
+        if (!ratedWorkers.includes(jobApplicationId)) {
+            ratedWorkers.push(jobApplicationId);
+            localStorage.setItem('ratedWorkerJobApplications', JSON.stringify(ratedWorkers));
+        }
+    } catch (error) {
+        console.error('Error marking worker as rated:', error);
+    }
+};
+
+/**
+ * Clear all worker rating records (useful for testing or logout)
+ */
+export const clearWorkerRatingRecords = (): void => {
+    try {
+        localStorage.removeItem('ratedWorkerJobApplications');
+    } catch (error) {
+        console.error('Error clearing worker rating records:', error);
+    }
 }; 

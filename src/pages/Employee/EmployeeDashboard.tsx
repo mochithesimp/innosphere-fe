@@ -81,29 +81,19 @@ const EmployeeDashboard: React.FC = () => {
         setSelectedJobApplication(null);
     };
 
-    // Load rated job applications from localStorage on component mount
-    useEffect(() => {
-        const ratedJobs = JSON.parse(localStorage.getItem('ratedJobApplications') || '[]');
-        setRatedJobApplications(ratedJobs);
-    }, []);
-
-    // Function to handle successful rating
+    // Rating functions
     const handleRatingSuccess = (jobApplicationId: number) => {
-        setRatedJobApplications(prev => {
-            if (!prev.includes(jobApplicationId)) {
-                return [...prev, jobApplicationId];
-            }
-            return prev;
-        });
+        console.log('🌟 Rating success for application:', jobApplicationId);
+        setRatedJobApplications(prev => [...prev, jobApplicationId]);
+        setIsRatingModalOpen(false);
     };
 
-    // Function to open rating modal with job details
     const openRatingModal = (jobTitle: string, employerName: string, jobApplicationId: number, employerId: number) => {
         setSelectedJob({
             title: jobTitle,
             employer: employerName,
-            jobApplicationId: jobApplicationId,
-            employerId: employerId
+            jobApplicationId,
+            employerId
         });
         setIsRatingModalOpen(true);
     };
@@ -218,7 +208,7 @@ const EmployeeDashboard: React.FC = () => {
         return `${day} tháng ${month}, ${year} ${hours}:${minutes}`;
     };
 
-    // Function to get status info based on application and job posting status
+    // Function to get status info based on application and job posting status (updated to match Employee Jobs page)
     const getStatusInfo = (applicationStatus: string, jobPostingStatus: string) => {
         if (applicationStatus === 'PENDING') {
             return {
@@ -233,13 +223,16 @@ const EmployeeDashboard: React.FC = () => {
                 color: '#dc2626'
             };
         } else if (applicationStatus === 'ACCEPTED') {
+            // Show "Hoạt động" for ACCEPTED applications with APPROVED job posting
             if (jobPostingStatus === 'APPROVED') {
                 return {
                     text: 'Hoạt động',
                     style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
                     color: '#309689'
                 };
-            } else if (jobPostingStatus === 'COMPLETED' || jobPostingStatus === 'CLOSED') {
+            }
+            // Show "Đã xong" for ACCEPTED applications with COMPLETED or CLOSED job posting
+            else if (jobPostingStatus === 'COMPLETED' || jobPostingStatus === 'CLOSED') {
                 return {
                     text: 'Đã xong',
                     style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
@@ -475,6 +468,8 @@ const EmployeeDashboard: React.FC = () => {
                                         cursor: pointer !important;
                                         display: inline-block !important;
                                         text-decoration: none !important;
+                                        outline: none !important;
+                                        box-shadow: none !important;
                                     }
                                     button.detail-button:hover {
                                         background-color: #dfeeed !important;
@@ -484,6 +479,9 @@ const EmployeeDashboard: React.FC = () => {
                                         background-color: #EBF5F4 !important;
                                         color: #309689 !important;
                                         outline: none !important;
+                                    }
+                                    button.detail-button:disabled {
+                                        cursor: not-allowed !important;
                                     }
                                 `
                             }} />
@@ -549,7 +547,6 @@ const EmployeeDashboard: React.FC = () => {
 
                                                         return (
                                                             <button
-                                                                className="detail-button"
                                                                 onClick={() => {
                                                                     if (!isRated) {
                                                                         if (job.isFromAPI && apiData) {
@@ -563,23 +560,16 @@ const EmployeeDashboard: React.FC = () => {
                                                                                     application.jobPosting.employerId
                                                                                 );
                                                                             }
-                                                                        } else {
-                                                                            // For static data, we'll use placeholder values
-                                                                            openRatingModal(job.title, job.action.employerName || 'Unknown', 0, 0);
                                                                         }
                                                                     }
                                                                 }}
+                                                                className="detail-button"
                                                                 disabled={isRated}
                                                                 style={{
                                                                     backgroundColor: isRated ? '#9CA3AF' : '#EBF5F4',
                                                                     color: isRated ? '#6B7280' : '#309689',
                                                                     cursor: isRated ? 'not-allowed' : 'pointer',
-                                                                    opacity: isRated ? 0.7 : 1,
-                                                                    padding: '6px 16px',
-                                                                    borderRadius: '6px',
-                                                                    border: `1px solid ${isRated ? '#9CA3AF' : '#d0e6e3'}`,
-                                                                    fontSize: '14px',
-                                                                    fontWeight: '500'
+                                                                    opacity: isRated ? 0.7 : 1
                                                                 }}
                                                             >
                                                                 {isRated ? 'Đã đánh giá' : job.action.text}

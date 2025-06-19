@@ -9,8 +9,6 @@ export interface RatingCriteriaModel {
     description?: string;
     criteriaType: string; // "Employer" or "Worker"
 }
-
-// Interfaces for Creating Employer Rating
 export interface CreateEmployerRatingDetailModel {
     ratingCriteriaId: number;
     score: number; // 0-5
@@ -30,7 +28,7 @@ export interface EmployerRatingModel {
     employerId: number;
     ratingValue: number;
     comment?: string;
-    ratedAt: string;
+    createdAt: string;
 }
 
 export interface EmployerRatingCriteriaModel {
@@ -39,6 +37,29 @@ export interface EmployerRatingCriteriaModel {
     ratingCriteriaId: number;
     score: number;
     ratingCriteria: RatingCriteriaModel;
+}
+
+// Add worker rating interfaces
+export interface CreateWorkerRatingDetailModel {
+    ratingCriteriaId: number;
+    score: number;
+}
+
+export interface CreateWorkerRatingModel {
+    jobApplicationId: number;
+    workerId: number;
+    ratingValue: number;
+    comment?: string;
+    details: CreateWorkerRatingDetailModel[];
+}
+
+export interface WorkerRatingModel {
+    id: number;
+    jobApplicationId: number;
+    workerId: number;
+    ratingValue: number;
+    comment?: string;
+    createdAt: string;
 }
 
 export class RatingService {
@@ -83,6 +104,17 @@ export class RatingService {
     static async getEmployerRatingDetails(ratingId: number): Promise<EmployerRatingCriteriaModel[]> {
         const response = await axios.get(`${API_BASE_URL}/api/employerrating/${ratingId}/details`, this.getAuthHeaders());
         return response.data;
+    }
+
+    // New worker rating methods
+    static async createWorkerRating(ratingData: CreateWorkerRatingModel): Promise<WorkerRatingModel> {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/api/workerrating`, ratingData, this.getAuthHeaders());
+            return response.data;
+        } catch (error) {
+            console.error('Error creating worker rating:', error);
+            throw error;
+        }
     }
 }
 

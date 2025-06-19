@@ -33,6 +33,7 @@ interface Applicant {
     applicationId?: number; // Job application ID for API calls
     applicationStatus?: string; // Current application status
     jobPostingStatus?: string; // Job posting status (OPEN, CLOSED, etc.)
+    workerId?: number; // The actual worker ID from the API
 }
 
 // Props interface for JobApplicationsView
@@ -78,6 +79,7 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
             applicationId: app.id, // Job application ID for API calls
             applicationStatus: app.status, // Current application status
             jobPostingStatus: app.jobPosting.status, // Job posting status
+            workerId: app.workerId, // Worker ID for rating
             workerProfile: app.workerProfile ? {
                 fullName: app.workerProfile.fullName,
                 bio: app.workerProfile.bio,

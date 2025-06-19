@@ -3,6 +3,30 @@ import { IoMdClose } from 'react-icons/io';
 import { RiStarLine, RiMailLine, RiUserReceived2Line, RiToggleLine, RiToggleFill } from 'react-icons/ri';
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYoutube, FaStar } from 'react-icons/fa';
 import { JobApplicationService } from '../../../services/jobApplicationService';
+import RatingService, { RatingCriteriaModel, CreateWorkerRatingModel } from '../../../services/ratingService';
+import { isWorkerRated, markWorkerAsRated } from '../../../utils/ratingUtils';
+
+// Add CSS for rating button to match Employee page styling and SendMail button dimensions
+const buttonStyles = `
+    .rating-button-fixed {
+        background-color: #F1F2F4 !important;
+        color: #309689 !important;
+        padding: 8px 16px !important;
+        border-radius: 6px !important;
+        border: 1px solid #e0e1e3 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        height: auto !important;
+        min-height: 40px !important;
+    }
+`;
 
 // Enhanced Applicant interface to support API data
 interface Applicant {
@@ -33,6 +57,7 @@ interface Applicant {
     applicationId?: number; // Job application ID for API calls
     applicationStatus?: string; // Current application status
     jobPostingStatus?: string; // Job posting status (OPEN, CLOSED, etc.)
+    workerId?: number; // The actual worker ID from the API
 }
 
 interface ApplicantPopupProps {
@@ -47,29 +72,124 @@ interface RatingPopupProps {
     isOpen: boolean;
     onClose: () => void;
     applicant: Applicant | null;
+    onRatingSuccess?: (jobApplicationId: number) => void;
 }
 
-const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant }) => {
-    const [ratings, setRatings] = useState({
-        workEfficiency: 3,
-        attitude: 4,
-        responsibility: 2,
-        skills: 5
-    });
+const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant, onRatingSuccess }) => {
+    const [criteria, setCriteria] = useState<RatingCriteriaModel[]>([]);
+    const [ratings, setRatings] = useState<{ [key: number]: number }>({});
     const [comment, setComment] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-    if (!isOpen || !applicant) return null;
+    // Fetch rating criteria when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchCriteria();
+        }
+    }, [isOpen]);
 
-    const handleRatingChange = (category: string, value: number) => {
+    const fetchCriteria = async () => {
+        try {
+            setLoading(true);
+            console.log('🌟 Fetching worker rating criteria...');
+            const criteriaData = await RatingService.getWorkerRatingCriteria();
+            console.log('🌟 Worker criteria fetched:', criteriaData);
+            setCriteria(criteriaData);
+
+            // Initialize ratings with 0 for each criterion
+            const initialRatings: { [key: number]: number } = {};
+            criteriaData.forEach(criterion => {
+                initialRatings[criterion.id] = 0;
+            });
+            setRatings(initialRatings);
+        } catch (error) {
+            console.error('❌ Error fetching worker criteria:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRatingChange = (criteriaId: number, value: number) => {
+        console.log(`🌟 Rating changed for criteria ${criteriaId}:`, value);
         setRatings(prev => ({
             ...prev,
-            [category]: value
+            [criteriaId]: value
         }));
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log('🌟 Submitting worker rating...');
+        console.log('🌟 Current ratings state:', ratings);
+        console.log('🌟 Applicant data:', applicant);
+
+        if (!applicant?.applicationId) {
+            console.error('❌ Missing application ID');
+            alert('Thiếu thông tin ứng dụng');
+            return;
+        }
+
+        // Get workerId from applicant data 
+        const workerId = applicant.workerId || applicant.id; // Use workerId if available, otherwise fall back to applicant.id
+
+        console.log('🌟 Debug - Applicant data:', {
+            applicantId: applicant.id,
+            workerId: applicant.workerId,
+            finalWorkerId: workerId,
+            applicationId: applicant.applicationId
+        });
+
+        // Validate that all criteria have been rated (not 0)
+        const unratedCriteria = criteria.filter(criterion => !ratings[criterion.id] || ratings[criterion.id] === 0);
+        if (unratedCriteria.length > 0) {
+            console.log('❌ Unrated criteria:', unratedCriteria);
+            alert('Vui lòng đánh giá tất cả các tiêu chí');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+
+            // Prepare rating details
+            const details = criteria.map(criterion => ({
+                ratingCriteriaId: criterion.id,
+                score: ratings[criterion.id]
+            }));
+
+            const ratingData: CreateWorkerRatingModel = {
+                jobApplicationId: applicant.applicationId,
+                workerId: workerId,
+                ratingValue: 0, // Will be calculated on backend
+                comment: comment || undefined,
+                details: details
+            };
+
+            console.log('🌟 Sending worker rating data:', JSON.stringify(ratingData, null, 2));
+
+            await RatingService.createWorkerRating(ratingData);
+            console.log('✅ Worker rating created successfully');
+
+            // Mark as rated and call success callback
+            if (onRatingSuccess) {
+                onRatingSuccess(applicant.applicationId);
+            }
+
+            alert('Đánh giá thành công!');
+            onClose();
+        } catch (error) {
+            console.error('❌ Error creating worker rating:', error);
+            alert('Có lỗi xảy ra khi tạo đánh giá');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (!isOpen || !applicant) return null;
+
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg w-[450px] overflow-auto relative p-6">
+            <div className="bg-white rounded-lg w-[450px] max-h-[80vh] overflow-auto relative p-6 mx-4">
                 <div className="flex justify-between items-center mb-4 text-left">
                     <h2 className="text-xl font-semibold text-left">Đánh giá ứng viên: {applicant.name}</h2>
                     <button
@@ -82,109 +202,64 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant })
 
                 <p className="text-gray-600 mb-6 text-left">Độ tin cậy và chất lượng công việc thế nào?</p>
 
-                <div className="space-y-6">
-                    <div className="text-left">
-                        <p className="mb-2 text-gray-700 font-medium text-left">Hiệu suất công việc</p>
-                        <div className="flex space-x-2 justify-start">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => handleRatingChange('workEfficiency', star)}
-                                >
-                                    <FaStar
-                                        size={24}
-                                        className={star <= ratings.workEfficiency
-                                            ? "text-yellow-500"
-                                            : "text-gray-300"}
-                                    />
-                                </button>
-                            ))}
+                {loading ? (
+                    <div className="space-y-6">
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">Đang tải tiêu chí đánh giá...</p>
                         </div>
                     </div>
+                ) : (
+                    <div className="space-y-6">
+                        {criteria.map((criterion) => (
+                            <div key={criterion.id} className="text-left">
+                                <p className="mb-2 text-gray-700 font-medium text-left">{criterion.criteriaName}</p>
+                                <div className="flex space-x-2 justify-start">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => handleRatingChange(criterion.id, star)}
+                                        >
+                                            <FaStar
+                                                size={24}
+                                                className={star <= (ratings[criterion.id] || 0)
+                                                    ? "text-yellow-500"
+                                                    : "text-gray-300"}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
 
-                    <div className="text-left">
-                        <p className="mb-2 text-gray-700 font-medium text-left">Thái độ và tinh thần làm việc</p>
-                        <div className="flex space-x-2 justify-start">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => handleRatingChange('attitude', star)}
-                                >
-                                    <FaStar
-                                        size={24}
-                                        className={star <= ratings.attitude
-                                            ? "text-yellow-500"
-                                            : "text-gray-300"}
-                                    />
-                                </button>
-                            ))}
+                        <div className="text-left">
+                            <p className="mb-2 text-gray-700 font-medium text-left">Bạn có thể cho chúng tôi biết thêm không?</p>
+                            <textarea
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                className="w-full border border-gray-300 rounded-md p-3 h-[100px] resize-none focus:outline-none focus:border-[#309689] text-left"
+                                placeholder="Thêm phản hồi"
+                                disabled={submitting}
+                            ></textarea>
+                        </div>
+
+                        <div className="flex justify-between mt-6">
+                            <button
+                                onClick={onClose}
+                                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 bg-white"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                className="px-6 py-2 text-white rounded-md flex items-center justify-center"
+                                style={{ backgroundColor: '#309689' }}
+                            >
+                                {submitting ? 'Đang gửi...' : 'Gửi'}
+                            </button>
                         </div>
                     </div>
-
-                    <div className="text-left">
-                        <p className="mb-2 text-gray-700 font-medium text-left">Tinh thần trách nhiệm</p>
-                        <div className="flex space-x-2 justify-start">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => handleRatingChange('responsibility', star)}
-                                >
-                                    <FaStar
-                                        size={24}
-                                        className={star <= ratings.responsibility
-                                            ? "text-yellow-500"
-                                            : "text-gray-300"}
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="text-left">
-                        <p className="mb-2 text-gray-700 font-medium text-left">Kỹ năng và năng lực</p>
-                        <div className="flex space-x-2 justify-start">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => handleRatingChange('skills', star)}
-                                >
-                                    <FaStar
-                                        size={24}
-                                        className={star <= ratings.skills
-                                            ? "text-yellow-500"
-                                            : "text-gray-300"}
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="text-left">
-                        <p className="mb-2 text-gray-700 font-medium text-left">Bạn có thể cho chúng tôi biết thêm không?</p>
-                        <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md p-3 h-[100px] resize-none focus:outline-none focus:border-[#309689] text-left"
-                            placeholder="Thêm phản hồi"
-                        ></textarea>
-                    </div>
-                </div>
-
-                <div className="flex justify-between mt-6">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                        Hủy bỏ
-                    </button>
-                    <a href="#" className="px-6 py-2 bg-[#309689] text-white rounded-md hover:bg-[#277b70] flex items-center justify-center">
-                        Gửi
-                    </a>
-                </div>
+                )}
             </div>
         </div>
     );
@@ -195,10 +270,29 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
     const [isRatingPopupOpen, setIsRatingPopupOpen] = useState(false);
     const [isHired, setIsHired] = useState(false);
     const [isHiring, setIsHiring] = useState(false);
+    const [hasRatedWorker, setHasRatedWorker] = useState(false);
+
+    // Inject CSS styles for button matching Employee page
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = buttonStyles;
+        document.head.appendChild(style);
+        return () => {
+            try {
+                document.head.removeChild(style);
+            } catch {
+                // Style might already be removed
+            }
+        };
+    }, []);
 
     // Update isHired state when applicant changes
     useEffect(() => {
         setIsHired(applicant?.applicationStatus === 'ACCEPTED');
+        // Check if this worker has been rated
+        if (applicant?.applicationId) {
+            setHasRatedWorker(isWorkerRated(applicant.applicationId));
+        }
     }, [applicant]);
 
     if (!isOpen || !applicant) return null;
@@ -236,6 +330,13 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
     };
 
     const closeRatingPopup = () => {
+        setIsRatingPopupOpen(false);
+    };
+
+    const handleRatingSuccess = (jobApplicationId: number) => {
+        console.log('🌟 Worker rating success for application:', jobApplicationId);
+        markWorkerAsRated(jobApplicationId);
+        setHasRatedWorker(true);
         setIsRatingPopupOpen(false);
     };
 
@@ -280,18 +381,20 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                 <span>Send Mail</span>
                             </button>
                             {isRatingMode ? (
-                                <a
-                                    href="#"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        openRatingPopup();
-                                    }}
-                                    className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md"
-                                >
-                                    <span>Đánh Giá Ứng Viên</span>
-                                </a>
-                            ) : (
-                                isHired && applicant.jobPostingStatus === 'CLOSED' ? (
+                                hasRatedWorker ? (
+                                    <button
+                                        disabled
+                                        className="rating-button-fixed"
+                                        style={{
+                                            backgroundColor: '#9CA3AF',
+                                            color: '#6B7280',
+                                            cursor: 'not-allowed',
+                                            opacity: 0.7
+                                        }}
+                                    >
+                                        <span>Đã đánh giá</span>
+                                    </button>
+                                ) : (
                                     <a
                                         href="#"
                                         onClick={(e) => {
@@ -300,8 +403,36 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                         }}
                                         className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md"
                                     >
-                                        <span>Đánh giá ứng viên</span>
+                                        <span>Đánh Giá Ứng Viên</span>
                                     </a>
+                                )
+                            ) : (
+                                isHired && applicant.jobPostingStatus === 'CLOSED' ? (
+                                    hasRatedWorker ? (
+                                        <button
+                                            disabled
+                                            className="rating-button-fixed"
+                                            style={{
+                                                backgroundColor: '#9CA3AF',
+                                                color: '#6B7280',
+                                                cursor: 'not-allowed',
+                                                opacity: 0.7
+                                            }}
+                                        >
+                                            <span>Đã đánh giá</span>
+                                        </button>
+                                    ) : (
+                                        <a
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                openRatingPopup();
+                                            }}
+                                            className="w-auto h-auto flex items-center gap-2 py-2 px-4 bg-[#309689] text-white rounded-md"
+                                        >
+                                            <span>Đánh giá ứng viên</span>
+                                        </a>
+                                    )
                                 ) : isHired ? (
                                     <a
                                         href="#"
@@ -640,8 +771,9 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                 isOpen={isRatingPopupOpen}
                 onClose={closeRatingPopup}
                 applicant={applicant}
+                onRatingSuccess={handleRatingSuccess}
             />
-        </div >
+        </div>
     );
 };
 

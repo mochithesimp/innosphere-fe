@@ -53,6 +53,7 @@ export interface WorkerJobApplicationsResponse {
     applications: {
         id: number;
         jobPostingId: number;
+        workerId: number; // Worker ID for rating
         jobPosting: {
             id: number;
             employerId: number;
