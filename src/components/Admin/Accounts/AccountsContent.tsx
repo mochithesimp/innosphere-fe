@@ -1,6 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { UserService, UserModel } from '../../../services';
 
 const AccountsContent: React.FC = () => {
+    const [accountUsers, setAccountUsers] = useState<UserModel[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setIsLoading(true);
+                const userData = await UserService.getAllUsers();
+                setAccountUsers(userData);
+            } catch (error) {
+                console.error('Error fetching account users:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
+    // Get user initials for avatar
+    const getUserInitials = (fullName: string) => {
+        return fullName
+            .split(' ')
+            .map(name => name.charAt(0))
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    // Get user status (mock status since API doesn't provide this)
+    const getUserStatus = (index: number) => {
+        const statuses = [
+            { text: 'Chấp nhận', color: 'text-green-500' },
+            { text: 'Đang giải quyết', color: 'text-blue-500' },
+            { text: 'Từ chối', color: 'text-red-500' }
+        ];
+        return statuses[index % statuses.length];
+    };
+
+    // Format date to Vietnamese time format
+    const getTimeFormat = (index: number) => {
+        const hours = [1, 5, 10, 2];
+        return `${hours[index % hours.length]} tiếng trước`;
+    };
 
     const recentTransactions = [
         {
@@ -57,37 +102,6 @@ const AccountsContent: React.FC = () => {
             status: 'Hoàn thành',
             amount: '+$780',
             amountColor: 'text-green-500'
-        }
-    ];
-
-    const accountUsers = [
-        {
-            id: 1,
-            name: 'Minh Anh',
-            time: '5 tiếng trước',
-            status: 'Đang giải quyết',
-            statusColor: 'text-blue-500'
-        },
-        {
-            id: 2,
-            name: 'Linh Huế',
-            time: '1 tiếng trước',
-            status: 'Chấp nhận',
-            statusColor: 'text-green-500'
-        },
-        {
-            id: 3,
-            name: 'Tâm Anh',
-            time: '5 tiếng trước',
-            status: 'Từ chối',
-            statusColor: 'text-red-500'
-        },
-        {
-            id: 4,
-            name: 'Thái Sơn',
-            time: '10 tiếng trước',
-            status: 'Chấp nhận',
-            statusColor: 'text-green-500'
         }
     ];
 
@@ -252,23 +266,49 @@ const AccountsContent: React.FC = () => {
                 <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6 text-left">Tài khoản khách hàng</h2>
 
-                    <div className="space-y-4">
-                        {accountUsers.map((user) => (
-                            <div key={user.id} className="flex items-center justify-between py-3">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                                        <span className="text-pink-500 text-lg">👤</span>
+                    <div className={`space-y-4 ${accountUsers.length > 4 ? 'max-h-80 overflow-y-auto pr-2' : ''}`}>
+                        {isLoading ? (
+                            // Loading state
+                            Array.from({ length: 4 }).map((_, index) => (
+                                <div key={index} className="flex items-center justify-between py-3">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse">
+                                        </div>
+                                        <div>
+                                            <div className="h-4 bg-gray-200 rounded mb-2 w-20 animate-pulse"></div>
+                                            <div className="h-3 bg-gray-200 rounded w-16 animate-pulse"></div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-medium text-gray-900">{user.name}</h3>
-                                        <p className="text-sm text-gray-500">{user.time}</p>
-                                    </div>
+                                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
                                 </div>
-                                <span className={`text-sm font-medium ${user.statusColor}`}>
-                                    {user.status}
-                                </span>
+                            ))
+                        ) : accountUsers.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                Không có khách hàng nào
                             </div>
-                        ))}
+                        ) : (
+                            accountUsers.map((user, index) => {
+                                const status = getUserStatus(index);
+                                return (
+                                    <div key={user.id} className="flex items-center justify-between py-3">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
+                                                <span className="text-pink-500 text-xs font-medium">
+                                                    {getUserInitials(user.fullName)}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium text-gray-900">{user.fullName}</h3>
+                                                <p className="text-sm text-gray-500">{getTimeFormat(index)}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-sm font-medium ${status.color}`}>
+                                            {status.text}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </div>

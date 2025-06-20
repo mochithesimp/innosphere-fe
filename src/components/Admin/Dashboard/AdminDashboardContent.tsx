@@ -1,7 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { IoCard, IoSwapHorizontal, IoTrendingUp } from 'react-icons/io5';
+import { UserService, UserModel } from '../../../services';
 
 const AdminDashboardContent: React.FC = () => {
+    const [users, setUsers] = useState<UserModel[]>([]);
+    const [currentPage, setCurrentPage] = useState<number>(0); // 0 for first 3, 1 for next 3
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setIsLoading(true);
+                const userData = await UserService.getAllUsers();
+                // Get only 6 users for outstanding customers
+                setUsers(userData.slice(0, 6));
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
+    // Get current 3 users to display
+    const getCurrentUsers = () => {
+        const startIndex = currentPage * 3;
+        return users.slice(startIndex, startIndex + 3);
+    };
+
+    // Get user initials for avatar
+    const getUserInitials = (fullName: string) => {
+        return fullName
+            .split(' ')
+            .map(name => name.charAt(0))
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    // Get avatar color based on user index
+    const getAvatarColor = (index: number) => {
+        const colors = ['bg-blue-100 text-blue-600', 'bg-purple-100 text-purple-600', 'bg-green-100 text-green-600'];
+        return colors[index % colors.length];
+    };
+
+    // Get role color
+    const getRoleColor = (index: number) => {
+        const colors = ['text-blue-500', 'text-purple-500', 'text-green-500'];
+        return colors[index % colors.length];
+    };
+
     return (
         <div className="space-y-6">
             {/* Credit Cards and Recent Transactions Section - Same Line */}
@@ -218,33 +268,42 @@ const AdminDashboardContent: React.FC = () => {
                     <h2 className="text-lg font-semibold text-gray-900 mb-6 text-left">Khách hàng xuất sắc nhất</h2>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center justify-around flex-1 space-x-6">
-                            <div className="text-center flex-1">
-                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-3 mx-auto">
-                                    <span className="text-blue-600 font-bold text-lg">LV</span>
-                                </div>
-                                <p className="text-sm font-medium text-gray-800">Lê Thanh Vũ</p>
-                                <p className="text-sm text-blue-500">Actor</p>
-                            </div>
-                            <div className="text-center flex-1">
-                                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-3 mx-auto">
-                                    <span className="text-purple-600 font-bold text-lg">AL</span>
-                                </div>
-                                <p className="text-sm font-medium text-gray-800">Anh Vũ Lê</p>
-                                <p className="text-sm text-purple-500">Developer</p>
-                            </div>
-                            <div className="text-center flex-1">
-                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3 mx-auto">
-                                    <span className="text-green-600 font-bold text-lg">TL</span>
-                                </div>
-                                <p className="text-sm font-medium text-gray-800">Tín Lê</p>
-                                <p className="text-sm text-green-500">Designer</p>
-                            </div>
+                            {isLoading ? (
+                                // Loading state
+                                Array.from({ length: 3 }).map((_, index) => (
+                                    <div key={index} className="text-center flex-1">
+                                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-3 mx-auto animate-pulse">
+                                        </div>
+                                        <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                                        <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                                    </div>
+                                ))
+                            ) : (
+                                // User data
+                                getCurrentUsers().map((user, index) => (
+                                    <div key={user.id} className="text-center flex-1">
+                                        <div className={`w-16 h-16 ${getAvatarColor(index)} rounded-full flex items-center justify-center mb-3 mx-auto`}>
+                                            <span className="font-bold text-lg">{getUserInitials(user.fullName)}</span>
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-800">{user.fullName}</p>
+                                        <p className={`text-sm ${getRoleColor(index)}`}>
+                                            {user.roles.join(', ')}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
                         </div>
-                        <button className="text-gray-400 hover:text-gray-600 ml-4">
-                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
+                        {users.length > 3 && (
+                            <button
+                                className="text-gray-400 hover:text-gray-600 ml-4"
+                                onClick={() => setCurrentPage(prev => prev === 0 ? 1 : 0)}
+                                disabled={isLoading}
+                            >
+                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 </div>
 
