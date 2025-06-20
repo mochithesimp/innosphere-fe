@@ -18,7 +18,9 @@ const Header: React.FC = () => {
     const handleAvatarClick = () => {
         if (token) {
             const role = getRoleFromToken(token);
-            if (role === "Worker") {
+            if (role === "Admin") {
+                navigate("/admin/dashboard");
+            } else if (role === "Worker") {
                 navigate("/employee/dashboard");
             } else if (role === "Employer") {
                 navigate("/employer/dashboard");

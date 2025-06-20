@@ -60,24 +60,10 @@ const LoginForm: React.FC = () => {
 
         const role = getRoleFromToken(accessToken);
 
-        if (role === "Admin") {
-          swal({
-            title: "Truy cập bị từ chối",
-            text: "Tài khoản hoặc mật khẩu không chính xác.",
-            icon: "warning",
-            buttons: {
-              ok: {
-                text: "OK",
-                value: true,
-                className: "swal-ok-button",
-              },
-            },
-          });
-          return;
-        }
-
         // Navigate based on role
-        if (role === "Worker") {
+        if (role === "Admin") {
+          navigate("/admin/dashboard");
+        } else if (role === "Worker") {
           navigate("/employee/dashboard");
         } else if (role === "Employer") {
           // Check if employer profile exists

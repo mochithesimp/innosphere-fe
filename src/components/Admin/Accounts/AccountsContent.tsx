@@ -1,6 +1,7 @@
 import React from 'react';
 
 const AccountsContent: React.FC = () => {
+
     const recentTransactions = [
         {
             id: 1,

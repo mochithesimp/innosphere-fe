@@ -62,10 +62,10 @@ const HeroBanner: React.FC = () => {
         console.error("Error fetching dashboard stats:", error);
       }
     };
-  
+
     fetchCounts();
   }, []);
-  
+
 
   // Hàm xử lý khi click nút Tìm việc
   const handleSearch = async () => {
@@ -104,7 +104,9 @@ const HeroBanner: React.FC = () => {
   const handleAvatarClick = () => {
     if (token) {
       const role = getRoleFromToken(token);
-      if (role === "Worker") {
+      if (role === "Admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "Worker") {
         navigate("/employee/dashboard");
       } else if (role === "Employer") {
         navigate("/employer/dashboard");
@@ -350,7 +352,7 @@ const HeroBanner: React.FC = () => {
               <div>
                 {/* <h4 className="font-bold text-xl text-white">10,250</h4>
                  */}
-                 <h4 className="font-bold text-xl text-white">{workerCount.toLocaleString()}</h4>
+                <h4 className="font-bold text-xl text-white">{workerCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Ứng viên</p>
               </div>
             </div>
