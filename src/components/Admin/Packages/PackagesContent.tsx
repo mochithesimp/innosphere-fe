@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { IoFunnelOutline, IoCalendarOutline, IoChevronDownOutline, IoRefreshOutline, IoCloseOutline, IoChevronBackOutline, IoChevronForwardOutline, IoEllipsisVertical } from 'react-icons/io5';
 import { AdminService, PackageDisplayData, AdvertisementModel, JobPostingModel, SubscriptionModel } from '../../../services';
 import { AxiosError } from 'axios';
+import JobPostingDetailModal from '../JobPostingDetailModal';
 
 interface ModalData {
     name: string;
@@ -18,6 +19,8 @@ const PackagesContent: React.FC = () => {
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
     const [modalData, setModalData] = useState<ModalData | null>(null);
+    const [showJobDetailModal, setShowJobDetailModal] = useState(false);
+    const [selectedJobPosting, setSelectedJobPosting] = useState<JobPostingModel | null>(null);
 
     // API data states
     const [apiPackagesData, setApiPackagesData] = useState<PackageDisplayData[]>([]);
@@ -198,6 +201,23 @@ const PackagesContent: React.FC = () => {
     const closeImageModal = () => {
         setShowImageModal(false);
         setModalData(null);
+    };
+
+    const openJobDetailModal = async (jobPostingId: number) => {
+        try {
+            const jobPosting = await AdminService.getJobPostingById(jobPostingId);
+            if (jobPosting) {
+                setSelectedJobPosting(jobPosting);
+                setShowJobDetailModal(true);
+            }
+        } catch (error) {
+            console.error('Error fetching job posting details:', error);
+        }
+    };
+
+    const closeJobDetailModal = () => {
+        setShowJobDetailModal(false);
+        setSelectedJobPosting(null);
     };
 
     const getStatusColor = (status: string) => {
@@ -480,6 +500,22 @@ const PackagesContent: React.FC = () => {
                                                 Xem ảnh
                                             </button>
                                         )}
+                                        {item.serviceType === 'Đăng tin' && (
+                                            <button
+                                                onClick={() => {
+                                                    const originalJp = item.originalData as JobPostingModel;
+                                                    openJobDetailModal(originalJp.id);
+                                                }}
+                                                className="ml-2 px-3 py-1 text-xs rounded-full hover:bg-gray-50"
+                                                style={{
+                                                    color: '#123288',
+                                                    borderColor: '#123288',
+                                                    border: '1px solid #123288'
+                                                }}
+                                            >
+                                                Xem chi tiết
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900">
@@ -633,6 +669,13 @@ const PackagesContent: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Job Posting Detail Modal */}
+            <JobPostingDetailModal
+                isOpen={showJobDetailModal}
+                onClose={closeJobDetailModal}
+                jobPosting={selectedJobPosting}
+            />
         </div>
     );
 };

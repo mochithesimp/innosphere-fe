@@ -141,6 +141,17 @@ export const AdminService = {
         }
     },
 
+    // Get job posting by ID
+    getJobPostingById: async (id: number): Promise<JobPostingModel | null> => {
+        try {
+            const response = await request.get(`/api/jobposting/${id}`);
+            return response.data || response;
+        } catch (error) {
+            console.error('Error fetching job posting by ID:', error);
+            return null;
+        }
+    },
+
     // Convert raw data to display format
     convertToDisplayData: (
         advertisements: AdvertisementModel[],
