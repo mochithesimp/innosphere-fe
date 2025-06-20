@@ -1,9 +1,10 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { IoNotificationsOutline, IoSettingsOutline } from 'react-icons/io5';
 
 const AdminHeader: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
 
     const getPageTitle = () => {
         switch (location.pathname) {
@@ -34,14 +35,17 @@ const AdminHeader: React.FC = () => {
         <header className="bg-white shadow-sm border-b border-gray-200">
             <div className="flex items-center justify-between px-6 py-4 pr-12">
                 {/* Logo - matching sidebar style */}
-                <div className="flex items-center w-64 px-4">
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center w-64 px-4 hover:opacity-80 transition-opacity cursor-pointer"
+                >
                     <img
                         src="/logo.png"
                         alt="InnoSphere Logo"
                         className="h-8 w-auto"
                     />
                     <span className="ml-2 text-xl font-semibold" style={{ color: '#00FF19' }}>InnoSphere</span>
-                </div>
+                </button>
 
                 {/* Center section - Page title */}
                 <div className="flex-1 flex items-center">

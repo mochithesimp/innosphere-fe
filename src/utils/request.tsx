@@ -7,6 +7,35 @@ const request = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Add request interceptor to include auth token
+request.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle 401 errors
+request.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear tokens and redirect to login if needed
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      // You might want to redirect to login page here
+      console.warn('Authentication failed. Please log in again.');
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const get = async (path: string, options = {}) => {
   try {
     const response: AxiosResponse = await request.get(path, options);

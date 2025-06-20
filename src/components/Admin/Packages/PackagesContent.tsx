@@ -1,18 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { IoFunnelOutline, IoCalendarOutline, IoChevronDownOutline, IoRefreshOutline, IoCloseOutline, IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5';
-
-interface PackageData {
-    id: string;
-    name: string;
-    serviceType: string;
-    date: string;
-    type: string;
-    status: string;
-}
+import { IoFunnelOutline, IoCalendarOutline, IoChevronDownOutline, IoRefreshOutline, IoCloseOutline, IoChevronBackOutline, IoChevronForwardOutline, IoEllipsisVertical } from 'react-icons/io5';
+import { AdminService, PackageDisplayData, AdvertisementModel, JobPostingModel, SubscriptionModel } from '../../../services';
+import { AxiosError } from 'axios';
 
 interface ModalData {
     name: string;
     type: string;
+    imageUrl?: string;
 }
 
 const PackagesContent: React.FC = () => {
@@ -25,8 +19,67 @@ const PackagesContent: React.FC = () => {
     const [showImageModal, setShowImageModal] = useState(false);
     const [modalData, setModalData] = useState<ModalData | null>(null);
 
+    // API data states
+    const [apiPackagesData, setApiPackagesData] = useState<PackageDisplayData[]>([]);
+    const [isApiLoading, setIsApiLoading] = useState(true);
+    const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(9);
+
+    // Loading state for status updates
+    const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+
     const serviceDropdownRef = useRef<HTMLDivElement>(null);
     const statusDropdownRef = useRef<HTMLDivElement>(null);
+    const actionDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Load data from APIs
+    useEffect(() => {
+        const fetchAllData = async () => {
+            try {
+                setIsApiLoading(true);
+
+                // Debug: Check current token and user info
+                const token = localStorage.getItem('token');
+                console.log('🔑 Current token:', token ? 'Token exists' : 'No token');
+                if (token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        console.log('🔍 Token payload:', payload);
+                        console.log('👤 User roles:', payload.role || 'No role found');
+                    } catch (e) {
+                        console.error('❌ Failed to decode token:', e);
+                    }
+                }
+
+                const [advertisements, jobPostings, subscriptions] = await Promise.all([
+                    AdminService.getAllAdvertisements(),
+                    AdminService.getAllJobPostings(),
+                    AdminService.getAllSubscriptions()
+                ]);
+
+                const combinedData = AdminService.convertToDisplayData(
+                    advertisements,
+                    jobPostings,
+                    subscriptions
+                );
+
+                setApiPackagesData(combinedData);
+            } catch (error) {
+                console.error('Error fetching admin packages data:', error);
+                if (error instanceof AxiosError) {
+                    console.error('Error details:', error.response?.data);
+                    console.error('Error status:', error.response?.status);
+                }
+            } finally {
+                setIsApiLoading(false);
+            }
+        };
+
+        fetchAllData();
+    }, []);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -37,6 +90,9 @@ const PackagesContent: React.FC = () => {
             if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
                 setShowStatusDropdown(false);
             }
+            if (actionDropdownRef.current && !actionDropdownRef.current.contains(event.target as Node)) {
+                setDropdownOpenId(null);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
@@ -45,83 +101,11 @@ const PackagesContent: React.FC = () => {
         };
     }, []);
 
-    const packagesData: PackageData[] = [
-        {
-            id: '00001',
-            name: 'Le Thanh Vu',
-            serviceType: 'Quảng cáo',
-            date: '19 Tháng 3 2025',
-            type: 'Đầu trang',
-            status: 'Hoàn thành'
-        },
-        {
-            id: '00002',
-            name: 'Vu Le Thanh',
-            serviceType: 'Quảng cáo',
-            date: '19 Tháng 3 2025',
-            type: 'Đầu trang',
-            status: 'Đang xử lý'
-        },
-        {
-            id: '00003',
-            name: 'Thanh Vu Le',
-            serviceType: 'Gói thành viên',
-            date: '19 Tháng 3 2025',
-            type: 'Đầu trang',
-            status: 'Từ chối'
-        },
-        {
-            id: '00004',
-            name: 'Lu Thanh Ve',
-            serviceType: 'Quảng cáo',
-            date: '19 Tháng 3 2025',
-            type: 'Giữa trang',
-            status: 'Hoàn thành'
-        },
-        {
-            id: '00005',
-            name: 'Mochi',
-            serviceType: 'Gói thành viên',
-            date: '18 Tháng 3 2025',
-            type: 'Cuối trang',
-            status: 'Đang xử lý'
-        },
-        {
-            id: '00006',
-            name: 'Mochi the Cutie',
-            serviceType: 'Quảng cáo',
-            date: '18 Tháng 3 2025',
-            type: 'Giữa trang',
-            status: 'Hoàn thành'
-        },
-        {
-            id: '00007',
-            name: 'Mochi the Simp',
-            serviceType: 'Gói thành viên',
-            date: '18 Tháng 3 2025',
-            type: 'Giữa trang',
-            status: 'Đang xử lý'
-        },
-        {
-            id: '00008',
-            name: 'Anh Vu Le',
-            serviceType: 'Quảng cáo',
-            date: '17 Tháng 3 2025',
-            type: 'Đầu trang',
-            status: 'Đang chờ'
-        },
-        {
-            id: '00009',
-            name: 'Le Vu Anh',
-            serviceType: 'Gói thành viên',
-            date: '17 Tháng 3 2025',
-            type: 'Cuối trang',
-            status: 'Hoàn thành'
-        }
-    ];
+    // Use API data or fallback to empty array while loading
+    const packagesData = isApiLoading ? [] : apiPackagesData;
 
-    const serviceTypes = ['Quảng Cáo', 'Gói thành viên'];
-    const statusOptions = ['Hoàn thành', 'Đang xử lý', 'Từ chối', 'Đang chờ'];
+    const serviceTypes = ['Quảng Cáo', 'Đăng tin', 'Gói thành viên'];
+    const statusOptions = ['Hoàn thành', 'Đang xử lý', 'Từ chối', 'Đang chờ', 'Đồng ý'];
 
     // Filter the data based on selected filters
     const filteredData = useMemo(() => {
@@ -130,26 +114,54 @@ const PackagesContent: React.FC = () => {
                 item.serviceType.toLowerCase() === service.toLowerCase()
             );
             const matchesStatus = filterStatus.length === 0 || filterStatus.includes(item.status);
-            const matchesDate = !filterDate || item.date.includes(convertDateFormat(filterDate));
+
+            // Fix date filtering - compare actual dates instead of formatted strings
+            let matchesDate = true;
+            if (filterDate) {
+                const filterDateObj = new Date(filterDate);
+                const itemDateObj = new Date(
+                    item.originalType === 'advertisement' ? (item.originalData as AdvertisementModel).startDate :
+                        item.originalType === 'jobposting' ? (item.originalData as JobPostingModel).postedAt :
+                            (item.originalData as SubscriptionModel).startDate
+                );
+
+                // Compare only the date part (ignore time)
+                const filterDateStr = filterDateObj.toDateString();
+                const itemDateStr = itemDateObj.toDateString();
+                matchesDate = filterDateStr === itemDateStr;
+
+                // Debug logging for date filter
+                if (packagesData.length > 0 && packagesData.indexOf(item) === 0) {
+                    console.log('🗓️ Date Filter Debug:');
+                    console.log('Filter Date:', filterDate, '→', filterDateStr);
+                    console.log('Item Date:', itemDateObj.toISOString().split('T')[0], '→', itemDateStr);
+                    console.log('Match:', matchesDate);
+                }
+            }
 
             return matchesService && matchesStatus && matchesDate;
         });
-    }, [filterService, filterStatus, filterDate]);
+    }, [packagesData, filterService, filterStatus, filterDate]);
 
-    // Convert date from YYYY-MM-DD to Vietnamese format
-    const convertDateFormat = (dateStr: string) => {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-        return `${day} Tháng ${month} ${year}`;
-    };
+    // Paginate the filtered data
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        return filteredData.slice(startIndex, endIndex);
+    }, [filteredData, currentPage, itemsPerPage]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterService, filterStatus, filterDate]);
 
     const resetFilters = () => {
         setFilterDate('');
         setFilterService([]);
         setFilterStatus([]);
+        setCurrentPage(1);
     };
 
     const toggleServiceFilter = (service: string) => {
@@ -170,14 +182,16 @@ const PackagesContent: React.FC = () => {
 
     const applyServiceFilter = () => {
         setShowServiceDropdown(false);
+        // Page reset is handled by useEffect
     };
 
     const applyStatusFilter = () => {
         setShowStatusDropdown(false);
+        // Page reset is handled by useEffect
     };
 
-    const openImageModal = (name: string, type: string) => {
-        setModalData({ name, type });
+    const openImageModal = (name: string, type: string, imageUrl?: string) => {
+        setModalData({ name, type, imageUrl });
         setShowImageModal(true);
     };
 
@@ -196,8 +210,52 @@ const PackagesContent: React.FC = () => {
                 return 'bg-red-100 text-red-800';
             case 'Đang chờ':
                 return 'bg-orange-100 text-orange-800';
+            case 'Đồng ý':
+                return 'bg-green-100 text-green-800';
             default:
                 return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const handleStatusUpdate = async (item: PackageDisplayData, newStatus: string) => {
+        try {
+            setUpdatingItemId(item.id);
+            setDropdownOpenId(null);
+
+            const action = newStatus === 'Đồng ý' ? 'approve' : 'reject';
+
+            if (item.originalType === 'advertisement') {
+                const originalAd = item.originalData as AdvertisementModel;
+                await AdminService.updateAdvertisementStatus(originalAd.id, action);
+                console.log(`✅ Advertisement ${originalAd.id} ${action}d successfully`);
+            } else if (item.originalType === 'jobposting') {
+                const originalJp = item.originalData as JobPostingModel;
+                await AdminService.updateJobPostingStatus(originalJp.id, action);
+                console.log(`✅ Job Posting ${originalJp.id} ${action}d successfully`);
+            }
+
+            // Refresh data after successful update
+            const [advertisements, jobPostings, subscriptions] = await Promise.all([
+                AdminService.getAllAdvertisements(),
+                AdminService.getAllJobPostings(),
+                AdminService.getAllSubscriptions()
+            ]);
+
+            const combinedData = AdminService.convertToDisplayData(
+                advertisements,
+                jobPostings,
+                subscriptions
+            );
+
+            setApiPackagesData(combinedData);
+        } catch (error) {
+            console.error('❌ Error updating status:', error);
+            if (error instanceof AxiosError) {
+                console.error('Error details:', error.response?.data);
+                console.error('Error status:', error.response?.status);
+            }
+        } finally {
+            setUpdatingItemId(null);
         }
     };
 
@@ -381,10 +439,19 @@ const PackagesContent: React.FC = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Tình trạng
                             </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredData.map((item) => (
+                        {isApiLoading ? (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                                    Đang tải dữ liệu...
+                                </td>
+                            </tr>
+                        ) : paginatedData.map((item) => (
                             <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium text-gray-900">
                                     {item.id}
@@ -397,17 +464,22 @@ const PackagesContent: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900">
                                     <div className="flex items-center justify-start">
                                         <span>{item.serviceType}</span>
-                                        <button
-                                            onClick={() => openImageModal(item.name, item.type)}
-                                            className="ml-2 px-3 py-1 text-xs rounded-full hover:bg-gray-50"
-                                            style={{
-                                                color: '#123288',
-                                                borderColor: '#123288',
-                                                border: '1px solid #123288'
-                                            }}
-                                        >
-                                            Xem ảnh
-                                        </button>
+                                        {item.serviceType === 'Quảng cáo' && (
+                                            <button
+                                                onClick={() => {
+                                                    const originalAd = item.originalData as AdvertisementModel;
+                                                    openImageModal(item.name, item.type, originalAd.imageUrl);
+                                                }}
+                                                className="ml-2 px-3 py-1 text-xs rounded-full hover:bg-gray-50"
+                                                style={{
+                                                    color: '#123288',
+                                                    borderColor: '#123288',
+                                                    border: '1px solid #123288'
+                                                }}
+                                            >
+                                                Xem ảnh
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900">
@@ -421,6 +493,41 @@ const PackagesContent: React.FC = () => {
                                         {item.status}
                                     </span>
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    {item.status === 'Đang chờ' && (item.originalType === 'advertisement' || item.originalType === 'jobposting') && (
+                                        <div className="relative" ref={actionDropdownRef}>
+                                            <button
+                                                onClick={() => setDropdownOpenId(dropdownOpenId === item.id ? null : item.id)}
+                                                className="text-gray-400 hover:text-gray-600 p-1"
+                                                disabled={updatingItemId === item.id}
+                                            >
+                                                {updatingItemId === item.id ? (
+                                                    <div className="animate-spin h-5 w-5 border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
+                                                ) : (
+                                                    <IoEllipsisVertical className="h-5 w-5" />
+                                                )}
+                                            </button>
+                                            {dropdownOpenId === item.id && (
+                                                <div className="origin-top-right absolute right-0 mt-2 w-32 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                                    <div className="py-1">
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(item, 'Đồng ý')}
+                                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                                        >
+                                                            Đồng ý
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(item, 'Từ chối')}
+                                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                                        >
+                                                            Từ chối
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -429,17 +536,28 @@ const PackagesContent: React.FC = () => {
 
             {/* Pagination */}
             <div className="px-6 py-4 border-t border-gray-200">
-                <div className="flex items-center justify-start space-x-4">
+                <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-700">
-                        Hiển thị 1-{filteredData.length} trên {filteredData.length}
+                        Hiển thị {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredData.length)} trên {filteredData.length}
                     </div>
                     <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-gray-600">
+                        <button
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600">
+                        <span className="px-3 py-1 text-sm text-gray-700">
+                            Trang {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
@@ -491,14 +609,22 @@ const PackagesContent: React.FC = () => {
                                         <IoChevronForwardOutline className="h-6 w-6 text-gray-600" />
                                     </button>
 
-                                    {/* Image Placeholder */}
+                                    {/* Image Display */}
                                     <div className="flex flex-col items-center justify-center h-64">
-                                        <div className="w-48 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl mb-4 flex items-center justify-center relative">
-                                            <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full absolute top-4 left-4"></div>
-                                            <svg className="w-16 h-16 text-white opacity-50" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
+                                        {modalData.imageUrl ? (
+                                            <img
+                                                src={modalData.imageUrl}
+                                                alt="Advertisement"
+                                                className="max-w-full max-h-full object-contain rounded-lg"
+                                            />
+                                        ) : (
+                                            <div className="w-48 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl mb-4 flex items-center justify-center relative">
+                                                <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full absolute top-4 left-4"></div>
+                                                <svg className="w-16 h-16 text-white opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
