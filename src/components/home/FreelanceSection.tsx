@@ -52,7 +52,12 @@ const getTimeAgo = (dateTimeString: string) => {
 
 // Function to convert API data to display data with static categories but real location
 const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[]): JobProps[] => {
-    return apiJobs.map((apiJob, index) => {
+    // Filter out jobs with REJECTED and PENDING status
+    const filteredJobs = apiJobs.filter(apiJob =>
+        apiJob.status !== 'REJECTED' && apiJob.status !== 'PENDING'
+    );
+
+    return filteredJobs.map((apiJob, index) => {
         const staticCategory = staticJobCategories[index % staticJobCategories.length];
         const timeRange = `${formatTime(apiJob.startTime)}-${formatTime(apiJob.endTime)}`;
         const formattedSalary = `${apiJob.hourlyRate?.toLocaleString()}/giờ`;

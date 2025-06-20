@@ -62,8 +62,10 @@ const getTimeAgo = (dateTimeString: string) => {
 
 // Function to convert API data to display data with static categories but real location
 const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[], startIndex: number = 0): JobProps[] => {
-    // Filter out jobs with "REJECTED" status
-    const filteredJobs = apiJobs.filter(apiJob => apiJob.status !== 'REJECTED');
+    // Filter out jobs with "REJECTED" and "PENDING" status
+    const filteredJobs = apiJobs.filter(apiJob =>
+        apiJob.status !== 'REJECTED' && apiJob.status !== 'PENDING'
+    );
 
     return filteredJobs.map((apiJob, index) => {
         const staticIndex = (startIndex + index) % staticJobCategories.length;

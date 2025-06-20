@@ -17,7 +17,7 @@ export interface CreateJobPostingModel {
     expiresAt: string;
     isUrgent: boolean;
     isHighlighted: boolean;
-    tagIds: number[];
+    tagIds?: number[];
 }
 
 export interface JobPostingResponse {

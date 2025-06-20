@@ -98,8 +98,13 @@ export class JobService {
      */
     static async getHomepageJobs(): Promise<JobPostingApiResponse[]> {
         try {
-            const response = await this.getJobPostings(1, 5);
-            return response.data || [];
+            const response = await this.getJobPostings(1, 20); // Fetch more to account for filtering
+            // Filter out jobs with REJECTED and PENDING status
+            const filteredJobs = (response.data || []).filter(job =>
+                job.status !== 'REJECTED' && job.status !== 'PENDING'
+            );
+            // Return only the first 5 valid jobs
+            return filteredJobs.slice(0, 5);
         } catch (error) {
             console.error('Error fetching homepage jobs:', error);
             return [];

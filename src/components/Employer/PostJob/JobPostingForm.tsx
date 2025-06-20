@@ -121,8 +121,7 @@ const JobPostingForm: React.FC = () => {
                 requirements: requirements,
                 expiresAt: expDate.toISOString(),
                 isUrgent: isUrgent,
-                isHighlighted: isHighlighted,
-                tagIds: [0] // Include at least one element as per your example
+                isHighlighted: isHighlighted
             };
 
             // Log the API payload in JSON format
