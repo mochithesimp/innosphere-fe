@@ -4,6 +4,10 @@ import { RiBriefcaseLine, RiUserLine, RiTimeLine, RiMoreLine } from 'react-icons
 import { JobPostingService, JobPostingListItem } from '../../../services/jobPostingService';
 import { SubscriptionService } from '../../../services/subscriptionService';
 import JobApplicationsView from './JobApplicationsView';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 const OverviewContent: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
@@ -172,11 +176,23 @@ const OverviewContent: React.FC = () => {
                 }
                 setOpenDropdownId(null);
             } else {
-                alert('Có lỗi xảy ra khi kết thúc công việc');
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Có lỗi xảy ra',
+                    text: 'Có lỗi xảy ra khi kết thúc công việc',
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         } catch (error) {
             console.error('Error closing job:', error);
-            alert('Có lỗi xảy ra khi kết thúc công việc');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Có lỗi xảy ra',
+                text: 'Có lỗi xảy ra khi kết thúc công việc',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#dc3545'
+            });
         }
     };
 
@@ -195,11 +211,23 @@ const OverviewContent: React.FC = () => {
                 }
                 setOpenDropdownId(null);
             } else {
-                alert('Có lỗi xảy ra khi đóng công việc');
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Có lỗi xảy ra',
+                    text: 'Có lỗi xảy ra khi đóng công việc',
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         } catch (error) {
             console.error('Error rejecting job:', error);
-            alert('Có lỗi xảy ra khi đóng công việc');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Có lỗi xảy ra',
+                text: 'Có lỗi xảy ra khi đóng công việc',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#dc3545'
+            });
         }
     };
 

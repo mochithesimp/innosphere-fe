@@ -5,6 +5,10 @@ import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYou
 import { JobApplicationService } from '../../../services/jobApplicationService';
 import RatingService, { RatingCriteriaModel, CreateWorkerRatingModel } from '../../../services/ratingService';
 import { isWorkerRated, markWorkerAsRated } from '../../../utils/ratingUtils';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 // Add CSS for rating button to match Employee page styling and SendMail button dimensions
 const buttonStyles = `
@@ -126,7 +130,13 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant, o
 
         if (!applicant?.applicationId) {
             console.error('❌ Missing application ID');
-            alert('Thiếu thông tin ứng dụng');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Thiếu thông tin ứng dụng',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
 
@@ -144,7 +154,13 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant, o
         const unratedCriteria = criteria.filter(criterion => !ratings[criterion.id] || ratings[criterion.id] === 0);
         if (unratedCriteria.length > 0) {
             console.log('❌ Unrated criteria:', unratedCriteria);
-            alert('Vui lòng đánh giá tất cả các tiêu chí');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu đánh giá',
+                text: 'Vui lòng đánh giá tất cả các tiêu chí',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
 
@@ -175,11 +191,25 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ isOpen, onClose, applicant, o
                 onRatingSuccess(applicant.applicationId);
             }
 
-            alert('Đánh giá thành công!');
+            MySwal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Đánh giá thành công!',
+                confirmButtonText: 'Tuyệt vời!',
+                confirmButtonColor: '#37A594',
+                timer: 2500,
+                timerProgressBar: true
+            });
             onClose();
         } catch (error) {
             console.error('❌ Error creating worker rating:', error);
-            alert('Có lỗi xảy ra khi tạo đánh giá');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Có lỗi xảy ra',
+                text: 'Có lỗi xảy ra khi tạo đánh giá',
+                confirmButtonText: 'Thử lại',
+                confirmButtonColor: '#dc3545'
+            });
         } finally {
             setSubmitting(false);
         }
@@ -315,7 +345,13 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
             }
         } catch (error) {
             console.error('Error hiring applicant:', error);
-            alert('Có lỗi xảy ra khi thuê ứng viên');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Có lỗi xảy ra',
+                text: 'Có lỗi xảy ra khi thuê ứng viên',
+                confirmButtonText: 'Thử lại',
+                confirmButtonColor: '#dc3545'
+            });
         } finally {
             setIsHiring(false);
         }

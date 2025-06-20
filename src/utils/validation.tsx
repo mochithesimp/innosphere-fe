@@ -4,13 +4,27 @@ export const validateEmail = (email: string): string => {
     if (!email) {
         return "Email là bắt buộc";
     }
-    if (!email.includes("@gmail.com")) {
-        return "Email phải có định dạng @gmail.com";
+
+    // Check if email contains either @gmail.com or @fpt.edu.vn
+    const hasGmail = email.includes("@gmail.com");
+    const hasFptEdu = email.includes("@fpt.edu.vn");
+
+    if (!hasGmail && !hasFptEdu) {
+        return "Email phải có định dạng @gmail.com hoặc @fpt.edu.vn";
     }
-    const emailRegex = /^[^\s@]+@gmail\.com$/;
+
+    // Use appropriate regex based on email domain
+    let emailRegex: RegExp;
+    if (hasGmail) {
+        emailRegex = /^[^\s@]+@gmail\.com$/;
+    } else {
+        emailRegex = /^[^\s@]+@fpt\.edu\.vn$/;
+    }
+
     if (!emailRegex.test(email)) {
         return "Định dạng email không hợp lệ";
     }
+
     return "";
 };
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { IoClose } from 'react-icons/io5';
 import { FaStar } from 'react-icons/fa';
-import { RatingService, RatingCriteriaModel, CreateEmployerRatingModel, CreateEmployerRatingDetailModel } from '../../services/ratingService';
+import Swal from 'sweetalert2';
 
 interface RatingModalProps {
     isOpen: boolean;
@@ -10,156 +10,173 @@ interface RatingModalProps {
     employerName: string;
     jobApplicationId: number;
     employerId: number;
-    onRatingSuccess?: (jobApplicationId: number) => void; // Callback for successful rating
+    onRatingSuccess: (jobApplicationId: number) => void;
 }
 
-const RatingModal: React.FC<RatingModalProps> = ({ isOpen, onClose, jobTitle, employerName, jobApplicationId, employerId, onRatingSuccess }) => {
-    const [ratingCriteria, setRatingCriteria] = useState<RatingCriteriaModel[]>([]);
-    const [criteriaRatings, setCriteriaRatings] = useState<{ [key: number]: number }>({});
+const RatingModal: React.FC<RatingModalProps> = ({
+    isOpen,
+    onClose,
+    jobTitle,
+    employerName,
+    jobApplicationId,
+    employerId,
+    onRatingSuccess
+}) => {
+    const [jobDescriptionRating, setJobDescriptionRating] = useState<number>(0);
+    const [employerTrustRating, setEmployerTrustRating] = useState<number>(0);
+    const [workEnvironmentRating, setWorkEnvironmentRating] = useState<number>(0);
+    const [fairnessRating, setFairnessRating] = useState<number>(0);
     const [feedback, setFeedback] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    // Fetch employer rating criteria when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            fetchRatingCriteria();
+    if (!isOpen) return null;
+
+    const handleRatingChange = (category: string, rating: number) => {
+        switch (category) {
+            case 'jobDescription':
+                setJobDescriptionRating(rating);
+                break;
+            case 'employerTrust':
+                setEmployerTrustRating(rating);
+                break;
+            case 'workEnvironment':
+                setWorkEnvironmentRating(rating);
+                break;
+            case 'fairness':
+                setFairnessRating(rating);
+                break;
+            default:
+                break;
         }
-    }, [isOpen]);
-
-    const fetchRatingCriteria = async () => {
-        try {
-            setIsLoading(true);
-            console.log('🔍 Fetching employer rating criteria...');
-            const criteria = await RatingService.getEmployerRatingCriteria();
-            console.log('✅ Fetched criteria:', criteria);
-            setRatingCriteria(criteria);
-
-            // Initialize ratings object
-            const initialRatings: { [key: number]: number } = {};
-            criteria.forEach(criterion => {
-                initialRatings[criterion.id] = 0;
-            });
-            setCriteriaRatings(initialRatings);
-        } catch (error) {
-            console.error('❌ Error fetching rating criteria:', error);
-            alert('Không thể tải tiêu chí đánh giá. Vui lòng thử lại.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleRatingChange = (criteriaId: number, rating: number) => {
-        setCriteriaRatings(prev => ({
-            ...prev,
-            [criteriaId]: rating
-        }));
     };
 
     const handleSubmit = async () => {
         try {
-            console.log('=== RATING SUBMISSION DEBUG START ===');
-            console.log('🔍 Props received:');
-            console.log('- jobApplicationId:', jobApplicationId);
-            console.log('- employerId:', employerId);
-            console.log('- jobTitle:', jobTitle);
-            console.log('- employerName:', employerName);
+            // Get token from localStorage
+            const token = localStorage.getItem('token');
+            console.log('🔑 Token check:', token ? `Token found (length: ${token.length})` : 'No token found');
 
-            console.log('🔍 Current state:');
-            console.log('- ratingCriteria:', ratingCriteria);
-            console.log('- criteriaRatings:', criteriaRatings);
-            console.log('- feedback:', feedback);
-
-            // Validate that all criteria have been rated (rating > 0)
-            const unratedCriteria = ratingCriteria.filter(criterion => criteriaRatings[criterion.id] === 0);
-            console.log('🔍 Validation check:');
-            console.log('- unratedCriteria:', unratedCriteria);
-
-            if (unratedCriteria.length > 0) {
-                console.log('❌ Validation failed: Some criteria not rated');
-                alert('Vui lòng đánh giá tất cả các tiêu chí!');
+            if (!token) {
+                Swal.fire('Lỗi', 'Vui lòng đăng nhập lại', 'error');
                 return;
             }
 
-            setIsSubmitting(true);
-            console.log('🌟 Starting rating submission...');
+            // Log input props
+            console.log('📝 Rating Modal Props:');
+            console.log('  - jobApplicationId:', jobApplicationId, typeof jobApplicationId);
+            console.log('  - employerId:', employerId, typeof employerId);
+            console.log('  - jobTitle:', jobTitle);
+            console.log('  - employerName:', employerName);
 
-            // Prepare rating details
-            console.log('🔧 Preparing rating details...');
-            const details: CreateEmployerRatingDetailModel[] = ratingCriteria.map(criterion => {
-                const detail = {
-                    ratingCriteriaId: criterion.id,
-                    score: criteriaRatings[criterion.id]
-                };
-                console.log(`- Detail for criterion ${criterion.id} (${criterion.criteriaName}):`, detail);
-                return detail;
-            });
-            console.log('📋 Final details array:', details);
+            // Log rating values
+            console.log('⭐ Rating Values:');
+            console.log('  - jobDescriptionRating:', jobDescriptionRating, typeof jobDescriptionRating);
+            console.log('  - employerTrustRating:', employerTrustRating, typeof employerTrustRating);
+            console.log('  - workEnvironmentRating:', workEnvironmentRating, typeof workEnvironmentRating);
+            console.log('  - fairnessRating:', fairnessRating, typeof fairnessRating);
+            console.log('  - feedback:', feedback, typeof feedback);
 
-            // Prepare rating data
-            console.log('🔧 Preparing final rating data...');
-            const ratingData: CreateEmployerRatingModel = {
-                jobApplicationId,
-                employerId,
-                comment: feedback.trim() || undefined,
-                details
+            // Calculate overall rating (average of all individual ratings)
+            const allRatings = [jobDescriptionRating, employerTrustRating, workEnvironmentRating, fairnessRating];
+            const overallRating = Math.round(allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length);
+
+            // Prepare rating data in correct API format
+            const ratingData = {
+                jobApplicationId: jobApplicationId,
+                employerId: employerId,
+                ratingValue: overallRating,
+                comment: feedback || "",
+                details: [
+                    {
+                        ratingCriteriaId: 1, // Assuming ID 1 for "Công việc giống mô tả"
+                        score: jobDescriptionRating
+                    },
+                    {
+                        ratingCriteriaId: 2, // Assuming ID 2 for "Độ uy tín của người tuyển dụng"
+                        score: employerTrustRating
+                    },
+                    {
+                        ratingCriteriaId: 3, // Assuming ID 3 for "Môi trường làm việc"
+                        score: workEnvironmentRating
+                    },
+                    {
+                        ratingCriteriaId: 4, // Assuming ID 4 for "Sự minh bạch và công bằng"
+                        score: fairnessRating
+                    }
+                ]
             };
 
-            console.log('📤 FINAL JSON BEING SENT TO API:');
-            console.log(JSON.stringify(ratingData, null, 2));
-            console.log('📤 API Endpoint: POST /api/employerrating');
+            console.log('📤 API Request Details:');
+            console.log('  - URL: https://localhost:7085/api/employerrating');
+            console.log('  - Method: POST');
+            console.log('  - Headers:', {
+                'Authorization': `Bearer ${token.substring(0, 20)}...`,
+                'Content-Type': 'application/json'
+            });
+            console.log('  - Body (stringified):', JSON.stringify(ratingData, null, 2));
+            console.log('  - Body (object):', ratingData);
 
-            const result = await RatingService.createEmployerRating(ratingData);
+            // Call rating API
+            console.log('🚀 Making API call...');
+            const response = await fetch('https://localhost:7085/api/employerrating', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ratingData)
+            });
 
-            console.log('✅ API Response received:');
-            console.log(result);
-            console.log('✅ Rating submitted successfully!');
+            console.log('📥 API Response Details:');
+            console.log('  - Status:', response.status);
+            console.log('  - Status Text:', response.statusText);
+            console.log('  - Headers:', Object.fromEntries(response.headers.entries()));
 
-            // Store successful rating in localStorage
-            const ratedJobs = JSON.parse(localStorage.getItem('ratedJobApplications') || '[]');
-            if (!ratedJobs.includes(jobApplicationId)) {
+            // Try to get response body as text first
+            const responseText = await response.text();
+            console.log('  - Response Body (text):', responseText);
+
+            let responseJson = null;
+            try {
+                responseJson = JSON.parse(responseText);
+                console.log('  - Response Body (parsed JSON):', responseJson);
+            } catch (parseError) {
+                console.log('  - Could not parse response as JSON:', parseError);
+            }
+
+            if (response.ok) {
+                console.log('✅ API call successful!');
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: 'Đánh giá của bạn đã được gửi thành công',
+                    icon: 'success',
+                    confirmButtonColor: '#309689'
+                });
+
+                // Mark this job application as rated
+                const ratedJobs = JSON.parse(localStorage.getItem('ratedJobApplications') || '[]');
                 ratedJobs.push(jobApplicationId);
                 localStorage.setItem('ratedJobApplications', JSON.stringify(ratedJobs));
-                console.log('💾 Stored rating success for jobApplicationId:', jobApplicationId);
-            }
 
-            // Notify parent component of successful rating
-            if (onRatingSuccess) {
+                // Call success callback
                 onRatingSuccess(jobApplicationId);
+                onClose();
+            } else {
+                console.error('❌ API call failed with status:', response.status);
+                console.error('❌ Response body:', responseText);
+                throw new Error(`API call failed with status ${response.status}: ${responseText}`);
             }
-
-            alert('Đánh giá đã được gửi thành công!');
-
-            // Reset form and close modal
-            setCriteriaRatings({});
-            setFeedback('');
-            onClose();
-
         } catch (error) {
-            console.log('=== ERROR DETAILS ===');
-            console.error('❌ Error submitting rating:', error);
-
-            // Log detailed error information
-            if (error && typeof error === 'object' && 'response' in error) {
-                const axiosError = error as { response?: { status?: number; statusText?: string; data?: unknown; headers?: unknown }; config?: unknown };
-                console.error('🔥 API Error Response:');
-                console.error('- Status:', axiosError.response?.status);
-                console.error('- Status Text:', axiosError.response?.statusText);
-                console.error('- Response Data:', axiosError.response?.data);
-                console.error('- Response Headers:', axiosError.response?.headers);
-                console.error('- Request Config:', axiosError.config);
-            }
-
-            alert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
-        } finally {
-            setIsSubmitting(false);
-            console.log('=== RATING SUBMISSION DEBUG END ===');
+            console.error('Error submitting rating:', error);
+            Swal.fire({
+                title: 'Lỗi!',
+                text: 'Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.',
+                icon: 'error',
+                confirmButtonColor: '#309689'
+            });
         }
     };
 
-    if (!isOpen) return null;
-
-    const renderStars = (criteriaId: number, currentRating: number) => {
+    const renderStars = (category: string, currentRating: number) => {
         return (
             <div className="flex">
                 {[...Array(5)].map((_, index) => (
@@ -167,7 +184,7 @@ const RatingModal: React.FC<RatingModalProps> = ({ isOpen, onClose, jobTitle, em
                         key={index}
                         className={`w-7 h-7 cursor-pointer ${index < currentRating ? 'text-[#FFA500]' : 'text-gray-300'
                             }`}
-                        onClick={() => handleRatingChange(criteriaId, index + 1)}
+                        onClick={() => handleRatingChange(category, index + 1)}
                     />
                 ))}
             </div>
@@ -196,20 +213,27 @@ const RatingModal: React.FC<RatingModalProps> = ({ isOpen, onClose, jobTitle, em
                     <div className="mt-6">
                         <p className="text-gray-700 font-medium">Độ tin cậy và chất lượng công việc thế nào?</p>
 
-                        {isLoading ? (
-                            <div className="mt-4 text-center py-8">
-                                <div className="text-gray-500">Đang tải tiêu chí đánh giá...</div>
+                        <div className="mt-4 space-y-5">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-700 font-bold">Công việc giống mô tả</span>
+                                {renderStars('jobDescription', jobDescriptionRating)}
                             </div>
-                        ) : (
-                            <div className="mt-4 space-y-5">
-                                {ratingCriteria.map((criterion) => (
-                                    <div key={criterion.id} className="flex justify-between items-center">
-                                        <span className="text-gray-700 font-bold">{criterion.criteriaName}</span>
-                                        {renderStars(criterion.id, criteriaRatings[criterion.id] || 0)}
-                                    </div>
-                                ))}
+
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-700 font-bold">Độ uy tín của người tuyển dụng</span>
+                                {renderStars('employerTrust', employerTrustRating)}
                             </div>
-                        )}
+
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-700 font-bold">Môi trường làm việc</span>
+                                {renderStars('workEnvironment', workEnvironmentRating)}
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-700 font-bold">Sự minh bạch và công bằng</span>
+                                {renderStars('fairness', fairnessRating)}
+                            </div>
+                        </div>
 
                         <div className="mt-6">
                             <p className="text-gray-700 mb-2">Bạn có thể cho chúng tôi biết thêm không?</p>
@@ -231,23 +255,22 @@ const RatingModal: React.FC<RatingModalProps> = ({ isOpen, onClose, jobTitle, em
                     >
                         Hủy bỏ
                     </button>
-                    <button
+                    <div
                         onClick={handleSubmit}
-                        disabled={isSubmitting || isLoading}
                         style={{
-                            backgroundColor: isSubmitting || isLoading ? "#9CA3AF" : "#35a79c",
+                            backgroundColor: "#35a79c",
                             color: "white",
                             padding: "12px 16px",
                             border: "none",
                             borderRadius: "4px",
                             fontWeight: "500",
                             flex: "1",
-                            cursor: isSubmitting || isLoading ? "not-allowed" : "pointer",
+                            cursor: "pointer",
                             textAlign: "center"
                         }}
                     >
-                        {isSubmitting ? 'Đang gửi...' : 'Gửi'}
-                    </button>
+                        Gửi
+                    </div>
                 </div>
             </div>
         </div>

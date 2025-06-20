@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './Popup.css';
 import { ResumeService, ResumeModel } from '../services/resumeService';
 import { JobApplicationService, CreateJobApplicationModel } from '../services/jobApplicationService';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 // Text Editor Component
 const TextEditor: React.FC<{
@@ -159,13 +163,25 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) 
 
         if (!selectedResume) {
             console.log('⚠️ No resume selected for application');
-            alert('Vui lòng chọn một CV để ứng tuyển');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng chọn một CV để ứng tuyển',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
 
         if (!editorValue.trim()) {
             console.log('⚠️ No cover note provided');
-            alert('Vui lòng nhập giới thiệu bản thân');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng nhập giới thiệu bản thân',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
 
@@ -185,13 +201,21 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) 
             console.log('✅ Job Application API Response:', response);
             console.log('🎉 Application submitted successfully!');
 
-            alert('Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.');
-            onClose(); // Close the popup after successful application
-
-            // Navigate to employee dashboard after successful application
-            setTimeout(() => {
-                window.location.href = '/employee/dashboard';
-            }, 500); // Small delay to ensure popup closes smoothly
+            MySwal.fire({
+                icon: 'success',
+                title: 'Ứng tuyển thành công!',
+                text: 'Nhà tuyển dụng sẽ liên hệ với bạn sớm.',
+                confirmButtonText: 'Tuyệt vời!',
+                confirmButtonColor: '#37A594',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
+                onClose(); // Close the popup after successful application
+                // Navigate to employee dashboard after successful application
+                setTimeout(() => {
+                    window.location.href = '/employee/dashboard';
+                }, 300);
+            });
 
         } catch (error) {
             console.error('❌ Error submitting job application:', error);
@@ -199,12 +223,32 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) 
             const errorResponse = error as { response?: { status?: number; data?: unknown } };
             if (errorResponse.response?.status === 400) {
                 console.log('⚠️ Bad request - may have already applied');
-                alert('Có lỗi xảy ra. Bạn có thể đã ứng tuyển công việc này rồi.');
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Không thể ứng tuyển',
+                    text: 'Có lỗi xảy ra. Bạn có thể đã ứng tuyển công việc này rồi.',
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#dc3545'
+                });
             } else if (errorResponse.response?.status === 401) {
                 console.log('⚠️ Unauthorized - please login');
-                alert('Vui lòng đăng nhập để ứng tuyển.');
+                MySwal.fire({
+                    icon: 'warning',
+                    title: 'Chưa đăng nhập',
+                    text: 'Vui lòng đăng nhập để ứng tuyển.',
+                    confirmButtonText: 'Đăng nhập',
+                    confirmButtonColor: '#37A594'
+                }).then(() => {
+                    window.location.href = '/login';
+                });
             } else {
-                alert('Có lỗi xảy ra khi ứng tuyển. Vui lòng thử lại.');
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Có lỗi xảy ra',
+                    text: 'Có lỗi xảy ra khi ứng tuyển. Vui lòng thử lại.',
+                    confirmButtonText: 'Thử lại',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         }
     };

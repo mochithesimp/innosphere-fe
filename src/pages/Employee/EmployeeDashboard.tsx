@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaRegBookmark, FaChevronRight } from 'react-icons/fa';
 import { HiOutlineBriefcase } from "react-icons/hi";
 import { FiBell } from "react-icons/fi";
+import Swal from 'sweetalert2';
 
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
@@ -40,6 +41,7 @@ interface JobItem {
 }
 
 const EmployeeDashboard: React.FC = () => {
+    const navigate = useNavigate();
     const [hasProfile, setHasProfile] = useState<boolean>(false);
     const [profileLoading, setProfileLoading] = useState<boolean>(true);
 
@@ -320,7 +322,31 @@ const EmployeeDashboard: React.FC = () => {
                 });
             } catch (error) {
                 console.error('Error checking worker profile:', error);
-                // If there's an error (like 404), show the profile completion alert
+
+                // If there's a 404 error, show SweetAlert to complete profile
+                if (error && typeof error === 'object' && 'response' in error) {
+                    const axiosError = error as { response?: { status?: number } };
+                    console.log('Error status:', axiosError.response?.status);
+
+                    if (axiosError.response?.status === 404) {
+                        console.log('404 detected, showing SweetAlert');
+                        Swal.fire({
+                            title: 'Hồ sơ chưa hoàn tất',
+                            text: 'Vui lòng hoàn tất hồ sơ của bạn để sử dụng đầy đủ tính năng.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Hoàn tất hồ sơ',
+                            cancelButtonText: 'Để sau',
+                            confirmButtonColor: '#309689',
+                            cancelButtonColor: '#6b7280'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                navigate('/employee/settings');
+                            }
+                        });
+                    }
+                }
+
                 setHasProfile(false);
             } finally {
                 setProfileLoading(false);
@@ -328,7 +354,7 @@ const EmployeeDashboard: React.FC = () => {
         };
 
         checkWorkerProfile();
-    }, []);
+    }, [navigate]);
 
     // Function to fetch job applications (extracted for reuse)
     const fetchJobApplications = async () => {

@@ -3,6 +3,10 @@ import { getUserIdFromToken } from '../../../utils/auth';
 import { SubscriptionService } from '../../../services/subscriptionService';
 import { JobPostingService } from '../../../services/jobPostingService';
 import JobPromotionPopup from './JobPromotionPopup';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 const JobPostingForm: React.FC = () => {
     // Form state
@@ -43,19 +47,43 @@ const JobPostingForm: React.FC = () => {
 
         // Basic validation
         if (!title.trim()) {
-            alert('Vui lòng nhập tiêu đề công việc');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng nhập tiêu đề công việc',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
         if (!jobType) {
-            alert('Vui lòng chọn vai trò công việc');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng chọn vai trò công việc',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
         if (!salaryRangeTo.trim()) {
-            alert('Vui lòng nhập mức lương tối đa');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng nhập mức lương tối đa',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
         if (!expirationDate) {
-            alert('Vui lòng chọn ngày hết hạn');
+            MySwal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng chọn ngày hết hạn',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594'
+            });
             return;
         }
 
@@ -133,13 +161,28 @@ const JobPostingForm: React.FC = () => {
 
             if (response) {
                 // Success - redirect to dashboard or show success message
-                alert('Công việc đã được đăng thành công!');
-                window.location.href = '/employer/dashboard';
+                MySwal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: 'Công việc đã được đăng thành công!',
+                    confirmButtonText: 'Tuyệt vời!',
+                    confirmButtonColor: '#37A594',
+                    timer: 3000,
+                    timerProgressBar: true
+                }).then(() => {
+                    window.location.href = '/employer/dashboard';
+                });
             }
 
         } catch (error) {
             console.error('Error posting job:', error);
-            alert('Có lỗi xảy ra khi đăng công việc. Vui lòng thử lại.');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Có lỗi xảy ra',
+                text: 'Có lỗi xảy ra khi đăng công việc. Vui lòng thử lại.',
+                confirmButtonText: 'Thử lại',
+                confirmButtonColor: '#dc3545'
+            });
         } finally {
             setIsSubmitting(false);
             setShowPromotionPopup(false);

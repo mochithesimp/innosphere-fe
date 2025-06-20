@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
 import { WorkerJobApplicationsResponse, JobApplicationService } from '../../services/jobApplicationService';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 // Define the type for a single job application from the API response
 type JobApplication = WorkerJobApplicationsResponse['applications'][0];
@@ -61,7 +65,15 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
             await JobApplicationService.cancelJobApplication(jobApplication.id);
 
             console.log('✅ Job application canceled successfully');
-            alert('Đã hủy ứng tuyển thành công!');
+            MySwal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Đã hủy ứng tuyển thành công!',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#37A594',
+                timer: 2500,
+                timerProgressBar: true
+            });
 
             // Call the callback to refresh data
             if (onStatusUpdate) {
@@ -71,7 +83,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
             onClose(); // Close the modal
         } catch (error) {
             console.error('❌ Error canceling job application:', error);
-            alert('Có lỗi xảy ra khi hủy ứng tuyển. Vui lòng thử lại.');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Có lỗi xảy ra',
+                text: 'Có lỗi xảy ra khi hủy ứng tuyển. Vui lòng thử lại.',
+                confirmButtonText: 'Thử lại',
+                confirmButtonColor: '#dc3545'
+            });
         } finally {
             setIsUpdatingStatus(false);
         }

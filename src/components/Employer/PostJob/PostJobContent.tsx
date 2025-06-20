@@ -3,6 +3,10 @@ import { FaCheck, FaTimes, FaCreditCard } from 'react-icons/fa';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { getUserIdFromToken } from '../../../utils/auth';
 import { SubscriptionService } from '../../../services/subscriptionService';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 interface PlanDetails {
     name: string;
@@ -162,15 +166,33 @@ const PostJobContent: React.FC = () => {
 
                 // Show user-friendly error message
                 const errorMessage = apiError.data?.message || apiError.data || 'Unknown API error';
-                alert(`Payment failed (${apiError.status}): ${errorMessage}`);
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Thanh toán thất bại',
+                    text: `Payment failed (${apiError.status}): ${errorMessage}`,
+                    confirmButtonText: 'Thử lại',
+                    confirmButtonColor: '#dc3545'
+                });
             } else if ((error as any).request) {
                 // Request was made but no response received
                 console.error('🌐 Network Error - No response received:', JSON.stringify((error as any).request, null, 2));
-                alert('Network error: Unable to reach the server. Please check your connection.');
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Lỗi kết nối',
+                    text: 'Network error: Unable to reach the server. Please check your connection.',
+                    confirmButtonText: 'Thử lại',
+                    confirmButtonColor: '#dc3545'
+                });
             } else {
                 // Something else happened
                 console.error('🔧 Other Error:', JSON.stringify({ message: (error as any).message }, null, 2));
-                alert(`Payment processing failed: ${(error as any).message}`);
+                MySwal.fire({
+                    icon: 'error',
+                    title: 'Lỗi xử lý',
+                    text: `Payment processing failed: ${(error as any).message}`,
+                    confirmButtonText: 'Thử lại',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         }
     };

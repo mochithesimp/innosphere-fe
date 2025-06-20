@@ -9,7 +9,9 @@ import { BiWorld } from 'react-icons/bi';
 import { IoSettingsOutline } from 'react-icons/io5';
 import CVModal from '../../components/Employee/CVModal';
 import { ResumeService, ResumeModel, WorkerProfileResponse } from '../../services/resumeService';
-
+import { WorkerService, WorkerProfileModel } from '../../services/workerService';
+import { getUserIdFromToken } from '../../utils/jwtHelper';
+import Swal from 'sweetalert2';
 
 const settingStyles = `
     .tab-item {
@@ -376,7 +378,25 @@ const EmployeeSettings: React.FC = () => {
         experience: '',
         education: '',
         website: '',
-        bio: ''
+        bio: '',
+        nationality: '',
+        dateOfBirth: '',
+        gender: '',
+        maritalStatus: '',
+        address: '',
+        skills: '',
+        avatarUrl: ''
+    });
+
+    // Social links state
+    const [socialLinks, setSocialLinks] = useState({
+        linkedin: '',
+        facebook: '',
+        twitter: '',
+        instagram: '',
+        youtube: '',
+        github: '',
+        website: ''
     });
 
     // Load worker profile and resumes on component mount
@@ -403,7 +423,14 @@ const EmployeeSettings: React.FC = () => {
                 experience: profile.experience || '',
                 education: profile.education || '',
                 website: '', // Not available in API, keeping empty
-                bio: profile.bio || ''
+                bio: profile.bio || '',
+                nationality: '',
+                dateOfBirth: '',
+                gender: '',
+                maritalStatus: '',
+                address: profile.address || '',
+                skills: profile.skills || '',
+                avatarUrl: profile.avatarUrl || ''
             };
 
             console.log('📝 Populating form fields with data:', formDataToSet);
@@ -427,7 +454,14 @@ const EmployeeSettings: React.FC = () => {
                     experience: '',
                     education: '',
                     website: '',
-                    bio: ''
+                    bio: '',
+                    nationality: '',
+                    dateOfBirth: '',
+                    gender: '',
+                    maritalStatus: '',
+                    address: '',
+                    skills: '',
+                    avatarUrl: ''
                 });
             }
         } finally {
@@ -459,6 +493,104 @@ const EmployeeSettings: React.FC = () => {
             ...prev,
             [field]: value
         }));
+    };
+
+    const handleSocialLinkChange = (platform: keyof typeof socialLinks, value: string) => {
+        setSocialLinks(prev => ({
+            ...prev,
+            [platform]: value
+        }));
+    };
+
+    // Function to create worker profile
+    const createWorkerProfile = async () => {
+        try {
+            const token = localStorage.getItem('token'); // Fixed: use 'token' instead of 'accessToken'
+            console.log('🔑 Retrieved token:', token ? 'Token found' : 'No token found');
+
+            if (!token) {
+                Swal.fire('Lỗi', 'Vui lòng đăng nhập lại', 'error');
+                return;
+            }
+
+            const userId = getUserIdFromToken(token);
+            console.log('👤 User ID from token:', userId);
+
+            if (!userId) {
+                Swal.fire('Lỗi', 'Không thể xác thực người dùng', 'error');
+                return;
+            }
+
+            // Prepare social links array (only include non-empty links)
+            const socialLinksArray = Object.entries(socialLinks)
+                .filter(([, url]) => url.trim() !== '')
+                .map(([platform, url]) => {
+                    // Map platform names to proper format
+                    const platformMap: { [key: string]: string } = {
+                        'facebook': 'Facebook',
+                        'twitter': 'Twitter',
+                        'instagram': 'Instagram',
+                        'youtube': 'Youtube',
+                        'linkedin': 'LinkedIn',
+                        'github': 'GitHub',
+                        'website': 'Website'
+                    };
+
+                    return {
+                        userId: userId,
+                        platform: (platformMap[platform] || platform.charAt(0).toUpperCase() + platform.slice(1)) as 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube' | 'LinkedIn' | 'GitHub' | 'Website',
+                        url: url.trim()
+                    };
+                });
+
+            console.log('🔗 Social links array:', socialLinksArray);
+
+            const profileData: WorkerProfileModel = {
+                fullName: formData.fullName,
+                avatarUrl: formData.avatarUrl || '',
+                address: formData.address || '',
+                phoneNumber: formData.phoneNumber,
+                skills: formData.skills || '',
+                bio: formData.bio,
+                education: formData.education,
+                experience: formData.experience,
+                socialLinks: socialLinksArray
+            };
+
+            console.log('🚀 Creating worker profile with data:', profileData);
+
+            // Use WorkerService which has better error handling and token management  
+            const response = await (WorkerService as any).createOrUpdateWorkerProfile(profileData);
+
+            if (response) {
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: 'Hồ sơ của bạn đã được tạo thành công',
+                    icon: 'success',
+                    confirmButtonColor: '#309689'
+                });
+
+                // Refresh the worker data
+                loadWorkerData();
+            }
+        } catch (error) {
+            console.error('❌ Error creating worker profile:', error);
+            Swal.fire({
+                title: 'Lỗi!',
+                text: 'Có lỗi xảy ra khi tạo hồ sơ. Vui lòng thử lại.',
+                icon: 'error',
+                confirmButtonColor: '#309689'
+            });
+        }
+    };
+
+    // Navigation handlers for tabs
+    const handleBasicSave = () => {
+        setActiveTab('profile');
+    };
+
+    const handleProfileSave = () => {
+        setActiveTab('social');
     };
 
     const toggleProfilePrivacy = () => {
@@ -713,8 +845,8 @@ const EmployeeSettings: React.FC = () => {
                                         </div>
 
                                         <div className="pt-4">
-                                            <button className="apply-button">
-                                                Lưu Thay Đổi
+                                            <button onClick={handleBasicSave} className="apply-button">
+                                                Lưu
                                             </button>
                                         </div>
                                     </div>
@@ -877,13 +1009,16 @@ const EmployeeSettings: React.FC = () => {
                                             Học vấn
                                         </label>
                                         <div className="relative">
-                                            <select className="select-field text-left">
-                                                <option value="" disabled selected>Chọn...</option>
-                                                <option value="high-school">Trung học phổ thông</option>
-                                                <option value="college">Cao đẳng</option>
-                                                <option value="bachelor">Cử nhân</option>
-                                                <option value="master">Thạc sĩ</option>
-                                                <option value="phd">Tiến sĩ</option>
+                                            <select
+                                                className="select-field text-left"
+                                                value={formData.education}
+                                                onChange={(e) => handleFormChange('education', e.target.value)}
+                                            >
+                                                <option value="">Chọn...</option>
+                                                <option value="Trung học">Trung học</option>
+                                                <option value="Cao đẳng">Cao đẳng</option>
+                                                <option value="Đại học">Đại học</option>
+                                                <option value="Sau đại học">Sau đại học</option>
                                             </select>
                                         </div>
                                     </div>
@@ -892,13 +1027,16 @@ const EmployeeSettings: React.FC = () => {
                                             Kinh nghiệm
                                         </label>
                                         <div className="relative">
-                                            <select className="select-field text-left">
-                                                <option value="" disabled selected>Chọn...</option>
-                                                <option value="0">Chưa có kinh nghiệm</option>
-                                                <option value="1">Dưới 1 năm</option>
-                                                <option value="2">1-2 năm</option>
-                                                <option value="3">3-5 năm</option>
-                                                <option value="5">Trên 5 năm</option>
+                                            <select
+                                                className="select-field text-left"
+                                                value={formData.experience}
+                                                onChange={(e) => handleFormChange('experience', e.target.value)}
+                                            >
+                                                <option value="">Chọn...</option>
+                                                <option value="Dưới 1 năm">Dưới 1 năm</option>
+                                                <option value="1-2 năm">1-2 năm</option>
+                                                <option value="3-5 năm">3-5 năm</option>
+                                                <option value="Trên 5 năm">Trên 5 năm</option>
                                             </select>
                                         </div>
                                     </div>
@@ -942,8 +1080,8 @@ const EmployeeSettings: React.FC = () => {
                                 </div>
 
                                 <div className="pt-4 text-left">
-                                    <button className="apply-button">
-                                        Lưu Thay Đổi
+                                    <button onClick={handleProfileSave} className="apply-button">
+                                        Lưu
                                     </button>
                                 </div>
                             </div>
@@ -981,6 +1119,8 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
+                                                        value={socialLinks.facebook}
+                                                        onChange={(e) => handleSocialLinkChange('facebook', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1021,6 +1161,8 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
+                                                        value={socialLinks.twitter}
+                                                        onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1061,6 +1203,8 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
+                                                        value={socialLinks.instagram}
+                                                        onChange={(e) => handleSocialLinkChange('instagram', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1101,6 +1245,8 @@ const EmployeeSettings: React.FC = () => {
                                                         type="text"
                                                         className="w-full px-3 py-2 bg-white rounded-r-md outline-none"
                                                         placeholder="Profile link/url..."
+                                                        value={socialLinks.youtube}
+                                                        onChange={(e) => handleSocialLinkChange('youtube', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -1129,7 +1275,7 @@ const EmployeeSettings: React.FC = () => {
 
                                     {/* Save Button */}
                                     <div className="mt-6 text-left">
-                                        <button className="apply-button">
+                                        <button onClick={createWorkerProfile} className="apply-button">
                                             Lưu Thay Đổi
                                         </button>
                                     </div>

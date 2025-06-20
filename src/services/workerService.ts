@@ -22,7 +22,7 @@ const getTokenFromStorage = (): string | null => {
 // Social Link Interface
 export interface SocialLinkModel {
     userId: string;
-    platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube';
+    platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube' | 'LinkedIn' | 'GitHub' | 'Website';
     url: string;
 }
 
@@ -48,24 +48,20 @@ export class WorkerService {
      * @returns Promise<WorkerProfileModel | null>
      */
     static async getWorkerProfile(): Promise<WorkerProfileModel | null> {
-        try {
-            const token = getTokenFromStorage();
-            if (!token || isTokenExpired()) {
-                console.warn('No valid token found');
-                return null;
-            }
-
-            const response = await get(`${this.BASE_URL}/profile`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            return response;
-        } catch (error) {
-            console.error('Error fetching worker profile:', error);
+        const token = getTokenFromStorage();
+        if (!token || isTokenExpired()) {
+            console.warn('No valid token found');
             return null;
         }
+
+        // Let errors bubble up so they can be caught by the caller
+        const response = await get(`${this.BASE_URL}/profile`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        return response;
     }
 
     /**
