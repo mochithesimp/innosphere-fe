@@ -22,6 +22,7 @@ interface JobItem {
     hourlyRate: string;
     timeRange: string;
     date: string;
+    sortDate: Date; // Add sortable date field
     status: {
         text: string;
         style: string;
@@ -107,6 +108,7 @@ const EmployeeDashboard: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '13h00-18h00',
             date: '2 tháng 3, 2025 19:28',
+            sortDate: new Date('2025-03-02T19:28:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
@@ -127,6 +129,7 @@ const EmployeeDashboard: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '10h00-15h00',
             date: '3 tháng 3, 2025 23:26',
+            sortDate: new Date('2025-03-03T23:26:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
@@ -147,6 +150,7 @@ const EmployeeDashboard: React.FC = () => {
             hourlyRate: '25.000/Giờ',
             timeRange: '7h00-13h00',
             date: '12 tháng 3, 2025 19:28',
+            sortDate: new Date('2025-03-12T19:28:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
@@ -167,6 +171,7 @@ const EmployeeDashboard: React.FC = () => {
             hourlyRate: '28.000/Giờ',
             timeRange: '9h00-16h00',
             date: '11 tháng 3, 2025 23:26',
+            sortDate: new Date('2025-03-11T23:26:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
@@ -289,6 +294,7 @@ const EmployeeDashboard: React.FC = () => {
                 hourlyRate: `${app.jobPosting.hourlyRate.toLocaleString('vi-VN')}/Giờ`,
                 timeRange: formatTime(app.jobPosting.startTime, app.jobPosting.endTime),
                 date: formatDate(app.jobPosting.startTime),
+                sortDate: new Date(app.jobPosting.startTime),
                 status: statusInfo,
                 action,
                 companyInitial: companyInfo.initial,
@@ -346,9 +352,10 @@ const EmployeeDashboard: React.FC = () => {
         fetchJobApplications();
     }, []);
 
-    // Combine API data (on top) with static data, limit to 4 items
+    // Combine API data (on top) with static data, sort by date (nearest first), limit to 4 items
     const allJobData = [...apiJobApplications, ...staticJobData];
-    const displayedJobs = allJobData.slice(0, 4);
+    const sortedJobData = allJobData.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+    const displayedJobs = sortedJobData.slice(0, 4);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">

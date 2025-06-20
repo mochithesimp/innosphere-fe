@@ -17,6 +17,7 @@ interface JobItem {
     hourlyRate: string;
     timeRange: string;
     date: string;
+    sortDate: Date; // Add sortable date field
     status: {
         text: string;
         style: string;
@@ -108,6 +109,7 @@ const EmployeeJobsPage: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '13h00-16h00',
             date: '2 tháng 3, 2025 19:28',
+            sortDate: new Date('2025-03-02T19:28:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689]',
@@ -128,6 +130,7 @@ const EmployeeJobsPage: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '11h00-18h00',
             date: '8 tháng 3, 2025 09:30',
+            sortDate: new Date('2025-03-08T09:30:00'),
             status: {
                 text: 'Đã xong',
                 style: 'bg-[#EBF5F4] text-[#309689]',
@@ -149,6 +152,7 @@ const EmployeeJobsPage: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '7h00-13h00',
             date: '12 tháng 3, 2025 16:01',
+            sortDate: new Date('2025-03-12T16:01:00'),
             status: {
                 text: 'Đã xong',
                 style: 'bg-[#EBF5F4] text-[#309689]',
@@ -170,6 +174,7 @@ const EmployeeJobsPage: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '9h00-15h00',
             date: '21 tháng 3, 2025 11:00',
+            sortDate: new Date('2025-03-21T11:00:00'),
             status: {
                 text: 'Đã xong',
                 style: 'bg-[#EBF5F4] text-[#309689]',
@@ -191,6 +196,7 @@ const EmployeeJobsPage: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '13h00-18h00',
             date: '2 tháng 4, 2025 19:28',
+            sortDate: new Date('2025-04-02T19:28:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689]',
@@ -211,6 +217,7 @@ const EmployeeJobsPage: React.FC = () => {
             hourlyRate: '20.000/Giờ',
             timeRange: '19h00-23h00',
             date: '3 tháng 4, 2025 15:28',
+            sortDate: new Date('2025-04-03T15:28:00'),
             status: {
                 text: 'Hoạt động',
                 style: 'bg-[#EBF5F4] text-[#309689]',
@@ -330,6 +337,7 @@ const EmployeeJobsPage: React.FC = () => {
                 hourlyRate: `${app.jobPosting.hourlyRate.toLocaleString('vi-VN')}/Giờ`,
                 timeRange: formatTime(app.jobPosting.startTime, app.jobPosting.endTime),
                 date: formatDate(app.jobPosting.startTime),
+                sortDate: new Date(app.jobPosting.startTime),
                 status: statusInfo,
                 action,
                 companyInitial: companyInfo.initial,
@@ -370,15 +378,16 @@ const EmployeeJobsPage: React.FC = () => {
         fetchJobApplications();
     }, []);
 
-    // Combine API data (on top) with static data
+    // Combine API data (on top) with static data, sort by date (nearest first)
     const allJobData = [...apiJobApplications, ...staticJobData];
+    const sortedJobData = allJobData.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
 
     // Calculate pagination
-    const totalItems = allJobData.length;
+    const totalItems = sortedJobData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const currentPageData = allJobData.slice(startIndex, endIndex);
+    const currentPageData = sortedJobData.slice(startIndex, endIndex);
 
     // Function to handle successful rating
     const handleRatingSuccess = (jobApplicationId: number) => {
