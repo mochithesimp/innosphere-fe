@@ -1,9 +1,182 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import { FaCheck } from 'react-icons/fa';
+import Swal from 'sweetalert2';
+import { getUserIdFromToken, isTokenExpired } from '../../utils/auth';
+import { CreateAdvertisementModel, AdvertisementService, AdvertisementPackageModel } from '../../services/advertisementService';
+import { EmployerService } from '../../services/employerService';
+import AdvertisementModal, { AdvertisementFormData } from '../../components/Advertisement/AdvertisementModal';
+import AdvertisementPaymentModal from '../../components/Advertisement/AdvertisementPaymentModal';
 
 const AdsPage: React.FC = () => {
+    const [packages, setPackages] = useState<AdvertisementPackageModel[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedPackage, setSelectedPackage] = useState<AdvertisementPackageModel | null>(null);
+    const [isAdModalOpen, setIsAdModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [advertisementData, setAdvertisementData] = useState<AdvertisementFormData | null>(null);
+    const [employerId, setEmployerId] = useState<number | null>(null);
+
+    // Fetch advertisement packages on component mount
+    useEffect(() => {
+        const fetchPackages = async () => {
+            try {
+                const activePackages = await AdvertisementService.getAllActivePackages();
+                setPackages(activePackages);
+            } catch (error) {
+                console.error('Error fetching advertisement packages:', error);
+                Swal.fire('Lỗi', 'Không thể tải danh sách gói quảng cáo', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPackages();
+    }, []);
+
+    // Get employer information if user is logged in
+    useEffect(() => {
+        const checkEmployerStatus = async () => {
+            try {
+                const userId = getUserIdFromToken();
+                if (userId && !isTokenExpired()) {
+                    const employerProfile = await EmployerService.getProfile();
+                    console.log('Employer Profile:', employerProfile); // Debug log
+                    if (employerProfile?.employerId) {
+                        setEmployerId(employerProfile.employerId);
+                    }
+                }
+            } catch (error) {
+                console.log('User is not an employer or not logged in:', error);
+            }
+        };
+
+        checkEmployerStatus();
+    }, []);
+
+    // Check if user is logged in
+    const isUserLoggedIn = (): boolean => {
+        const userId = getUserIdFromToken();
+        return !!(userId && !isTokenExpired());
+    };
+
+    // Handle "Mua gói" button click
+    const handlePurchaseClick = (packageData: AdvertisementPackageModel) => {
+        if (!isUserLoggedIn()) {
+            // Show SweetAlert and redirect to login
+            Swal.fire({
+                title: 'Đăng nhập để tiếp tục',
+                text: 'Bạn cần đăng nhập để mua gói quảng cáo',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Đăng nhập ngay',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#309689',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/login';
+                }
+            });
+            return;
+        }
+
+        if (!employerId) {
+            Swal.fire({
+                title: 'Tài khoản không hợp lệ',
+                text: 'Chỉ tài khoản nhà tuyển dụng mới có thể mua gói quảng cáo',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#309689',
+            });
+            return;
+        }
+
+        // Show advertisement modal
+        setSelectedPackage(packageData);
+        setIsAdModalOpen(true);
+    };
+
+    // Handle proceeding to payment
+    const handleProceedToPayment = (adData: AdvertisementFormData) => {
+        setAdvertisementData(adData);
+        setIsAdModalOpen(false);
+        setIsPaymentModalOpen(true);
+    };
+
+    // Handle payment success
+    const handlePaymentSuccess = async (transactionId: string) => {
+        if (!advertisementData || !employerId || !selectedPackage) return;
+
+        try {
+            // Handle image upload - for now, use the filename as imageUrl
+            let imageUrl = "";
+            if (advertisementData.imageFile) {
+                // In real implementation, you would upload to server and get the URL
+                // For now, we'll use the filename as specified in requirements
+                imageUrl = advertisementData.imageFile.name;
+            }
+
+            // Calculate dates - start now, end after package duration
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + selectedPackage.durationDays);
+
+            // Map adPosition from API to expected values
+            let mappedAdPosition = selectedPackage.adPosition;
+            if (selectedPackage.adPosition === 'TOP') {
+                mappedAdPosition = 'Top';
+            } else if (selectedPackage.adPosition === 'MIDDLE') {
+                mappedAdPosition = 'Sidebar';
+            } else if (selectedPackage.adPosition === 'BOTTOM') {
+                mappedAdPosition = 'DetailPage';
+            }
+
+            // Create advertisement according to API specification
+            const createAdData: CreateAdvertisementModel = {
+                employerId: employerId,
+                advertisementPackageId: selectedPackage.id,
+                adTitle: advertisementData.title,
+                adDescription: advertisementData.description,
+                imageUrl: imageUrl,
+                adPosition: mappedAdPosition,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                price: selectedPackage.price,
+                maxImpressions: 1, // Default as specified in requirements
+                transactionId: transactionId
+            };
+
+            await AdvertisementService.createAdvertisement(createAdData);
+
+            // Close modals and show success message
+            setIsPaymentModalOpen(false);
+            setIsAdModalOpen(false);
+            setSelectedPackage(null);
+            setAdvertisementData(null);
+
+            Swal.fire({
+                title: 'Thanh toán thành công!',
+                text: 'Quảng cáo của bạn đã được tạo và sẽ được xem xét trong vòng 24 giờ.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#309689',
+            });
+
+        } catch (error) {
+            console.error('Error creating advertisement:', error);
+            Swal.fire('Lỗi', 'Có lỗi xảy ra khi tạo quảng cáo. Vui lòng liên hệ hỗ trợ.', 'error');
+        }
+    };
+
+    // Close modals
+    const handleCloseModals = () => {
+        setIsAdModalOpen(false);
+        setIsPaymentModalOpen(false);
+        setSelectedPackage(null);
+        setAdvertisementData(null);
+    };
+
     return (
         <div className="min-h-screen bg-white">
             <Header />
@@ -131,149 +304,184 @@ const AdsPage: React.FC = () => {
                     </div>
 
                     {/* Pricing Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Basic Plan */}
-                        <div className="border border-teal-500 rounded-3xl flex flex-col h-full overflow-hidden">
-                            <div className="p-6 border-b border-teal-500 text-left">
-                                <h3 className="font-medium text-lg">Trang chi tiết công việc</h3>
-                            </div>
+                    {loading ? (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {packages.map((pkg, index) => (
+                                <div
+                                    key={pkg.id}
+                                    className={`border border-teal-500 rounded-3xl flex flex-col h-full overflow-hidden ${index === 1 ? 'bg-[#F0F9F6]' : ''
+                                        }`}
+                                >
+                                    <div className="p-6 border-b border-teal-500 text-left">
+                                        <h3 className="font-medium text-lg">{pkg.packageName}</h3>
+                                    </div>
 
-                            <div className="p-6 pb-2">
-                                <h2 className="text-5xl font-bold">3.000.000 VNĐ</h2>
-                            </div>
+                                    <div className="p-6 pb-2">
+                                        <h2 className="text-5xl font-bold">
+                                            {new Intl.NumberFormat('vi-VN', {
+                                                style: 'currency',
+                                                currency: 'VND'
+                                            }).format(pkg.price)}
+                                        </h2>
+                                    </div>
 
-                            <div className="px-6 pt-20 pb-4 flex-grow">
-                                <div className="space-y-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
+                                    <div className="px-6 pt-20 pb-4 flex-grow">
+                                        <div className="space-y-5">
+                                            {index === 0 && (
+                                                <>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Quảng cáo hiển trong trang chi tiết</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Tối đa 3 chiến dịch</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Báo cáo hàng tháng</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Tồn tại 30 ngày</span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {index === 1 && (
+                                                <>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Quảng cáo hiển ở trái/ phải trang chủ</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Tối đa 6 chiến dịch</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Báo cáo hai tuần một lần</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Tồn tại 30 ngày</span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {index === 2 && (
+                                                <>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Quảng cáo hiển ở đầu trang chủ</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Không giới hạn chiến dịch</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Báo cáo hàng tuần</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Tồn tại 30 ngày</span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {index > 2 && (
+                                                <>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Vị trí: {pkg.adPosition}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                        <span>Thời hạn: {pkg.durationDays} ngày</span>
+                                                    </div>
+                                                    {pkg.maxImpressions && (
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                                <FaCheck className="text-sm" />
+                                                            </div>
+                                                            <span>Tối đa {pkg.maxImpressions.toLocaleString()} lượt hiển thị</span>
+                                                        </div>
+                                                    )}
+                                                    {pkg.description && (
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
+                                                                <FaCheck className="text-sm" />
+                                                            </div>
+                                                            <span>{pkg.description}</span>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
-                                        <span>Quảng cáo hiển trong trang chi tiết</span>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Tối đa 3 chiến dịch</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Báo cáo hàng tháng</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Tồn tại 30 ngày</span>
+
+                                    <div className="p-6 pt-20 mt-auto">
+                                        <button
+                                            onClick={() => handlePurchaseClick(pkg)}
+                                            className="border border-teal-500 text-teal-500 py-4 px-8 rounded-full hover:bg-teal-500 hover:text-white transition duration-300 w-full text-center text-lg"
+                                        >
+                                            Mua gói
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="p-6 pt-20 mt-auto">
-                                <button className="border border-teal-500 text-teal-500 py-4 px-8 rounded-full hover:bg-teal-500 hover:text-white transition duration-300 w-full text-center text-lg">
-                                    Mua gói
-                                </button>
-                            </div>
+                            ))}
                         </div>
-
-                        {/* Premium Plan - Highlighted */}
-                        <div className="rounded-3xl flex flex-col h-full bg-[#F0F9F6] overflow-hidden">
-                            <div className="p-6 border-b border-teal-500 text-left">
-                                <h3 className="font-medium text-lg">Trái/ phải trang chính</h3>
-                            </div>
-
-                            <div className="p-6 pb-2">
-                                <h2 className="text-5xl font-bold">4.000.00 VNĐ</h2>
-                            </div>
-
-                            <div className="px-6 pt-20 pb-4 flex-grow">
-                                <div className="space-y-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Quảng cáo hiển ở trái/ phải trang chủ</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Tối đa 6 chiến dịch</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Báo cáo hai tuần một lần</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Tồn tại 30 ngày</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-6 pt-20 mt-auto">
-                                <button className="border border-teal-500 text-teal-500 py-4 px-8 rounded-full hover:bg-teal-500 hover:text-white transition duration-300 w-full text-center text-lg">
-                                    Mua gói
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Premium Plan */}
-                        <div className="border border-teal-500 rounded-3xl flex flex-col h-full overflow-hidden">
-                            <div className="p-6 border-b border-teal-500 text-left">
-                                <h3 className="font-medium text-lg">Trên cùng trang chính</h3>
-                            </div>
-
-                            <div className="p-6 pb-2">
-                                <h2 className="text-5xl font-bold">5.000.00 VNĐ</h2>
-                            </div>
-
-                            <div className="px-6 pt-20 pb-4 flex-grow">
-                                <div className="space-y-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Quảng cáo hiển ở đầu trang chủ</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Không giới hạn chiến dịch</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Báo cáo hàng tuần</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="rounded-full bg-teal-500 w-6 h-6 flex items-center justify-center text-white">
-                                            <FaCheck className="text-sm" />
-                                        </div>
-                                        <span>Tồn tại 30 ngày</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-6 pt-20 mt-auto">
-                                <button className="border border-teal-500 text-teal-500 py-4 px-8 rounded-full hover:bg-teal-500 hover:text-white transition duration-300 w-full text-center text-lg">
-                                    Mua gói
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
             <Footer />
+
+            {/* Advertisement Modal */}
+            <AdvertisementModal
+                isOpen={isAdModalOpen}
+                onClose={handleCloseModals}
+                selectedPackage={selectedPackage}
+                onProceedToPayment={handleProceedToPayment}
+            />
+
+            {/* Advertisement Payment Modal */}
+            <AdvertisementPaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={handleCloseModals}
+                advertisementData={advertisementData}
+                onPaymentSuccess={handlePaymentSuccess}
+            />
         </div>
     );
 };

@@ -24,18 +24,23 @@ export interface EmployerEditModel {
 }
 
 export interface EmployerProfileResponse {
-    id: string;
+    userId: string;
     fullName?: string;
     avatarUrl?: string;
     address?: string;
+    email?: string;
     phoneNumber?: string;
+    employerId: number;
     companyName: string;
-    businessTypeId?: number;
-    newBusinessTypeName?: string;
-    newBusinessTypeDescription?: string;
+    businessTypeId: number;
     companyAddress?: string;
     taxCode?: string;
     companyDescription?: string;
+    rating: number;
+    totalRatings: number;
+    isVerified: boolean;
+    createdAt: string;
+    updatedAt?: string;
     socialLinks: CreateSocialLinkModel[];
 }
 
