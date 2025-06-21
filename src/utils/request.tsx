@@ -1,5 +1,8 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:7085";
+// PRIMARY: Deployed API | FALLBACK: Set VITE_API_BASE_URL=https://localhost:7085 for local development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://103.163.24.72:8080";
+console.log('🔧 API_BASE_URL Configuration:', API_BASE_URL);
+console.log('🔧 Environment Variables:', import.meta.env);
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL is not defined. Check your environment variables.");
 }
