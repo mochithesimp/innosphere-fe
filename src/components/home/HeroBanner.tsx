@@ -69,7 +69,7 @@ const HeroBanner: React.FC = () => {
 
   // Hàm xử lý khi click nút Tìm việc
   const handleSearch = async () => {
-    const params: any = {
+    const params: Record<string, string | number> = {
       Page: 1,
       PageSize: 10,
     };
@@ -248,6 +248,8 @@ const HeroBanner: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Công việc hoặc công ty"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
                   className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none border-r border-gray-100"
                 />
               </div>

@@ -11,7 +11,7 @@ interface SidebarItem {
     id: string;
     title: string;
     path: string;
-    icon: JSX.Element;
+    icon: React.ReactElement;
     count?: number;
 }
 
