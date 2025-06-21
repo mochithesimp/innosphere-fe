@@ -408,7 +408,7 @@ const EmployeeSettings: React.FC = () => {
         try {
             setIsLoadingResumes(true);
 
-            console.log('🔄 Calling API: GET http://103.163.24.72:8080/api/worker/profile');
+            console.log('🔄 Calling API: GET https://103.163.24.72:8080/api/worker/profile');
 
             // Get worker profile
             const profile = await ResumeService.getWorkerProfile();

@@ -60,7 +60,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
         try {
             setIsUpdatingStatus(true);
             console.log(`🔄 Canceling job application ID: ${jobApplication.id}`);
-            console.log('🔄 Calling API: PUT http://103.163.24.72:8080/api/jobapplication/' + jobApplication.id + '/cancel');
+            console.log('🔄 Calling API: PUT https://103.163.24.72:8080/api/jobapplication/' + jobApplication.id + '/cancel');
 
             await JobApplicationService.cancelJobApplication(jobApplication.id);
 

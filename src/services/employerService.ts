@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // PRIMARY: Deployed API | FALLBACK: Set VITE_API_BASE_URL=http://localhost:7085 for local development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://103.163.24.72:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://103.163.24.72:8080';
 
 export interface CreateSocialLinkModel {
     userId: string;
