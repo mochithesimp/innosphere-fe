@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 
 interface AuthLayoutProps {
     children: ReactNode;
@@ -15,10 +16,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
             <div className="w-full lg:w-3/5 p-8 flex flex-col relative bg-white">
                 {/* Logo - Fixed position at the top */}
                 <div className="absolute top-8 left-8 z-10">
-                    <div className="flex items-center gap-3">
+                    <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <img src="/logo.png" alt="InnoSphere Logo" className="w-8 h-8" />
                         <span className="text-xl font-medium">InnoSphere</span>
-                    </div>
+                    </Link>
                 </div>
 
                 {/* Form Container - Centered */}
