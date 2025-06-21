@@ -15,6 +15,16 @@ const JobDetailPage: React.FC = () => {
 
     const jobId = searchParams.get('id');
 
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 JobDetailPage mounted with:', {
+            url: window.location.href,
+            search: window.location.search,
+            jobId: jobId,
+            searchParams: Object.fromEntries(searchParams.entries())
+        });
+    }, []);
+
     const openModal = () => {
         setShowModal(true);
     };
@@ -61,6 +71,7 @@ const JobDetailPage: React.FC = () => {
     useEffect(() => {
         const fetchJobData = async () => {
             if (!jobId) {
+                console.error('❌ No job ID provided in URL');
                 setError('No job ID provided');
                 setLoading(false);
                 return;
@@ -68,17 +79,23 @@ const JobDetailPage: React.FC = () => {
 
             try {
                 setLoading(true);
+                console.log('🔍 Fetching job data for ID:', jobId);
 
                 // Fetch job details
                 const job = await JobService.getJobPostingById(parseInt(jobId));
+                console.log('📋 Job data received:', job);
+
                 if (job) {
                     setJobData(job);
                 } else {
+                    console.error('❌ Job not found for ID:', jobId);
                     setError('Job not found');
                 }
 
                 // Fetch related jobs (get more jobs to filter out current job)
                 const relatedJobsResponse = await JobService.getJobPostings(1, 10);
+                console.log('🔗 Related jobs response:', relatedJobsResponse);
+
                 if (relatedJobsResponse && relatedJobsResponse.data) {
                     // Filter out the current job and take only 2 jobs
                     const filteredJobs = relatedJobsResponse.data
@@ -88,8 +105,13 @@ const JobDetailPage: React.FC = () => {
                 }
 
             } catch (err) {
-                console.error('Error fetching job data:', err);
-                setError('Failed to load job data');
+                console.error('❌ Error fetching job data:', err);
+                console.error('❌ Error details:', {
+                    message: err instanceof Error ? err.message : 'Unknown error',
+                    jobId: jobId,
+                    url: window.location.href
+                });
+                setError(`Failed to load job data: ${err instanceof Error ? err.message : 'Unknown error'}`);
             } finally {
                 setLoading(false);
             }
