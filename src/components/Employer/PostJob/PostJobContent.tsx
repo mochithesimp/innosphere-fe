@@ -103,7 +103,7 @@ const PostJobContent: React.FC = () => {
     };
 
     // Handle successful PayPal payment
-    // @ts-expect-error - PayPal types can be complex, using any for actions parameter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePayPalApprove = async (_data: unknown, actions: any) => {
         try {
             const order = await actions.order.capture();
@@ -154,9 +154,10 @@ const PostJobContent: React.FC = () => {
             console.error('❌ Error processing payment:', error);
 
             // Log detailed error information in JSON format
-            if ((error as any).response) {
+            const typedError = error as { response?: { status: number; statusText: string; data: unknown; headers: unknown }; request?: unknown; message?: string };
+            if (typedError.response) {
                 // API responded with an error status
-                const apiError = (error as any).response;
+                const apiError = typedError.response;
                 console.error('🔍 API Error Details:', JSON.stringify({
                     status: apiError.status,
                     statusText: apiError.statusText,
@@ -165,7 +166,7 @@ const PostJobContent: React.FC = () => {
                 }, null, 2));
 
                 // Show user-friendly error message
-                const errorMessage = apiError.data?.message || apiError.data || 'Unknown API error';
+                const errorMessage = (apiError.data as { message?: string })?.message || apiError.data || 'Unknown API error';
                 MySwal.fire({
                     icon: 'error',
                     title: 'Thanh toán thất bại',
@@ -173,9 +174,9 @@ const PostJobContent: React.FC = () => {
                     confirmButtonText: 'Thử lại',
                     confirmButtonColor: '#dc3545'
                 });
-            } else if ((error as any).request) {
+            } else if (typedError.request) {
                 // Request was made but no response received
-                console.error('🌐 Network Error - No response received:', JSON.stringify((error as any).request, null, 2));
+                console.error('🌐 Network Error - No response received:', JSON.stringify(typedError.request, null, 2));
                 MySwal.fire({
                     icon: 'error',
                     title: 'Lỗi kết nối',
@@ -185,11 +186,11 @@ const PostJobContent: React.FC = () => {
                 });
             } else {
                 // Something else happened
-                console.error('🔧 Other Error:', JSON.stringify({ message: (error as any).message }, null, 2));
+                console.error('🔧 Other Error:', JSON.stringify({ message: typedError.message }, null, 2));
                 MySwal.fire({
                     icon: 'error',
                     title: 'Lỗi xử lý',
-                    text: `Payment processing failed: ${(error as any).message}`,
+                    text: `Payment processing failed: ${typedError.message}`,
                     confirmButtonText: 'Thử lại',
                     confirmButtonColor: '#dc3545'
                 });
@@ -607,7 +608,7 @@ const PostJobContent: React.FC = () => {
                                                             label: 'paypal',
                                                             height: 40
                                                         }}
-                                                        createOrder={(data, actions) => {
+                                                        createOrder={(_data, actions) => {
                                                             return actions.order.create({
                                                                 intent: 'CAPTURE',
                                                                 purchase_units: [
