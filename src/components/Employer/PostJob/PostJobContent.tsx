@@ -103,7 +103,6 @@ const PostJobContent: React.FC = () => {
     };
 
     // Handle successful PayPal payment
-    // @ts-expect-error - PayPal types can be complex, using any for actions parameter
     const handlePayPalApprove = async (_data: unknown, actions: any) => {
         try {
             const order = await actions.order.capture();
@@ -607,7 +606,7 @@ const PostJobContent: React.FC = () => {
                                                             label: 'paypal',
                                                             height: 40
                                                         }}
-                                                        createOrder={(data, actions) => {
+                                                        createOrder={(_data, actions) => {
                                                             return actions.order.create({
                                                                 intent: 'CAPTURE',
                                                                 purchase_units: [
