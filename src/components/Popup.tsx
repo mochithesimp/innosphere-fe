@@ -123,14 +123,14 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) 
         try {
             setIsLoadingResumes(true);
 
-            console.log('🔄 Popup opened - Calling API: GET https://localhost:7085/api/worker/profile');
+            console.log('🔄 Popup opened - Calling API: GET http://103.163.24.72:8080/api/worker/profile');
 
             // First get worker profile to get workerId
             const profile = await ResumeService.getWorkerProfile();
             console.log('✅ Worker Profile API Response:', profile);
 
             if (profile.workerId) {
-                console.log(`🔄 Calling API: GET https://localhost:7085/api/resume/worker/${profile.workerId}`);
+                console.log(`🔄 Calling API: GET http://103.163.24.72:8080/api/resume/worker/${profile.workerId}`);
 
                 // Then get resumes using workerId
                 const resumesData = await ResumeService.getResumesByWorker(profile.workerId);
@@ -194,7 +194,7 @@ const Popup: React.FC<PopupProps> = ({ show, onClose, jobTitle, jobPostingId }) 
 
             console.log('📝 Submitting job application with data:');
             console.log(JSON.stringify(applicationData, null, 2));
-            console.log('🔄 Calling API: POST https://localhost:7085/api/jobapplication/apply');
+            console.log('🔄 Calling API: POST http://103.163.24.72:8080/api/jobapplication/apply');
 
             const response = await JobApplicationService.applyForJob(applicationData);
 
