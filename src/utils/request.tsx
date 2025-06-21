@@ -1,26 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
-// PRIMARY: Deployed API | FALLBACK: Set VITE_API_BASE_URL=http://localhost:7085 for local development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://103.163.24.72:8080";
-console.log('🔧 API_BASE_URL Configuration:', API_BASE_URL);
-console.log('🔧 Environment Variables:', import.meta.env);
-
-// API Health Check
-const checkApiHealth = async () => {
-  try {
-    console.log('🏥 Checking API health at:', `${API_BASE_URL}/api/health`);
-    const response = await fetch(`${API_BASE_URL}/api/health`, { method: 'GET' });
-    console.log('🏥 API Health Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url
-    });
-  } catch (error) {
-    console.error('❌ API Health Check Failed:', error);
-  }
-};
-
-// Check API health on page load
-checkApiHealth();
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://103.163.24.72:8080";
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL is not defined. Check your environment variables.");
 }

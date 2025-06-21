@@ -103,6 +103,7 @@ const AdvertisementPaymentModal: React.FC<AdvertisementPaymentModalProps> = ({
     };
 
     // Handle successful PayPal payment
+    // @ts-expect-error - PayPal types can be complex, using any for actions parameter
     const handlePayPalApprove = async (_data: unknown, actions: any) => {
         try {
             setIsProcessingPayment(true);
@@ -258,7 +259,7 @@ const AdvertisementPaymentModal: React.FC<AdvertisementPaymentModalProps> = ({
                                         label: 'paypal',
                                         height: 40
                                     }}
-                                    createOrder={(_data, actions) => {
+                                    createOrder={(data, actions) => {
                                         return actions.order.create({
                                             intent: 'CAPTURE',
                                             purchase_units: [

@@ -106,8 +106,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
             };
 
             console.log('📤 API Request Details:');
-            // BACKUP: console.log('  - URL: https://localhost:7085/api/employerrating');
-            console.log('  - URL: https://103.163.24.72:8080/api/employerrating');
+            console.log('  - URL: http://103.163.24.72:8080/api/employerrating');
             console.log('  - Method: POST');
             console.log('  - Headers:', {
                 'Authorization': `Bearer ${token.substring(0, 20)}...`,
@@ -118,8 +117,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
 
             // Call rating API
             console.log('🚀 Making API call...');
-            // BACKUP: const response = await fetch('https://localhost:7085/api/employerrating', {
-            const response = await fetch('https://103.163.24.72:8080/api/employerrating', {
+            const response = await fetch('http://103.163.24.72:8080/api/employerrating', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
