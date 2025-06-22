@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://103.163.24.72:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://103.163.24.72';
 
 export interface CreateJobApplicationModel {
     jobPostingId: number;
