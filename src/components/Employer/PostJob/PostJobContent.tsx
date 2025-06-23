@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaCheck, FaTimes, FaCreditCard } from 'react-icons/fa';
+import { FaCheck, FaTimes, FaCreditCard, FaQrcode } from 'react-icons/fa';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { getUserIdFromToken } from '../../../utils/auth';
 import { SubscriptionService } from '../../../services/subscriptionService';
+import payosService, { PayOSPaymentData, PayOSPaymentResponse } from '../../../services/payosService';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -18,8 +19,12 @@ interface PlanDetails {
 const PostJobContent: React.FC = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'qr'>('card');
     const [useExistingCard, setUseExistingCard] = useState(true);
+    const [payosQrCode, setPayosQrCode] = useState<string>('');
+    const [payosOrderCode, setPayosOrderCode] = useState<number>(0);
+    const [isPayosLoading, setIsPayosLoading] = useState(false);
+    const [payosPaymentStatus, setPayosPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
 
     const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
 
@@ -100,6 +105,12 @@ const PostJobContent: React.FC = () => {
 
     const closeModal = () => {
         setShowPaymentModal(false);
+
+        // Reset PayOS state when modal is closed
+        setPayosQrCode('');
+        setPayosOrderCode(0);
+        setIsPayosLoading(false);
+        setPayosPaymentStatus(null);
     };
 
     // Handle successful PayPal payment
@@ -195,6 +206,171 @@ const PostJobContent: React.FC = () => {
                     confirmButtonColor: '#dc3545'
                 });
             }
+        }
+    };
+
+    // Handle PayOS QR payment
+    const handlePayOSPayment = async () => {
+        try {
+            if (!selectedPlan) return;
+
+            setIsPayosLoading(true);
+            setPayosPaymentStatus('pending');
+
+            const orderCode = payosService.generateOrderCode();
+            setPayosOrderCode(orderCode);
+
+            // Divide amount by 1000 for PayOS QR payment (remove last 3 zeros)
+            const payosAmount = Math.round(parseInt(selectedPlan.price) / 1000);
+
+            // Generate short description (max 25 characters for PayOS)
+            const shortDescription = selectedPlan.name === 'Doanh Nghiệp' ? 'Goi Doanh Nghiep' :
+                selectedPlan.name === 'Cao cấp' ? 'Goi Cao cap' :
+                    'Goi Co ban';
+
+            const paymentData: PayOSPaymentData = {
+                orderCode: orderCode,
+                amount: payosAmount,
+                description: shortDescription,
+                items: [
+                    {
+                        name: selectedPlan.name,
+                        quantity: 1,
+                        price: payosAmount
+                    }
+                ],
+                returnUrl: `${window.location.origin}/employer/post-job?payos_success=true&orderCode=${orderCode}`,
+                cancelUrl: `${window.location.origin}/employer/post-job?payos_cancel=true`
+            };
+
+            const response: PayOSPaymentResponse = await payosService.createPaymentLink(paymentData);
+
+            // PayOS returns code: '00' for success
+            if (response.code === '00' && response.data) {
+                console.log('🔍 QR Code data received:', response.data.qrCode);
+                console.log('🔍 QR Code type:', typeof response.data.qrCode);
+                console.log('🔍 QR Code length:', response.data.qrCode?.length);
+                console.log('🔍 QR Code first 100 chars:', response.data.qrCode?.substring(0, 100));
+
+                setPayosQrCode(response.data.qrCode);
+                console.log('✅ PayOS payment link created:', response.data);
+
+                // Start polling for payment status
+                startPaymentStatusPolling(orderCode);
+            } else {
+                throw new Error(response.desc || 'Failed to create payment link');
+            }
+        } catch (error) {
+            console.error('❌ PayOS payment error:', error);
+            setPayosPaymentStatus('failed');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Lỗi tạo thanh toán',
+                text: 'Không thể tạo mã QR thanh toán. Vui lòng thử lại.',
+                confirmButtonColor: '#dc3545'
+            });
+        } finally {
+            setIsPayosLoading(false);
+        }
+    };
+
+    // Poll payment status
+    const startPaymentStatusPolling = (orderCode: number) => {
+        console.log('🔄 Starting payment status polling for order:', orderCode);
+
+        const interval = setInterval(async () => {
+            try {
+                console.log('🔍 Checking payment status for order:', orderCode);
+                const response = await payosService.getPaymentInfo(orderCode);
+
+                console.log('📋 PayOS Status Response:', JSON.stringify(response, null, 2));
+
+                if (response.code === '00' && response.data) {
+                    console.log('✅ PayOS API Success, checking payment status...');
+                    console.log('💳 Payment Data:', response.data);
+                    console.log('🔍 Payment Status Code:', response.data.code);
+                    console.log('🔍 Payment Status Desc:', response.data.desc);
+
+                    // Check for successful payment - PayOS uses "00" code OR could be status "PAID"
+                    if (response.data.code === '00' || response.data.status === 'PAID') {
+                        // Payment successful
+                        console.log('🎉 Payment successful! Calling handlePayOSSuccess...');
+                        clearInterval(interval);
+                        await handlePayOSSuccess(response.data);
+                    } else if (response.data.code === 'CANCELLED' || response.data.status === 'CANCELLED') {
+                        // Payment cancelled
+                        console.log('❌ Payment cancelled');
+                        clearInterval(interval);
+                        setPayosPaymentStatus('failed');
+                    } else {
+                        console.log('⏳ Payment still pending, status:', response.data.code, 'or status:', response.data.status);
+                    }
+                } else {
+                    console.log('⚠️ PayOS API returned error:', response.code, response.desc);
+                }
+            } catch (error) {
+                console.error('❌ Error checking payment status:', error);
+            }
+        }, 3000); // Check every 3 seconds
+
+        // Stop polling after 10 minutes
+        setTimeout(() => {
+            console.log('⏰ Payment polling timeout reached (10 minutes)');
+            clearInterval(interval);
+        }, 600000);
+    };
+
+    // Handle PayOS success
+    const handlePayOSSuccess = async (paymentData: { reference?: string; orderCode: number;[key: string]: unknown }) => {
+        try {
+            if (!selectedPlan) return;
+
+            const userId = getUserIdFromToken();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            // Get employer profile to get the actual employerId
+            const employerProfile = await SubscriptionService.getEmployerProfile();
+            if (!employerProfile || !employerProfile.employerId) {
+                throw new Error('Could not get employer profile or employerId');
+            }
+
+            const employerId = employerProfile.employerId;
+
+            // Prepare subscription API payload
+            const startDate = new Date();
+            const duration = getSubscriptionDuration(selectedPlan.subscriptionPackageId);
+            const endDate = getEndDate(startDate, duration);
+
+            const subscriptionData = {
+                employerId: employerId,
+                subscriptionPackageId: selectedPlan.subscriptionPackageId,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                amountPaid: parseFloat(selectedPlan.price),
+                paymentStatus: "PAID",
+                transactionId: paymentData.reference || paymentData.orderCode.toString()
+            };
+
+            const response = await SubscriptionService.purchaseSubscription(subscriptionData);
+
+            if (response) {
+                setPayosPaymentStatus('success');
+
+                // Success - close modal and navigate to create-job
+                setShowPaymentModal(false);
+                window.location.href = '/employer/create-job';
+            }
+        } catch (error) {
+            console.error('❌ Error in handlePayOSSuccess:', error);
+            setPayosPaymentStatus('failed');
+            MySwal.fire({
+                icon: 'error',
+                title: 'Lỗi hệ thống',
+                text: 'Thanh toán thành công nhưng không thể tạo gói. Vui lòng liên hệ hỗ trợ.',
+                confirmButtonColor: '#dc3545'
+            });
         }
     };
 
@@ -506,6 +682,12 @@ const PostJobContent: React.FC = () => {
                                         >
                                             Paypal
                                         </button>
+                                        <button
+                                            className={`pb-2 px-8 ${paymentMethod === 'qr' ? 'border-b-2 border-[#309689] text-[#309689] font-medium' : 'text-gray-500'}`}
+                                            onClick={() => setPaymentMethod('qr')}
+                                        >
+                                            PayOS
+                                        </button>
                                     </div>
 
                                     {paymentMethod === 'card' && (
@@ -627,6 +809,91 @@ const PostJobContent: React.FC = () => {
                                             </div>
                                         </div>
                                     )}
+
+                                    {paymentMethod === 'qr' && (
+                                        <div className="text-center py-8 flex flex-col items-center min-h-[400px]">
+                                            {!payosQrCode && !isPayosLoading && payosPaymentStatus === null && (
+                                                <div className="text-center">
+                                                    <div className="mb-6">
+                                                        <FaQrcode className="mx-auto text-6xl text-[#309689] mb-4" />
+                                                        <h3 className="text-lg font-medium text-gray-800 mb-2">Thanh toán bằng QR Code</h3>
+                                                        <p className="text-gray-600 text-sm">
+                                                            Sử dụng ứng dụng ngân hàng để quét mã QR và thanh toán
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={handlePayOSPayment}
+                                                        className="bg-[#309689] hover:bg-[#257b6f] text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                                                    >
+                                                        Tạo mã QR thanh toán
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {isPayosLoading && (
+                                                <div className="text-center">
+                                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#309689] mx-auto mb-4"></div>
+                                                    <p className="text-gray-600">Đang tạo mã QR thanh toán...</p>
+                                                </div>
+                                            )}
+
+                                            {payosQrCode && payosPaymentStatus === 'pending' && (
+                                                <div className="text-center">
+                                                    <div className="mb-4">
+                                                        <h3 className="text-lg font-medium text-gray-800 mb-2">Quét mã QR để thanh toán</h3>
+                                                        <p className="text-gray-600 text-sm mb-4">
+                                                            Sử dụng ứng dụng ngân hàng của bạn để quét mã QR bên dưới
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-white p-6 rounded-lg border-2 border-[#309689] inline-block mb-4">
+                                                        <img
+                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payosQrCode)}`}
+                                                            alt="PayOS QR Code"
+                                                            className="w-48 h-48 mx-auto"
+                                                            onLoad={() => console.log('✅ QR Code image loaded successfully')}
+                                                            onError={(e) => console.error('❌ QR Code image failed to load:', e)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="text-sm text-gray-500 mb-4">
+                                                        Mã đơn hàng: {payosOrderCode}
+                                                    </div>
+
+                                                    <div className="flex items-center justify-center text-[#309689]">
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#309689] mr-2"></div>
+                                                        <span className="text-sm">Đang chờ thanh toán...</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {payosPaymentStatus === 'success' && (
+                                                <div className="text-center">
+                                                    <div className="text-green-500 text-6xl mb-4">✅</div>
+                                                    <h3 className="text-lg font-medium text-green-600 mb-2">Thanh toán thành công!</h3>
+                                                    <p className="text-gray-600">Đang chuyển hướng...</p>
+                                                </div>
+                                            )}
+
+                                            {payosPaymentStatus === 'failed' && (
+                                                <div className="text-center">
+                                                    <div className="text-red-500 text-6xl mb-4">❌</div>
+                                                    <h3 className="text-lg font-medium text-red-600 mb-2">Thanh toán thất bại</h3>
+                                                    <p className="text-gray-600 mb-4">Vui lòng thử lại</p>
+                                                    <button
+                                                        onClick={() => {
+                                                            setPayosPaymentStatus(null);
+                                                            setPayosQrCode('');
+                                                            setPayosOrderCode(0);
+                                                        }}
+                                                        className="bg-[#309689] hover:bg-[#257b6f] text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                                                    >
+                                                        Thử lại
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right Column - Order Summary */}
@@ -658,7 +925,9 @@ const PostJobContent: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div dangerouslySetInnerHTML={createPremiumButtonHtml('Thanh Toán', 'window.handlePayment()')} />
+                                    {paymentMethod !== 'qr' && (
+                                        <div dangerouslySetInnerHTML={createPremiumButtonHtml('Thanh Toán', 'window.handlePayment()')} />
+                                    )}
 
                                     <div className="text-center text-sm text-gray-500 mt-4">
                                         By clicking "Thanh Toán", you agree to our <a href="#" className="text-[#309689]">Terms and Conditions</a>
