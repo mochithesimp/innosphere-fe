@@ -6,6 +6,8 @@ export { EmployerService, type EmployerEditModel, type EmployerProfileResponse, 
 export { UserService, type UserModel, type UserApiResponse } from './userService';
 export { AdminService, type AdvertisementModel, type JobPostingModel, type SubscriptionModel, type PackageDisplayData } from './adminService';
 export { default as PayPalService, type PayPalTransactionInfo, type PayPalTransactionResponse } from './paypalService';
+export { default as PayOSService, type PayOSPaymentData, type PayOSPaymentResponse, type PayOSVerifyResponse } from './payosService';
+export { default as PaymentReceiptService, type SubscriptionData } from './paymentReceiptService';
 
 // You can add more services here in the future
 // export { AuthService } from './authService'; 

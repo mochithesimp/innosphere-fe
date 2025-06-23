@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IoCard, IoArrowDownOutline } from 'react-icons/io5';
-import { AdminService, SubscriptionModel, PayPalService } from '../../../services';
+import { AdminService, SubscriptionModel, PaymentReceiptService } from '../../../services';
 
 const TransactionsContent: React.FC = () => {
     const [activeTab, setActiveTab] = useState('all');
@@ -97,7 +97,7 @@ const TransactionsContent: React.FC = () => {
             const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
             const packageName = subscription.packageName || 'Gói dịch vụ';
 
-            await PayPalService.downloadTransactionReceipt(
+            await PaymentReceiptService.downloadReceipt(
                 subscription.transactionId,
                 employerName,
                 packageName,
@@ -162,10 +162,11 @@ const TransactionsContent: React.FC = () => {
                     </div>
             `;
 
-            // Add each transaction
+            // Add each transaction with provider detection
             subscriptionsWithTransactionId.forEach((subscription, index) => {
                 const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
                 const packageName = subscription.packageName || 'Gói dịch vụ';
+                const providerName = PaymentReceiptService.getProviderName(subscription.transactionId);
 
                 combinedHTML += `
                     <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid;">
@@ -177,6 +178,10 @@ const TransactionsContent: React.FC = () => {
                             <tr>
                                 <td style="padding: 8px 0; color: #666; width: 30%;">Mã giao dịch:</td>
                                 <td style="padding: 8px 0; font-weight: bold; color: #333;">${subscription.transactionId}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Phương thức:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #333;">${providerName}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #666;">Khách hàng:</td>

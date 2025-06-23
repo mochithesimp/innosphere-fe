@@ -221,6 +221,194 @@ class PayOSService {
     generateOrderCode(): number {
         return Math.floor(Math.random() * 1000000) + Date.now();
     }
+
+    // Generate receipt HTML for PayOS transactions
+    generateReceiptHTML(
+        payosData: PayOSVerifyResponse['data'],
+        employerName: string,
+        packageName?: string,
+        subscriptionData?: {
+            amountPaid: number;
+            startDate: string;
+            paymentStatus: string;
+        }
+    ): string {
+        if (!payosData) return '';
+
+        const formatCurrency = (amount: number | string) => {
+            const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(numAmount);
+        };
+
+        const formatDate = (dateString: string) => {
+            return new Date(dateString).toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
+        // Use subscription data if PayOS data is incomplete
+        const transactionAmount = subscriptionData?.amountPaid || payosData.amount || 0;
+        const transactionDate = subscriptionData?.startDate || payosData.transactionDateTime || new Date().toISOString();
+        const transactionStatus = subscriptionData?.paymentStatus || payosData.status || 'COMPLETED';
+
+        return `
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background: #fff;">
+                <div style="text-align: center; border-bottom: 3px solid #309689; padding-bottom: 20px; margin-bottom: 30px;">
+                    <h1 style="color: #309689; margin: 0; font-size: 28px;">INNOSPHERE</h1>
+                    <p style="color: #666; margin: 5px 0 0 0; font-size: 16px;">Biên lai thanh toán</p>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Thông tin giao dịch</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #666; width: 40%;">Mã đơn hàng:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${payosData.orderCode}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Trạng thái:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #16DBAA;">${transactionStatus}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Ngày giao dịch:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${formatDate(transactionDate)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                        </tr>
+                        ${packageName ? `
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${packageName}</td>
+                        </tr>
+                        ` : ''}
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Phương thức:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">Chuyển khoản ngân hàng (PayOS)</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Chi tiết thanh toán</h2>
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">Số tiền</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #333;">
+                                ${formatCurrency(transactionAmount)}
+                            </td>
+                        </tr>
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 12px; font-weight: bold; color: #333;">Tổng cộng</td>
+                            <td style="padding: 12px; text-align: right; font-weight: bold; color: #309689; font-size: 18px;">
+                                ${formatCurrency(transactionAmount)}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                ${payosData.counterAccountBankName ? `
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Thông tin ngân hàng</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #666; width: 40%;">Ngân hàng:</td>
+                            <td style="padding: 8px 0; color: #333;">${payosData.counterAccountBankName}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Số tài khoản:</td>
+                            <td style="padding: 8px 0; color: #333; font-family: monospace;">${payosData.counterAccountNumber || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Tên tài khoản:</td>
+                            <td style="padding: 8px 0; color: #333;">${payosData.counterAccountName || 'N/A'}</td>
+                        </tr>
+                        ${payosData.reference ? `
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Mã tham chiếu:</td>
+                            <td style="padding: 8px 0; color: #333; font-family: monospace;">${payosData.reference}</td>
+                        </tr>
+                        ` : ''}
+                    </table>
+                </div>
+                ` : ''}
+
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
+                    <p>Cảm ơn bạn đã sử dụng dịch vụ của INNOSPHERE!</p>
+                    <p>Biên lai này được tạo tự động vào ${formatDate(new Date().toISOString())}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Download PayOS transaction receipt
+    async downloadPayOSReceipt(
+        orderCode: string,
+        employerName: string,
+        packageName?: string,
+        subscriptionData?: {
+            amountPaid: number;
+            startDate: string;
+            paymentStatus: string;
+        }
+    ): Promise<void> {
+        try {
+            // Get PayOS transaction details
+            const response = await this.getPaymentInfo(parseInt(orderCode));
+
+            if (!response || !response.data) {
+                throw new Error('Không tìm thấy thông tin giao dịch PayOS');
+            }
+
+            // Generate HTML content
+            const htmlContent = this.generateReceiptHTML(response.data, employerName, packageName, subscriptionData);
+
+            // Create a new window and print
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                throw new Error('Popup blocked. Please allow popups for this site.');
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>PayOS Receipt - ${orderCode}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 1cm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() {
+                                window.close();
+                            }
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+        } catch (error) {
+            console.error('PayOS receipt download error:', error);
+            throw error;
+        }
+    }
 }
 
 export default new PayOSService(); 
