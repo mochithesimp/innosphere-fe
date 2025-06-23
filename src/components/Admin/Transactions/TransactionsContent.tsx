@@ -1,10 +1,47 @@
-import React, { useState } from 'react';
-import { IoCard, IoArrowUpOutline, IoArrowDownOutline } from 'react-icons/io5';
+import React, { useState, useEffect } from 'react';
+import { IoCard, IoArrowDownOutline } from 'react-icons/io5';
+import { AdminService, SubscriptionModel, PayPalService } from '../../../services';
 
 const TransactionsContent: React.FC = () => {
     const [activeTab, setActiveTab] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = 4;
+    const [subscriptions, setSubscriptions] = useState<SubscriptionModel[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const itemsPerPage = 5;
+
+    useEffect(() => {
+        const fetchSubscriptions = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const data = await AdminService.getAllSubscriptions();
+
+                // Sort by recent date first (startDate descending)
+                const sortedData = data.sort((a, b) => {
+                    const dateA = new Date(a.startDate);
+                    const dateB = new Date(b.startDate);
+                    return dateB.getTime() - dateA.getTime(); // Most recent first
+                });
+
+                setSubscriptions(sortedData);
+            } catch (error) {
+                console.error('Error fetching subscriptions:', error);
+                setError('Không thể tải dữ liệu giao dịch');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchSubscriptions();
+    }, []);
+
+    // Calculate pagination
+    const totalPages = Math.ceil(subscriptions.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentSubscriptions = subscriptions.slice(startIndex, endIndex);
 
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
@@ -24,58 +61,206 @@ const TransactionsContent: React.FC = () => {
         }
     };
 
-    const transactions = [
-        {
-            id: '#12345678',
-            name: 'Tín Lệ',
-            type: 'Refund',
-            card: '1234 ****',
-            date: '8 tháng 3, 12:30 AM',
-            amount: '-150.000VNĐ',
-            status: 'negative',
-            direction: 'up'
-        },
-        {
-            id: '#12345679',
-            name: 'NAVER Corp',
-            type: 'Booking',
-            card: '1234 ****',
-            date: '8 tháng 3, 10:40 PM',
-            amount: '+750.000VNĐ',
-            status: 'positive',
-            direction: 'down'
-        },
-        {
-            id: '#12345680',
-            name: 'Việt Quốc',
-            type: 'Refund',
-            card: '1234 ****',
-            date: '2 tháng 3, 10:40 PM',
-            amount: '-150.000VNĐ',
-            status: 'negative',
-            direction: 'up'
-        },
-        {
-            id: '#12345667',
-            name: 'Bùn Ngan Bà Bẩy',
-            type: 'Refund',
-            card: '1234 ****',
-            date: '2 tháng 3, 03:29 PM',
-            amount: '-1.050.000VNĐ',
-            status: 'negative',
-            direction: 'up'
-        },
-        {
-            id: '#12345668',
-            name: 'Quốc Thái',
-            type: 'Transfer',
-            card: '1234 ****',
-            date: '2 tháng 3, 10:40 PM',
-            amount: '+840.000VNĐ',
-            status: 'positive',
-            direction: 'down'
+    // Format date for display
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+
+    // Format amount for display
+    const formatAmount = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
+    // Determine transaction type based on payment status
+    const getTransactionType = (paymentStatus: string) => {
+        return paymentStatus === 'PAID' ? 'Booking' : paymentStatus;
+    };
+
+    // Handle download receipt
+    const handleDownloadReceipt = async (subscription: SubscriptionModel) => {
+        if (!subscription.transactionId || subscription.transactionId.trim() === '') {
+            alert('Không có mã giao dịch để tải biên lai');
+            return;
         }
-    ];
+
+        try {
+            setDownloadingId(subscription.transactionId);
+
+            const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
+            const packageName = subscription.packageName || 'Gói dịch vụ';
+
+            await PayPalService.downloadTransactionReceipt(
+                subscription.transactionId,
+                employerName,
+                packageName,
+                {
+                    amountPaid: subscription.amountPaid,
+                    startDate: subscription.startDate,
+                    paymentStatus: subscription.paymentStatus
+                }
+            );
+        } catch (error) {
+            console.error('Download receipt error:', error);
+
+            const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải biên lai';
+            alert(`Lỗi: ${errorMessage}`);
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    // Handle download all receipts
+    const handleDownloadAllReceipts = async () => {
+        // Filter subscriptions that have transaction IDs
+        const subscriptionsWithTransactionId = subscriptions.filter(
+            sub => sub.transactionId && sub.transactionId.trim() !== ''
+        );
+
+        if (subscriptionsWithTransactionId.length === 0) {
+            alert('Không có giao dịch nào có mã để tải về');
+            return;
+        }
+
+        try {
+            setDownloadingId('ALL');
+
+            // Generate combined HTML for all transactions
+            let combinedHTML = `
+                <div style="max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background: #fff;">
+                    <div style="text-align: center; border-bottom: 3px solid #309689; padding-bottom: 20px; margin-bottom: 30px;">
+                        <h1 style="color: #309689; margin: 0; font-size: 28px;">INNOSPHERE</h1>
+                        <p style="color: #666; margin: 5px 0 0 0; font-size: 16px;">Báo cáo tất cả giao dịch</p>
+                        <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+                            Tạo ngày: ${new Date().toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}
+                        </p>
+                    </div>
+
+                    <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+                        <h3 style="margin: 0; color: #333;">Tổng quan</h3>
+                        <p style="margin: 5px 0; color: #666;">
+                            Tổng số giao dịch: <strong>${subscriptionsWithTransactionId.length}</strong>
+                        </p>
+                        <p style="margin: 5px 0; color: #666;">
+                            Tổng doanh thu: <strong>${formatAmount(
+                subscriptionsWithTransactionId.reduce((sum, sub) => sum + sub.amountPaid, 0)
+            )}</strong>
+                        </p>
+                    </div>
+            `;
+
+            // Add each transaction
+            subscriptionsWithTransactionId.forEach((subscription, index) => {
+                const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
+                const packageName = subscription.packageName || 'Gói dịch vụ';
+
+                combinedHTML += `
+                    <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid;">
+                        <h3 style="color: #309689; margin: 0 0 15px 0; font-size: 18px;">
+                            Giao dịch #${index + 1}
+                        </h3>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #666; width: 30%;">Mã giao dịch:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #333;">${subscription.transactionId}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
+                                <td style="padding: 8px 0; color: #333;">${packageName}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Ngày giao dịch:</td>
+                                <td style="padding: 8px 0; color: #333;">${formatDate(subscription.startDate)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Trạng thái:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #16DBAA;">${getTransactionType(subscription.paymentStatus)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Số tiền:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #309689; font-size: 16px;">
+                                    ${formatAmount(subscription.amountPaid)}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+            });
+
+            combinedHTML += `
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
+                        <p>Cảm ơn bạn đã sử dụng dịch vụ của INNOSPHERE!</p>
+                        <p>Báo cáo này được tạo tự động vào ${new Date().toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}</p>
+                    </div>
+                </div>
+            `;
+
+            // Create a new window and print
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                throw new Error('Popup blocked. Please allow popups for this site.');
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>All Transactions Report - ${new Date().toLocaleDateString('vi-VN')}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 1cm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${combinedHTML}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() {
+                                window.close();
+                            }
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+        } catch (error) {
+            console.error('Download all receipts error:', error);
+
+            const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải tất cả biên lai';
+            alert(`Lỗi: ${errorMessage}`);
+        } finally {
+            setDownloadingId(null);
+        }
+    };
 
     return (
         <>
@@ -249,6 +434,18 @@ const TransactionsContent: React.FC = () => {
                         </button>
                     </div>
 
+                    {/* Table Header with Download All Button */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Chi tiết giao dịch</h3>
+                        <button
+                            onClick={handleDownloadAllReceipts}
+                            disabled={downloadingId === 'ALL' || subscriptions.filter(sub => sub.transactionId && sub.transactionId.trim() !== '').length === 0}
+                            className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {downloadingId === 'ALL' ? 'Đang tải...' : 'Tải về tất cả'}
+                        </button>
+                    </div>
+
                     {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -257,48 +454,70 @@ const TransactionsContent: React.FC = () => {
                                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Mô tả</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Giao dịch ID</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Loại</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Thẻ</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Ngày</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Số lượng</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Biên lai</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {transactions.map((transaction) => (
-                                    <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center space-x-3">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${transaction.direction === 'up' ? 'bg-blue-100' : 'bg-green-100'
-                                                    }`}>
-                                                    {transaction.direction === 'up' ? (
-                                                        <IoArrowUpOutline className={`h-5 w-5 ${transaction.direction === 'up' ? 'text-blue-600' : 'text-green-600'
-                                                            }`} />
-                                                    ) : (
-                                                        <IoArrowDownOutline className="h-5 w-5 text-green-600" />
-                                                    )}
-                                                </div>
-                                                <span className="font-medium text-gray-900">{transaction.name}</span>
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+                                            <div className="flex items-center justify-center space-x-2">
+                                                <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                                                <span>Đang tải dữ liệu...</span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-4 text-gray-600 text-left">{transaction.id}</td>
-                                        <td className="py-4 px-4 text-gray-600 text-left">{transaction.type}</td>
-                                        <td className="py-4 px-4 text-gray-600 text-left">{transaction.card}</td>
-                                        <td className="py-4 px-4 text-gray-600 text-left">{transaction.date}</td>
-                                        <td className="py-4 px-4 text-left">
-                                            <span className={`font-semibold ${transaction.status === 'positive' ? '' : 'text-red-500'
-                                                }`}
-                                                style={transaction.status === 'positive' ? { color: '#16DBAA' } : {}}
-                                            >
-                                                {transaction.amount}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-left">
-                                            <button className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600">
-                                                Tải về
-                                            </button>
+                                    </tr>
+                                ) : error ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-8 px-4 text-center text-red-500">
+                                            {error}
                                         </td>
                                     </tr>
-                                ))}
+                                ) : currentSubscriptions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+                                            Không có dữ liệu giao dịch
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    currentSubscriptions.map((subscription) => (
+                                        <tr key={subscription.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
+                                                        <IoArrowDownOutline className="h-5 w-5 text-green-600" />
+                                                    </div>
+                                                    <span className="font-medium text-gray-900">
+                                                        {subscription.employerFullName || subscription.employerUserName || 'N/A'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4 text-gray-600 text-left">{subscription.transactionId || 'N/A'}</td>
+                                            <td className="py-4 px-4 text-gray-600 text-left">{getTransactionType(subscription.paymentStatus)}</td>
+                                            <td className="py-4 px-4 text-gray-600 text-left">{formatDate(subscription.startDate)}</td>
+                                            <td className="py-4 px-4 text-left">
+                                                <span className="font-semibold" style={{ color: '#16DBAA' }}>
+                                                    {formatAmount(subscription.amountPaid)}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4 text-left">
+                                                {subscription.transactionId && subscription.transactionId.trim() !== '' ? (
+                                                    <button
+                                                        className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600"
+                                                        onClick={() => handleDownloadReceipt(subscription)}
+                                                        disabled={downloadingId === subscription.transactionId}
+                                                    >
+                                                        {downloadingId === subscription.transactionId ? 'Đang tải...' : 'Tải về'}
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-gray-400 text-sm">Không có</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -312,16 +531,19 @@ const TransactionsContent: React.FC = () => {
                         >
                             ← Trước
                         </button>
-                        {[1, 2, 3, 4].map((page) => (
-                            <button
-                                key={page}
-                                className={`px-3 py-2 rounded-md min-w-[2rem] h-8 flex items-center justify-center ${currentPage === page ? 'pagination-active' : 'pagination-inactive'
-                                    }`}
-                                onClick={() => handlePageChange(page)}
-                            >
-                                {page}
-                            </button>
-                        ))}
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            const page = i + 1;
+                            return (
+                                <button
+                                    key={page}
+                                    className={`px-3 py-2 rounded-md min-w-[2rem] h-8 flex items-center justify-center ${currentPage === page ? 'pagination-active' : 'pagination-inactive'
+                                        }`}
+                                    onClick={() => handlePageChange(page)}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        })}
                         <button
                             className="px-3 py-2 hover:opacity-80 flex items-center pagination-nav"
                             onClick={handleNext}
