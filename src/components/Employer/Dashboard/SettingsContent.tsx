@@ -1,19 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RiUploadCloudLine, RiUser3Line, RiBuilding2Line, RiGlobalLine, RiSettings4Line } from 'react-icons/ri';
 import { BiBold, BiItalic, BiUnderline, BiStrikethrough, BiLink, BiListUl, BiListOl } from 'react-icons/bi';
 import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaTrash } from 'react-icons/fa';
 import { IoMdAdd } from 'react-icons/io';
+import { EmployerService, EmployerProfileModel, EmployerProfileResponse } from '../../../services/employerService';
+import { FirebaseStorageService } from '../../../services/firebaseStorageService';
+import { getUserIdFromToken } from '../../../utils/jwtHelper';
+import Swal from 'sweetalert2';
 
 const SettingsContent: React.FC = () => {
     const [activeTab, setActiveTab] = useState('company-info');
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+    // Form data state
+    const [formData, setFormData] = useState({
+        fullName: '',
+        avatarUrl: '',
+        companyDescription: '',
+        businessTypeId: 0,
+        companyAddress: '',
+        socialLinks: [] as Array<{ platform: string; url: string; }>
+    });
+
+    // Local state for UI
     const [companyName, setCompanyName] = useState('');
     const [companyDescription, setCompanyDescription] = useState('');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [socialLinks, setSocialLinks] = useState([
         { id: 1, type: 'facebook', url: '' },
         { id: 2, type: 'twitter', url: '' }
     ]);
+
+    // Load employer profile on component mount
+    useEffect(() => {
+        loadEmployerData();
+    }, []);
+
+    const loadEmployerData = async () => {
+        try {
+            const profile = await EmployerService.getEmployerProfile();
+            console.log('📋 Loaded employer profile:', profile);
+
+            if (profile) {
+
+                // Map the data to form fields
+                setFormData({
+                    fullName: profile.companyName || '',
+                    avatarUrl: profile.avatarUrl || '',
+                    companyDescription: profile.companyDescription || '',
+                    businessTypeId: profile.businessTypeId || 0,
+                    companyAddress: profile.companyAddress || '',
+                    socialLinks: (profile.socialLinks || []).map(link => ({
+                        platform: link.platform,
+                        url: link.url
+                    }))
+                });
+
+                // Set UI state
+                setCompanyName(profile.companyName || '');
+                setCompanyDescription(profile.companyDescription || '');
+
+                // Convert social links for UI
+                const uiSocialLinks = (profile.socialLinks || []).map((link, index) => ({
+                    id: index + 1,
+                    type: link.platform.toLowerCase(),
+                    url: link.url
+                }));
+
+                if (uiSocialLinks.length > 0) {
+                    setSocialLinks(uiSocialLinks);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading employer profile:', error);
+        }
+    };
 
     const tabs = [
         {
@@ -41,6 +104,7 @@ const SettingsContent: React.FC = () => {
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setLogoFile(e.target.files[0]);
+            handleAvatarFileChange(e);
         }
     };
 
@@ -52,10 +116,140 @@ const SettingsContent: React.FC = () => {
 
     const handleDeleteLogo = () => {
         setLogoFile(null);
+        setAvatarPreview(null);
+        setFormData(prev => ({ ...prev, avatarUrl: '' }));
     };
 
     const handleDeleteCover = () => {
         setCoverFile(null);
+    };
+
+    // Avatar file handling
+    const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+
+            // Validate the file
+            const validation = FirebaseStorageService.validateImageFile(file);
+            if (!validation.valid) {
+                Swal.fire('Lỗi', validation.error, 'error');
+                return;
+            }
+
+            // Create preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setAvatarPreview(previewUrl);
+
+            // Upload to Firebase immediately
+            await uploadAvatarToFirebase(file);
+        }
+    };
+
+    const uploadAvatarToFirebase = async (file: File) => {
+        setIsUploadingAvatar(true);
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No token found');
+            }
+            const userId = getUserIdFromToken(token);
+            if (!userId) {
+                throw new Error('User ID not found in token');
+            }
+
+            console.log('🚀 Uploading avatar to Firebase...');
+            const downloadURL = await FirebaseStorageService.uploadImage(file, userId, 'employer-avatars');
+            console.log('✅ Avatar uploaded successfully. Download URL:', downloadURL);
+
+            // Update form data with the Firebase URL
+            setFormData(prev => ({ ...prev, avatarUrl: downloadURL }));
+
+            Swal.fire('Thành công', 'Ảnh đại diện đã được tải lên thành công!', 'success');
+        } catch (error) {
+            console.error('❌ Error uploading avatar:', error);
+            Swal.fire('Lỗi', 'Không thể tải lên ảnh đại diện. Vui lòng thử lại.', 'error');
+            // Reset preview on error
+            setAvatarPreview(null);
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+
+    // Form field handlers
+    const handleFormChange = (field: string, value: string | number) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+
+        // Update local UI state
+        if (field === 'fullName') setCompanyName(value as string);
+        if (field === 'companyDescription') setCompanyDescription(value as string);
+    };
+
+    // Business type mapping
+    const getBusinessTypeName = (id: number): string => {
+        switch (id) {
+            case 1: return 'Doanh nghiệp tư nhân';
+            case 3: return 'Công ty TNHH';
+            case 4: return 'Công ty cổ phần';
+            default: return 'Chọn...';
+        }
+    };
+
+    // Step navigation
+    const handleCompanyInfoSave = () => {
+        setActiveTab('establishment-info');
+    };
+
+    const handleEstablishmentInfoSave = () => {
+        setActiveTab('social-media');
+    };
+
+    // Final save to API
+    const handleFinalSave = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                Swal.fire('Lỗi', 'Vui lòng đăng nhập lại', 'error');
+                return;
+            }
+
+            const userId = getUserIdFromToken(token);
+            if (!userId) {
+                Swal.fire('Lỗi', 'Không thể xác thực người dùng', 'error');
+                return;
+            }
+
+            // Prepare social links for API
+            const socialLinksForAPI = socialLinks
+                .filter(link => link.url.trim() !== '')
+                .map(link => ({
+                    userId: userId,
+                    platform: link.type.charAt(0).toUpperCase() + link.type.slice(1) as 'Facebook' | 'Twitter' | 'Instagram' | 'Youtube' | 'LinkedIn' | 'GitHub' | 'Website',
+                    url: link.url
+                }));
+
+            const profileData: EmployerProfileModel = {
+                fullName: formData.fullName,
+                avatarUrl: formData.avatarUrl,
+                address: '',
+                phoneNumber: '',
+                companyName: formData.fullName,
+                businessTypeId: formData.businessTypeId,
+                newBusinessTypeName: '',
+                newBusinessTypeDescription: '',
+                companyAddress: formData.companyAddress,
+                taxCode: '',
+                companyDescription: formData.companyDescription,
+                socialLinks: socialLinksForAPI
+            };
+
+            console.log('📤 Saving employer profile:', profileData);
+            await EmployerService.updateEmployerProfile(profileData);
+
+            Swal.fire('Thành công', 'Hồ sơ công ty đã được cập nhật thành công!', 'success');
+        } catch (error) {
+            console.error('❌ Error saving employer profile:', error);
+            Swal.fire('Lỗi', 'Không thể lưu hồ sơ. Vui lòng thử lại.', 'error');
+        }
     };
 
     // Social media functions
@@ -147,12 +341,38 @@ const SettingsContent: React.FC = () => {
                                             onChange={handleLogoUpload}
                                         />
                                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors h-48 flex flex-col items-center justify-center">
-                                            {logoFile ? (
+                                            {avatarPreview ? (
                                                 <div className="relative">
                                                     <img
-                                                        src={URL.createObjectURL(logoFile)}
+                                                        src={avatarPreview}
                                                         alt="Logo preview"
                                                         className="h-24 w-24 object-contain mb-2"
+                                                    />
+                                                    {isUploadingAvatar && (
+                                                        <div className="absolute inset-0 bg-black bg-opacity-50 rounded flex items-center justify-center">
+                                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleDeleteLogo();
+                                                        }}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ) : formData.avatarUrl ? (
+                                                <div className="relative">
+                                                    <img
+                                                        src={formData.avatarUrl}
+                                                        alt="Current logo"
+                                                        className="h-24 w-24 object-contain mb-2"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.src = '/logo.png';
+                                                        }}
                                                     />
                                                     <button
                                                         onClick={(e) => {
@@ -170,6 +390,11 @@ const SettingsContent: React.FC = () => {
                                                     <p className="text-sm text-gray-600 mb-1">
                                                         <span className="font-medium text-[#309689]">Tải ảnh lên</span> hoặc kéo thả vào đây
                                                     </p>
+                                                    {isUploadingAvatar && (
+                                                        <div className="mt-2">
+                                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#309689] mx-auto"></div>
+                                                        </div>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -238,8 +463,8 @@ const SettingsContent: React.FC = () => {
                             type="text"
                             id="company-name"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#309689] focus:border-transparent"
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
+                            value={formData.fullName}
+                            onChange={(e) => handleFormChange('fullName', e.target.value)}
                             placeholder="Nhập tên công ty"
                         />
                     </div>
@@ -282,8 +507,8 @@ const SettingsContent: React.FC = () => {
                                 rows={6}
                                 className="w-full px-3 py-3 border-0 focus:outline-none focus:ring-0 resize-none"
                                 placeholder="Viết ra và công ty của bạn ở đây. Hãy cho ứng viên biết chúng tôi là ai..."
-                                value={companyDescription}
-                                onChange={(e) => setCompanyDescription(e.target.value)}
+                                value={formData.companyDescription}
+                                onChange={(e) => handleFormChange('companyDescription', e.target.value)}
                             />
                         </div>
                     </div>
@@ -320,7 +545,7 @@ const SettingsContent: React.FC = () => {
                                 }
                             `}
                         </style>
-                        <button className="custom-save-button">
+                        <button className="custom-save-button" onClick={handleCompanyInfoSave}>
                             Lưu Thay Đổi
                         </button>
                     </div>
@@ -337,12 +562,15 @@ const SettingsContent: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
                                 Loại hình tổ chức
                             </label>
-                            <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#309689] focus:border-transparent text-gray-500">
-                                <option>Chọn...</option>
-                                <option>Công ty TNHH</option>
-                                <option>Công ty Cổ phần</option>
-                                <option>Doanh nghiệp tư nhân</option>
-                                <option>Công ty hợp danh</option>
+                            <select
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#309689] focus:border-transparent text-gray-500"
+                                value={formData.businessTypeId}
+                                onChange={(e) => handleFormChange('businessTypeId', parseInt(e.target.value))}
+                            >
+                                <option value={0}>Chọn...</option>
+                                <option value={3}>Công ty TNHH</option>
+                                <option value={4}>Công ty Cổ phần</option>
+                                <option value={1}>Doanh nghiệp tư nhân</option>
                             </select>
                         </div>
 
@@ -401,6 +629,8 @@ const SettingsContent: React.FC = () => {
                                 type="url"
                                 placeholder="Website url..."
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#309689] focus:border-transparent text-gray-500"
+                                value={formData.companyAddress}
+                                onChange={(e) => handleFormChange('companyAddress', e.target.value)}
                             />
                         </div>
                     </div>
@@ -478,7 +708,7 @@ const SettingsContent: React.FC = () => {
                                 }
                             `}
                         </style>
-                        <button className="custom-save-button">
+                        <button className="custom-save-button" onClick={handleEstablishmentInfoSave}>
                             Lưu Thay Đổi
                         </button>
                     </div>
@@ -581,7 +811,7 @@ const SettingsContent: React.FC = () => {
                                 }
                             `}
                         </style>
-                        <button className="custom-save-button">
+                        <button className="custom-save-button" onClick={handleFinalSave}>
                             Lưu Thay Đổi
                         </button>
                     </div>

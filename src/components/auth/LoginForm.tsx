@@ -9,7 +9,7 @@ import { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import { validateEmail, validatePassword } from "../../utils/validation";
 import GoogleLoginForm from "./GoogleLoginForm";
-import { EmployerService } from "../../services/employerService";
+import { handleEmployerLoginRedirect } from "../../utils/employerAuth";
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -66,20 +66,8 @@ const LoginForm: React.FC = () => {
         } else if (role === "Worker") {
           navigate("/employee/dashboard");
         } else if (role === "Employer") {
-          // Check if employer profile exists
-          try {
-            await EmployerService.getProfile();
-            // If profile exists, navigate to dashboard
-            navigate("/employer/dashboard");
-          } catch (profileError) {
-            if (profileError instanceof AxiosError && profileError.response?.status === 404) {
-              // If profile doesn't exist (404), navigate to setup
-              navigate("/employer/business-info");
-            } else {
-              // If other error, navigate to setup anyway
-              navigate("/employer/business-info");
-            }
-          }
+          // Use employer auth logic to check profile and redirect appropriately
+          await handleEmployerLoginRedirect(navigate, accessToken);
         } else {
           navigate("/");
         }

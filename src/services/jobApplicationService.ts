@@ -88,6 +88,7 @@ export interface WorkerJobApplicationsResponse {
         jobTitle: string;
         workerName: string;
         resumeTitle: string;
+        resumeUrlCvs?: string; // Added for CV download functionality
         workerProfile?: WorkerProfileFromAPI;
     }[];
 }

@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getRoleFromToken } from '../../utils/jwtHelper';
+import { ResumeService, WorkerProfileResponse } from '../../services/resumeService';
+import { EmployerService, EmployerProfileModel } from '../../services/employerService';
+import { handleEmployerAvatarClick } from '../../utils/employerAuth';
 
 const Header: React.FC = () => {
     const location = useLocation();
@@ -9,13 +12,44 @@ const Header: React.FC = () => {
 
     const token = localStorage.getItem("token");
     const isLoggedIn = token;
+    const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
+    const [employerProfile, setEmployerProfile] = useState<EmployerProfileModel | null>(null);
+
+    // Load worker and employer profiles to get avatars
+    useEffect(() => {
+        const loadProfiles = async () => {
+            if (isLoggedIn && token) {
+                const role = getRoleFromToken(token);
+
+                if (role === "Worker") {
+                    try {
+                        const profile = await ResumeService.getWorkerProfile();
+                        setWorkerProfile(profile);
+                    } catch (error) {
+                        console.error('Error loading worker profile:', error);
+                        // Don't show error to user, just use default avatar
+                    }
+                } else if (role === "Employer") {
+                    try {
+                        const profile = await EmployerService.getEmployerProfile();
+                        setEmployerProfile(profile);
+                    } catch (error) {
+                        console.error('Error loading employer profile:', error);
+                        // Don't show error to user, just use default avatar
+                    }
+                }
+            }
+        };
+
+        loadProfiles();
+    }, [isLoggedIn, token]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
     };
 
-    const handleAvatarClick = () => {
+    const handleAvatarClick = async () => {
         if (token) {
             const role = getRoleFromToken(token);
             if (role === "Admin") {
@@ -23,7 +57,8 @@ const Header: React.FC = () => {
             } else if (role === "Worker") {
                 navigate("/employee/dashboard");
             } else if (role === "Employer") {
-                navigate("/employer/dashboard");
+                // Use employer auth logic to check profile and redirect appropriately
+                await handleEmployerAvatarClick(navigate, token);
             }
         }
     };
@@ -81,23 +116,24 @@ const Header: React.FC = () => {
                                 {/* User Avatar */}
                                 <button
                                     onClick={handleAvatarClick}
-                                    className="w-8 h-8 bg-[#309689] rounded-full flex items-center justify-center hover:bg-[#277a6e] transition-colors"
+                                    className="w-8 h-8 bg-[#309689] rounded-full flex items-center justify-center hover:bg-[#277a6e] transition-colors overflow-hidden"
                                     title="Đi tới Dashboard"
                                 >
-                                    <svg
-                                        className="w-5 h-5 text-white"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        ></path>
-                                    </svg>
+                                    <img
+                                        src={
+                                            token && getRoleFromToken(token) === "Worker"
+                                                ? workerProfile?.avatarUrl || "/avatar.jpg"
+                                                : token && getRoleFromToken(token) === "Employer"
+                                                    ? employerProfile?.avatarUrl || "/avatar.jpg"
+                                                    : "/avatar.jpg"
+                                        }
+                                        alt="User Avatar"
+                                        className="w-full h-full rounded-full object-cover"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = "/avatar.jpg";
+                                        }}
+                                    />
                                 </button>
 
                                 {/* Logout Button */}

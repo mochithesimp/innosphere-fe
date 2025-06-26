@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { FiX, FiUpload, FiFile } from 'react-icons/fi';
 import { CreateResumeModel, ResumeService } from '../../services/resumeService';
+import FirebaseStorageService from '../../services/firebaseStorageService';
+import { getUserIdFromToken } from '../../utils/jwtHelper';
 
 interface CVModalProps {
     isOpen: boolean;
@@ -53,12 +55,26 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
     const [cvName, setCvName] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setSelectedFile(e.target.files[0]);
+            const file = e.target.files[0];
+
+            // Validate document file
+            const validation = FirebaseStorageService.validateDocumentFile(file);
+            if (!validation.valid) {
+                setError(validation.error || 'Invalid file');
+                setSelectedFile(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                return;
+            }
+
+            setSelectedFile(file);
             setError('');
         }
     };
@@ -66,7 +82,16 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            setSelectedFile(e.dataTransfer.files[0]);
+            const file = e.dataTransfer.files[0];
+
+            // Validate document file
+            const validation = FirebaseStorageService.validateDocumentFile(file);
+            if (!validation.valid) {
+                setError(validation.error || 'Invalid file');
+                return;
+            }
+
+            setSelectedFile(file);
             setError('');
         }
     };
@@ -102,14 +127,41 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
         }
 
         setIsSubmitting(true);
+        setIsUploading(true);
         setError('');
 
         try {
+            // Get user ID from token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const userId = getUserIdFromToken(token);
+            if (!userId) {
+                throw new Error('Could not extract user ID from token');
+            }
+
+            console.log('🚀 Starting CV/Resume upload process...');
+            console.log('File:', selectedFile.name, 'Size:', selectedFile.size);
+
+            // Upload document to Firebase
+            const firebaseUrl = await FirebaseStorageService.uploadDocument(
+                selectedFile,
+                userId,
+                'cv-resumes'
+            );
+
+            console.log('✅ Document uploaded to Firebase:', firebaseUrl);
+
+            // Determine file type from the uploaded file
+            const fileExtension = selectedFile.name.split('.').pop()?.toUpperCase() || 'PDF';
+
             const resumeData: CreateResumeModel = {
                 workerId: workerId,
                 title: cvName.trim(),
-                urlCvs: "url", // Hard coded as requested
-                fileType: "PDF", // Always set as PDF
+                urlCvs: firebaseUrl, // Use Firebase download URL
+                fileType: fileExtension,
                 fileSize: selectedFile.size
             };
 
@@ -117,6 +169,8 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
             console.log(JSON.stringify(resumeData, null, 2));
 
             await ResumeService.createResume(resumeData);
+
+            console.log('✅ Resume created successfully in database');
 
             // Reset form
             setCvName('');
@@ -130,10 +184,15 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
             onResumeAdded();
 
         } catch (error) {
-            console.error('Error creating resume:', error);
-            setError('Có lỗi xảy ra khi thêm CV/Resume. Vui lòng thử lại.');
+            console.error('❌ Error in CV/Resume upload process:', error);
+            if (error instanceof Error) {
+                setError(`Có lỗi xảy ra: ${error.message}`);
+            } else {
+                setError('Có lỗi xảy ra khi thêm CV/Resume. Vui lòng thử lại.');
+            }
         } finally {
             setIsSubmitting(false);
+            setIsUploading(false);
         }
     };
 
@@ -254,9 +313,9 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
                             <button
                                 type="submit"
                                 className="add-button"
-                                disabled={!cvName || !selectedFile || isSubmitting}
+                                disabled={!cvName || !selectedFile || isSubmitting || isUploading}
                             >
-                                {isSubmitting ? 'Đang thêm...' : 'Thêm CV/Resume'}
+                                {isUploading ? 'Đang tải lên...' : isSubmitting ? 'Đang lưu...' : 'Thêm CV/Resume'}
                             </button>
                         </div>
                     </form>

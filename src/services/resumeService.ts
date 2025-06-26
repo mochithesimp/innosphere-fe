@@ -61,7 +61,9 @@ export class ResumeService {
     }
 
     static async deleteResume(resumeId: number): Promise<void> {
-        await axios.delete(`${API_BASE_URL}/api/resume/${resumeId}`, this.getAuthHeaders());
+        console.log(`🗑️ Deleting resume with ID: ${resumeId}`);
+        await axios.delete(`https://localhost:7085/api/resume/${resumeId}`, this.getAuthHeaders());
+        console.log(`✅ Resume ${resumeId} deleted successfully`);
     }
 
     static async updateResume(resumeId: number, resumeData: Partial<CreateResumeModel>): Promise<ResumeModel> {

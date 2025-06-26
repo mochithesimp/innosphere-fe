@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
-import { FiUpload, FiPlus } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import { BsGlobe } from 'react-icons/bs';
 import { FiUser } from 'react-icons/fi';
 import { BsFileEarmarkText } from 'react-icons/bs';
@@ -12,6 +12,7 @@ import { ResumeService, ResumeModel, WorkerProfileResponse } from '../../service
 import { WorkerService, WorkerProfileModel } from '../../services/workerService';
 import { getUserIdFromToken } from '../../utils/jwtHelper';
 import Swal from 'sweetalert2';
+import FirebaseStorageService from '../../services/firebaseStorageService';
 
 const settingStyles = `
     .tab-item {
@@ -371,6 +372,13 @@ const EmployeeSettings: React.FC = () => {
     const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
     const [isLoadingResumes, setIsLoadingResumes] = useState(false);
 
+    // Avatar upload state
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+    // Dropdown state management
+    const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+
     // Form state for profile data
     const [formData, setFormData] = useState({
         fullName: '',
@@ -404,6 +412,23 @@ const EmployeeSettings: React.FC = () => {
         loadWorkerData();
     }, []);
 
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => {
+            // Close all dropdowns when clicking anywhere on the document
+            if (openDropdownId !== null) {
+                closeAllDropdowns();
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+
+        // Cleanup event listener on component unmount
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [openDropdownId]);
+
     const loadWorkerData = async () => {
         try {
             setIsLoadingResumes(true);
@@ -435,6 +460,9 @@ const EmployeeSettings: React.FC = () => {
 
             console.log('📝 Populating form fields with data:', formDataToSet);
             setFormData(formDataToSet);
+
+            // Clear avatar preview when loading existing data
+            setAvatarPreview(null);
 
             // Get resumes using workerId
             if (profile.workerId) {
@@ -473,18 +501,127 @@ const EmployeeSettings: React.FC = () => {
         fileInputRef.current?.click();
     };
 
+    const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+
+            // Validate the file
+            const validation = FirebaseStorageService.validateImageFile(file);
+            if (!validation.valid) {
+                Swal.fire('Lỗi', validation.error, 'error');
+                return;
+            }
+
+            // Create preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setAvatarPreview(previewUrl);
+
+            // Auto-upload the image
+            await uploadAvatarToFirebase(file);
+        }
+    };
+
+    const uploadAvatarToFirebase = async (file: File) => {
+        try {
+            setIsUploadingAvatar(true);
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                Swal.fire('Lỗi', 'Vui lòng đăng nhập lại', 'error');
+                return;
+            }
+
+            const userId = getUserIdFromToken(token);
+            if (!userId) {
+                Swal.fire('Lỗi', 'Không thể xác thực người dùng', 'error');
+                return;
+            }
+
+            console.log('🚀 Uploading avatar to Firebase...');
+
+            // Upload to Firebase Storage
+            const downloadURL = await FirebaseStorageService.uploadImage(file, userId, 'avatars');
+            console.log('✅ Avatar uploaded successfully:', downloadURL);
+
+            // Update form data with new avatar URL
+            setFormData(prev => ({
+                ...prev,
+                avatarUrl: downloadURL
+            }));
+
+            Swal.fire({
+                title: 'Thành công!',
+                text: 'Ảnh đại diện đã được tải lên thành công',
+                icon: 'success',
+                confirmButtonColor: '#309689'
+            });
+
+        } catch (error) {
+            console.error('❌ Error uploading avatar:', error);
+            Swal.fire({
+                title: 'Lỗi!',
+                text: error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải ảnh lên',
+                icon: 'error',
+                confirmButtonColor: '#309689'
+            });
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+
     const handleResumeAdded = () => {
         // Refresh the resumes list after adding a new one
         loadWorkerData();
     };
 
+    // Dropdown management
+    const handleDropdownToggle = (resumeId: number) => {
+        setOpenDropdownId(prevId => prevId === resumeId ? null : resumeId);
+    };
+
+    const closeAllDropdowns = () => {
+        setOpenDropdownId(null);
+    };
+
     const handleDeleteResume = async (resumeId: number) => {
-        try {
-            await ResumeService.deleteResume(resumeId);
-            // Refresh the list
-            loadWorkerData();
-        } catch (error) {
-            console.error('Error deleting resume:', error);
+        // Show confirmation dialog
+        const result = await Swal.fire({
+            title: 'Xác nhận xóa',
+            text: 'Bạn có chắc chắn muốn xóa CV/Resume này? Hành động này không thể hoàn tác.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#309689',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                console.log(`🗑️ User confirmed deletion of resume ID: ${resumeId}`);
+                await ResumeService.deleteResume(resumeId);
+
+                // Show success message
+                Swal.fire({
+                    title: 'Đã xóa!',
+                    text: 'CV/Resume đã được xóa thành công.',
+                    icon: 'success',
+                    confirmButtonColor: '#309689'
+                });
+
+                // Refresh the list
+                loadWorkerData();
+            } catch (error) {
+                console.error('❌ Error deleting resume:', error);
+
+                // Show error message
+                Swal.fire({
+                    title: 'Lỗi!',
+                    text: 'Có lỗi xảy ra khi xóa CV/Resume. Vui lòng thử lại.',
+                    icon: 'error',
+                    confirmButtonColor: '#309689'
+                });
+            }
         }
     };
 
@@ -502,8 +639,8 @@ const EmployeeSettings: React.FC = () => {
         }));
     };
 
-    // Function to create worker profile
-    const createWorkerProfile = async () => {
+    // Function to create or update worker profile
+    const createOrUpdateWorkerProfile = async () => {
         try {
             const token = localStorage.getItem('token'); // Fixed: use 'token' instead of 'accessToken'
             console.log('🔑 Retrieved token:', token ? 'Token found' : 'No token found');
@@ -557,15 +694,25 @@ const EmployeeSettings: React.FC = () => {
                 socialLinks: socialLinksArray
             };
 
-            console.log('🚀 Creating worker profile with data:', profileData);
+            // Check if profile exists to determine whether to use POST (create) or PUT (update)
+            const profileExists = workerProfile !== null;
+            console.log('📋 Profile exists:', profileExists);
 
-            // Use WorkerService which has better error handling and token management  
-            const response = await (WorkerService as any).createOrUpdateWorkerProfile(profileData);
+            let response;
+            if (profileExists) {
+                console.log('🔄 Updating existing worker profile with data:', profileData);
+                // Use PUT method for updating existing profile
+                response = await WorkerService.updateWorkerProfile(profileData);
+            } else {
+                console.log('🚀 Creating new worker profile with data:', profileData);
+                // Use POST method for creating new profile
+                response = await WorkerService.createWorkerProfile(profileData);
+            }
 
             if (response) {
                 Swal.fire({
                     title: 'Thành công!',
-                    text: 'Hồ sơ của bạn đã được tạo thành công',
+                    text: profileExists ? 'Hồ sơ của bạn đã được cập nhật thành công' : 'Hồ sơ của bạn đã được tạo thành công',
                     icon: 'success',
                     confirmButtonColor: '#309689'
                 });
@@ -574,10 +721,10 @@ const EmployeeSettings: React.FC = () => {
                 loadWorkerData();
             }
         } catch (error) {
-            console.error('❌ Error creating worker profile:', error);
+            console.error('❌ Error creating/updating worker profile:', error);
             Swal.fire({
                 title: 'Lỗi!',
-                text: 'Có lỗi xảy ra khi tạo hồ sơ. Vui lòng thử lại.',
+                text: 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.',
                 icon: 'error',
                 confirmButtonColor: '#309689'
             });
@@ -708,9 +855,37 @@ const EmployeeSettings: React.FC = () => {
                                             <div className="flex flex-col items-center p-6 bg-white border border-gray-200 rounded-lg border-dashed">
                                                 <div className="relative mb-2">
                                                     <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                                                        <div className="text-gray-400 flex flex-col items-center justify-center">
-                                                            <FiUpload className="w-6 h-6 mb-1" />
-                                                        </div>
+                                                        {avatarPreview ? (
+                                                            <>
+                                                                <img
+                                                                    src={avatarPreview}
+                                                                    alt="Avatar preview"
+                                                                    className="w-full h-full object-cover rounded-full"
+                                                                />
+                                                                {isUploadingAvatar && (
+                                                                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                                                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <img
+                                                                    src={formData.avatarUrl || workerProfile?.avatarUrl || "/avatar.jpg"}
+                                                                    alt="Current avatar"
+                                                                    className="w-full h-full object-cover rounded-full"
+                                                                    onError={(e) => {
+                                                                        const target = e.target as HTMLImageElement;
+                                                                        target.src = "/avatar.jpg";
+                                                                    }}
+                                                                />
+                                                                {isUploadingAvatar && (
+                                                                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                                                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <input
@@ -718,17 +893,15 @@ const EmployeeSettings: React.FC = () => {
                                                     ref={fileInputRef}
                                                     className="hidden"
                                                     accept="image/*"
-                                                    onChange={(e) => {
-                                                        // Handle file change
-                                                        console.log(e.target.files);
-                                                    }}
+                                                    onChange={handleAvatarFileChange}
                                                 />
                                                 <div className="flex items-center space-x-2">
                                                     <button
                                                         onClick={handleFileUpload}
-                                                        className="text-sm font-medium text-[#309689] cursor-pointer hover:underline focus:outline-none"
+                                                        disabled={isUploadingAvatar}
+                                                        className="text-sm font-medium text-[#309689] cursor-pointer hover:underline focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
-                                                        Chọn ảnh
+                                                        {isUploadingAvatar ? 'Đang tải...' : 'Chọn ảnh'}
                                                     </button>
                                                     <span className="text-xs text-gray-500">hoặc thả vào đây</span>
                                                 </div>
@@ -888,7 +1061,8 @@ const EmployeeSettings: React.FC = () => {
                                                             <button
                                                                 className="cursor-pointer focus:outline-none"
                                                                 onClick={(e) => {
-                                                                    e.currentTarget.nextElementSibling?.classList.toggle('hidden');
+                                                                    e.stopPropagation();
+                                                                    handleDropdownToggle(resume.id);
                                                                 }}
                                                             >
                                                                 <div className="flex space-x-0.5">
@@ -899,16 +1073,27 @@ const EmployeeSettings: React.FC = () => {
                                                             </button>
 
                                                             {/* Dropdown Menu */}
-                                                            <div className="hidden absolute right-0 mt-1 bg-white shadow-lg rounded-md border border-gray-100 w-28 z-10">
+                                                            <div className={`${openDropdownId === resume.id ? 'block' : 'hidden'} absolute right-0 mt-1 bg-white shadow-lg rounded-md border border-gray-100 w-28 z-10`}>
                                                                 <div className="py-1">
-                                                                    <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
+                                                                    <a
+                                                                        href="#"
+                                                                        className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            closeAllDropdowns();
+                                                                            // Add edit functionality here when needed
+                                                                        }}
+                                                                    >
                                                                         <svg className="h-3.5 w-3.5 mr-2 text-[#309689]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                                         </svg>
                                                                         Chỉnh sửa
                                                                     </a>
                                                                     <button
-                                                                        onClick={() => handleDeleteResume(resume.id)}
+                                                                        onClick={() => {
+                                                                            closeAllDropdowns();
+                                                                            handleDeleteResume(resume.id);
+                                                                        }}
                                                                         className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-gray-100 text-left w-full"
                                                                     >
                                                                         <svg className="h-3.5 w-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1275,7 +1460,7 @@ const EmployeeSettings: React.FC = () => {
 
                                     {/* Save Button */}
                                     <div className="mt-6 text-left">
-                                        <button onClick={createWorkerProfile} className="apply-button">
+                                        <button onClick={createOrUpdateWorkerProfile} className="apply-button">
                                             Lưu Thay Đổi
                                         </button>
                                     </div>

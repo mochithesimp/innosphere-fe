@@ -5,6 +5,7 @@ import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYou
 import { JobApplicationService } from '../../../services/jobApplicationService';
 import RatingService, { RatingCriteriaModel, CreateWorkerRatingModel } from '../../../services/ratingService';
 import { isWorkerRated, markWorkerAsRated } from '../../../utils/ratingUtils';
+import { downloadFileFromUrl } from '../../../utils/fileDownload';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -55,8 +56,11 @@ interface Applicant {
         email?: string;
         experience?: string;
         education?: string;
+        avatarUrl?: string;
     };
     resumeTitle?: string;
+    resumeUrlCvs?: string; // Added for CV download functionality
+    avatarUrl?: string; // Added for displaying user avatar
     isFromAPI?: boolean; // Flag to identify API data
     applicationId?: number; // Job application ID for API calls
     applicationStatus?: string; // Current application status
@@ -391,7 +395,34 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                     {/* Header - Full width */}
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center">
-                            <div className="w-16 h-16 bg-gray-400 rounded-full mr-4 flex-shrink-0"></div>
+                            <div className="w-16 h-16 mr-4 flex-shrink-0">
+                                {(() => {
+                                    const avatarUrl = applicant.avatarUrl || applicant.workerProfile?.avatarUrl;
+                                    if (avatarUrl && avatarUrl.trim() !== '') {
+                                        return (
+                                            <img
+                                                src={avatarUrl}
+                                                alt={applicant.name}
+                                                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                                                onError={(e) => {
+                                                    // Fallback to placeholder if image fails to load
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.style.display = 'none';
+                                                    const placeholder = target.nextElementSibling as HTMLElement;
+                                                    if (placeholder) placeholder.style.display = 'flex';
+                                                }}
+                                            />
+                                        );
+                                    }
+                                    return (
+                                        <div className="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center">
+                                            <span className="text-white font-medium text-lg">
+                                                {applicant.name.charAt(0).toUpperCase()}
+                                            </span>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                             <div className="text-left">
                                 <h2 className="text-2xl font-semibold text-gray-800">
                                     {applicant.workerProfile?.fullName || applicant.name}
@@ -699,13 +730,25 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                             <p className="text-xs text-gray-500">PDF</p>
                                         </div>
                                     </div>
-                                    <a href="#" className="text-[#309689]">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (applicant.resumeUrlCvs) {
+                                                const filename = applicant.resumeTitle || applicant.name;
+                                                downloadFileFromUrl(applicant.resumeUrlCvs, `${filename}.pdf`);
+                                            } else {
+                                                console.warn('No CV URL available for download');
+                                            }
+                                        }}
+                                        className="text-[#309689] hover:text-teal-700 transition-colors"
+                                        disabled={!applicant.resumeUrlCvs}
+                                    >
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="#309689" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                             <path d="M7 10L12 15L17 10" stroke="#309689" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                             <path d="M12 15V3" stroke="#309689" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
 

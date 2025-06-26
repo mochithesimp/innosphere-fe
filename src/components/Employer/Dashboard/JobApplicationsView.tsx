@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { RiHome2Line, RiEditLine, RiDeleteBinLine, RiMoreFill, RiCloseLine } from 'react-icons/ri';
 import ApplicantPopup from './ApplicantPopup';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../../services/jobApplicationService';
+import { downloadFileFromUrl } from '../../../utils/fileDownload';
 
 // Define the Applicant type
 interface Applicant {
@@ -27,8 +28,11 @@ interface Applicant {
         email?: string;
         experience?: string;
         education?: string;
+        avatarUrl?: string;
     };
     resumeTitle?: string;
+    resumeUrlCvs?: string; // Added for CV download functionality
+    avatarUrl?: string; // Added for displaying user avatar
     isFromAPI?: boolean; // Flag to identify API data
     applicationId?: number; // Job application ID for API calls
     applicationStatus?: string; // Current application status
@@ -75,6 +79,8 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
             applicationDate: formatDate(app.appliedAt),
             coverNote: app.coverNote,
             resumeTitle: app.resumeTitle,
+            resumeUrlCvs: app.resumeUrlCvs, // Added for CV download functionality
+            avatarUrl: app.workerProfile?.avatarUrl, // Added for displaying user avatar
             isFromAPI: true,
             applicationId: app.id, // Job application ID for API calls
             applicationStatus: app.status, // Current application status
@@ -93,6 +99,7 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                 email: app.workerProfile.email,
                 experience: app.workerProfile.experience,
                 education: app.workerProfile.education,
+                avatarUrl: app.workerProfile.avatarUrl,
             } : undefined
         }));
     };
@@ -156,6 +163,46 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
     const handleClosePopup = () => {
         setIsPopupOpen(false);
         setSelectedApplicant(null);
+    };
+
+    // Handle CV download
+    const handleDownloadCV = (e: React.MouseEvent, applicant: Applicant) => {
+        e.stopPropagation();
+        if (applicant.resumeUrlCvs) {
+            const filename = applicant.resumeTitle || applicant.name;
+            downloadFileFromUrl(applicant.resumeUrlCvs, `${filename}.pdf`);
+        } else {
+            console.warn('No CV URL available for download');
+        }
+    };
+
+    // Render avatar component
+    const renderAvatar = (applicant: Applicant) => {
+        const avatarUrl = applicant.avatarUrl || applicant.workerProfile?.avatarUrl;
+
+        if (avatarUrl && avatarUrl.trim() !== '') {
+            return (
+                <img
+                    src={avatarUrl}
+                    alt={applicant.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                    onError={(e) => {
+                        // Fallback to placeholder if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                />
+            );
+        }
+
+        return (
+            <div className="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center">
+                <span className="text-white font-medium text-sm">
+                    {applicant.name.charAt(0).toUpperCase()}
+                </span>
+            </div>
+        );
     };
 
     // Handle applicant hire action
@@ -282,9 +329,9 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
             >
                 <div className="p-4">
                     <div className="flex items-start">
-                        {/* Blank Avatar */}
+                        {/* Avatar */}
                         <div className="mr-3">
-                            <div className="w-12 h-12 rounded-full bg-gray-400"></div>
+                            {renderAvatar(applicant)}
                         </div>
 
                         {/* Name and Title */}
@@ -315,7 +362,11 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                     </ul>
 
                     <div className="flex justify-between items-center mt-3">
-                        <button className="text-[#309689] text-sm font-medium flex items-center hover:underline text-left">
+                        <button
+                            onClick={(e) => handleDownloadCV(e, applicant)}
+                            className="text-[#309689] text-sm font-medium flex items-center hover:underline text-left"
+                            disabled={!applicant.resumeUrlCvs}
+                        >
                             <svg className="w-4 h-4 mr-1" style={{ color: "#309689" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M20 14V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 <path d="M12 15L12 3" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -378,9 +429,9 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
             >
                 <div className="p-4">
                     <div className="flex items-start">
-                        {/* Blank Avatar */}
+                        {/* Avatar */}
                         <div className="mr-3">
-                            <div className="w-12 h-12 rounded-full bg-gray-400"></div>
+                            {renderAvatar(applicant)}
                         </div>
 
                         {/* Name and Title */}
@@ -403,7 +454,11 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                     </ul>
 
                     <div className="flex justify-between items-center mt-3">
-                        <button className="text-[#309689] text-sm font-medium flex items-center hover:underline text-left">
+                        <button
+                            onClick={(e) => handleDownloadCV(e, applicant)}
+                            className="text-[#309689] text-sm font-medium flex items-center hover:underline text-left"
+                            disabled={!applicant.resumeUrlCvs}
+                        >
                             <svg className="w-4 h-4 mr-1" style={{ color: "#309689" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M20 14V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 <path d="M12 15L12 3" stroke="#309689" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

@@ -1,8 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBell, FaSearch } from 'react-icons/fa';
+import { ResumeService, WorkerProfileResponse } from '../../services/resumeService';
 
 const Header: React.FC = () => {
+    const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
+
+    // Load worker profile to get avatar
+    useEffect(() => {
+        const loadWorkerProfile = async () => {
+            try {
+                const profile = await ResumeService.getWorkerProfile();
+                setWorkerProfile(profile);
+            } catch (error) {
+                console.error('Error loading worker profile:', error);
+                // Don't show error to user, just use default avatar
+            }
+        };
+
+        loadWorkerProfile();
+    }, []);
+
     return (
         <>
             {/* Top Navigation */}
@@ -77,9 +95,13 @@ const Header: React.FC = () => {
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
                             </div>
                             <img
-                                src="/avatar.jpg"
+                                src={workerProfile?.avatarUrl || "/avatar.jpg"}
                                 alt="User profile"
-                                className="h-8 w-8 rounded-full border-2 border-white"
+                                className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = "/avatar.jpg";
+                                }}
                             />
                         </div>
                     </div>
