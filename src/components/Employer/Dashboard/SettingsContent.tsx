@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RiUploadCloudLine, RiUser3Line, RiBuilding2Line, RiGlobalLine, RiSettings4Line } from 'react-icons/ri';
 import { BiBold, BiItalic, BiUnderline, BiStrikethrough, BiLink, BiListUl, BiListOl } from 'react-icons/bi';
 import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaTrash } from 'react-icons/fa';
 import { IoMdAdd } from 'react-icons/io';
-import { EmployerService, EmployerProfileModel, EmployerProfileResponse } from '../../../services/employerService';
+import { EmployerService, EmployerProfileModel } from '../../../services/employerService';
 import { FirebaseStorageService } from '../../../services/firebaseStorageService';
 import { getUserIdFromToken } from '../../../utils/jwtHelper';
 import Swal from 'sweetalert2';
@@ -23,8 +23,6 @@ const SettingsContent: React.FC = () => {
     });
 
     // Local state for UI
-    const [companyName, setCompanyName] = useState('');
-    const [companyDescription, setCompanyDescription] = useState('');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -58,9 +56,7 @@ const SettingsContent: React.FC = () => {
                     }))
                 });
 
-                // Set UI state
-                setCompanyName(profile.companyName || '');
-                setCompanyDescription(profile.companyDescription || '');
+                // UI state is handled by formData
 
                 // Convert social links for UI
                 const uiSocialLinks = (profile.socialLinks || []).map((link, index) => ({
@@ -178,21 +174,17 @@ const SettingsContent: React.FC = () => {
     // Form field handlers
     const handleFormChange = (field: string, value: string | number) => {
         setFormData(prev => ({ ...prev, [field]: value }));
-
-        // Update local UI state
-        if (field === 'fullName') setCompanyName(value as string);
-        if (field === 'companyDescription') setCompanyDescription(value as string);
     };
 
-    // Business type mapping
-    const getBusinessTypeName = (id: number): string => {
-        switch (id) {
-            case 1: return 'Doanh nghiệp tư nhân';
-            case 3: return 'Công ty TNHH';
-            case 4: return 'Công ty cổ phần';
-            default: return 'Chọn...';
-        }
-    };
+    // Business type mapping (commented out as it's not currently used)
+    // const getBusinessTypeName = (id: number): string => {
+    //     switch (id) {
+    //         case 1: return 'Doanh nghiệp tư nhân';
+    //         case 3: return 'Công ty TNHH';
+    //         case 4: return 'Công ty cổ phần';
+    //         default: return 'Chọn...';
+    //     }
+    // };
 
     // Step navigation
     const handleCompanyInfoSave = () => {
