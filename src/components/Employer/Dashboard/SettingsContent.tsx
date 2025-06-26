@@ -23,7 +23,6 @@ const SettingsContent: React.FC = () => {
     });
 
     // Local state for UI
-    const [logoFile, setLogoFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [socialLinks, setSocialLinks] = useState([
@@ -99,7 +98,6 @@ const SettingsContent: React.FC = () => {
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setLogoFile(e.target.files[0]);
             handleAvatarFileChange(e);
         }
     };
@@ -111,7 +109,6 @@ const SettingsContent: React.FC = () => {
     };
 
     const handleDeleteLogo = () => {
-        setLogoFile(null);
         setAvatarPreview(null);
         setFormData(prev => ({ ...prev, avatarUrl: '' }));
     };
