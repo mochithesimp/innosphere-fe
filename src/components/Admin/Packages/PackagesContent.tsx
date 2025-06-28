@@ -53,7 +53,9 @@ const PackagesContent: React.FC = () => {
                     try {
                         const payload = JSON.parse(atob(token.split('.')[1]));
                         console.log('🔍 Token payload:', payload);
-                        console.log('👤 User roles:', payload.role || 'No role found');
+                        const userRole = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+                        console.log('👤 User roles:', userRole || 'No role found');
+                        console.log('✅ Is Admin?', userRole === 'Admin');
                     } catch (e) {
                         console.error('❌ Failed to decode token:', e);
                     }
