@@ -43,11 +43,13 @@ export const get = async (path: string, options = {}) => {
   } catch (error) {
     if (error instanceof AxiosError) {
       console.error("Error retrieving data:", error.message);
+      console.error("Status code:", error.response?.status);
+      console.error("Response data:", error.response?.data);
     } else {
       console.error("Unexpected error:", error);
     }
-    return [];
-    // throw new Error("Error retrieving notifications");
+    // Re-throw the error so calling services can handle it properly
+    throw error;
   }
 };
 

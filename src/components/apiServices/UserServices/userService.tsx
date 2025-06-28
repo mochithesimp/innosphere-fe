@@ -1,5 +1,9 @@
 import * as request from "../../../utils/request";
 
+interface User {
+  roles: string[];
+}
+
 export const getUserId = async (userId: string) => {
   try {
     const token = localStorage.getItem("token");
@@ -11,15 +15,16 @@ export const getUserId = async (userId: string) => {
     return res;
   } catch (error) {
     console.log(error);
+    return null;
   }
 };
 
 export const getUserCountsByRole = async () => {
   try {
-    const users = await request.get('/api/user'); // GET toàn bộ user
+    const users = await request.get('/api/user') as User[]; // GET toàn bộ user
 
-    const totalWorkers = users.filter((u: any) => u.roles.includes("Worker")).length;
-    const totalEmployers = users.filter((u: any) => u.roles.includes("Employer")).length;
+    const totalWorkers = users.filter((u: User) => u.roles.includes("Worker")).length;
+    const totalEmployers = users.filter((u: User) => u.roles.includes("Employer")).length;
 
     return { totalWorkers, totalEmployers };
   } catch (error) {

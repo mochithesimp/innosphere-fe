@@ -1,5 +1,7 @@
-import { get, put, post } from '../utils/request';
 import { getUserIdFromToken, isTokenExpired } from '../utils/auth';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://103.163.24.72';
 
 export interface CreateSocialLinkModel {
     userId: string;
@@ -45,7 +47,7 @@ export interface EmployerProfileResponse {
 
 // Token storage helper
 const getTokenFromStorage = (): string | null => {
-    return localStorage.getItem('token') || localStorage.getItem('accessToken');
+    return localStorage.getItem('token');
 };
 
 // Social Link Interface
@@ -72,7 +74,15 @@ export interface EmployerProfileModel {
 }
 
 export class EmployerService {
-    private static readonly BASE_URL = '/api/Employer';
+    private static getAuthHeaders() {
+        const token = getTokenFromStorage();
+        return {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        };
+    }
 
     /**
      * Create employer profile
@@ -125,17 +135,12 @@ export class EmployerService {
             };
 
             console.log('📤 Sending data to API (POST):');
-            console.log('URL:', `${this.BASE_URL}/profile`);
+            console.log('URL:', `${API_BASE_URL}/api/employer/profile`);
             console.log('Payload:', JSON.stringify(updatedProfileData, null, 2));
 
-            const response = await post(`${this.BASE_URL}/profile`, updatedProfileData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await axios.post(`${API_BASE_URL}/api/employer/profile`, updatedProfileData, this.getAuthHeaders());
 
-            console.log('📥 API Response:', response);
+            console.log('📥 API Response:', response.data);
             return response.data;
         } catch (error: unknown) {
             console.error('❌ Error creating employer profile:', error);
@@ -155,23 +160,21 @@ export class EmployerService {
         }
 
         try {
-            const response = await get(`${this.BASE_URL}/profile`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            return response;
+            console.log('📞 Making GET request to:', `${API_BASE_URL}/api/employer/profile`);
+            const response = await axios.get(`${API_BASE_URL}/api/employer/profile`, this.getAuthHeaders());
+            console.log('✅ Successfully retrieved employer profile:', response.data);
+            return response.data;
         } catch (error: unknown) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (error && typeof error === 'object' && 'response' in error) {
                 const axiosError = error as { response?: { status?: number } };
+                console.log('📊 API Error - Status:', axiosError.response?.status);
                 if (axiosError.response?.status === 404) {
-                    console.log('Employer profile not found (404)');
+                    console.log('❌ Employer profile not found (404)');
                     return null;
                 }
             }
-            console.error('Error fetching employer profile:', error);
+            console.error('❌ Error fetching employer profile:', error);
             throw error;
         }
     }
@@ -188,23 +191,21 @@ export class EmployerService {
         }
 
         try {
-            const response = await get(`${this.BASE_URL}/profile`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            return response;
+            console.log('📞 Making GET request to:', `${API_BASE_URL}/api/employer/profile`);
+            const response = await axios.get(`${API_BASE_URL}/api/employer/profile`, this.getAuthHeaders());
+            console.log('✅ Successfully retrieved employer profile:', response.data);
+            return response.data;
         } catch (error: unknown) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (error && typeof error === 'object' && 'response' in error) {
                 const axiosError = error as { response?: { status?: number } };
+                console.log('📊 API Error - Status:', axiosError.response?.status);
                 if (axiosError.response?.status === 404) {
-                    console.log('Employer profile not found (404)');
+                    console.log('❌ Employer profile not found (404)');
                     return null;
                 }
             }
-            console.error('Error fetching employer profile:', error);
+            console.error('❌ Error fetching employer profile:', error);
             throw error;
         }
     }
@@ -260,18 +261,13 @@ export class EmployerService {
             };
 
             console.log('📤 Sending data to API (PUT):');
-            console.log('URL:', `${this.BASE_URL}/profile`);
+            console.log('URL:', `${API_BASE_URL}/api/employer/profile`);
             console.log('Payload:', JSON.stringify(updatedProfileData, null, 2));
 
-            const response = await put(`${this.BASE_URL}/profile`, updatedProfileData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await axios.put(`${API_BASE_URL}/api/employer/profile`, updatedProfileData, this.getAuthHeaders());
 
-            console.log('📥 API Response:', response);
-            return response;
+            console.log('📥 API Response:', response.data);
+            return response.data;
         } catch (error: unknown) {
             console.error('❌ Error updating employer profile:', error);
             throw error;
