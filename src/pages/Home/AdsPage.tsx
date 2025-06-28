@@ -115,12 +115,8 @@ const AdsPage: React.FC = () => {
             if (advertisementData.imageFile) {
                 try {
                     console.log('🚀 Starting image upload to Firebase...');
-                    const token = localStorage.getItem('token');
-                    if (!token) {
-                        throw new Error('No authentication token found');
-                    }
 
-                    const userId = getUserIdFromToken(token);
+                    const userId = getUserIdFromToken();
                     if (!userId) {
                         throw new Error('Unable to get user ID from token');
                     }
