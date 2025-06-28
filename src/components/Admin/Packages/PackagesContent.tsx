@@ -277,21 +277,35 @@ const PackagesContent: React.FC = () => {
 
     const handleStatusUpdate = async (item: PackageDisplayData, newStatus: string) => {
         try {
+            console.log('🎯 Starting status update...');
+            console.log('📋 Item details:', {
+                id: item.id,
+                originalType: item.originalType,
+                currentStatus: item.status,
+                newStatus: newStatus
+            });
+
             setUpdatingItemId(item.id);
             setDropdownOpenId(null);
 
             const action = newStatus === 'Đồng ý' ? 'approve' : 'reject';
+            console.log('🔄 Action to perform:', action);
 
             if (item.originalType === 'advertisement') {
                 const originalAd = item.originalData as AdvertisementModel;
+                console.log('📢 Updating advertisement...', originalAd.id);
+                console.log('🌐 API endpoint:', `/api/advertisement/${originalAd.id}/${action}`);
                 await AdminService.updateAdvertisementStatus(originalAd.id, action);
                 console.log(`✅ Advertisement ${originalAd.id} ${action}d successfully`);
             } else if (item.originalType === 'jobposting') {
                 const originalJp = item.originalData as JobPostingModel;
+                console.log('💼 Updating job posting...', originalJp.id);
+                console.log('🌐 API endpoint:', `/api/jobposting/${originalJp.id}/${action}`);
                 await AdminService.updateJobPostingStatus(originalJp.id, action);
                 console.log(`✅ Job Posting ${originalJp.id} ${action}d successfully`);
             }
 
+            console.log('🔄 Refreshing data...');
             // Refresh data after successful update
             const [advertisements, jobPostings, subscriptions] = await Promise.all([
                 AdminService.getAllAdvertisements(),
@@ -306,14 +320,37 @@ const PackagesContent: React.FC = () => {
             );
 
             setApiPackagesData(combinedData);
+            console.log('✅ Data refreshed successfully');
         } catch (error) {
             console.error('❌ Error updating status:', error);
             if (error instanceof AxiosError) {
-                console.error('Error details:', error.response?.data);
-                console.error('Error status:', error.response?.status);
+                console.error('📊 Error details:', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    config: {
+                        method: error.config?.method,
+                        url: error.config?.url,
+                        headers: error.config?.headers
+                    }
+                });
+
+                // Show user-friendly error messages
+                if (error.response?.status === 401) {
+                    console.error('🚫 Authentication failed - token may be expired');
+                } else if (error.response?.status === 403) {
+                    console.error('🚫 Forbidden - insufficient permissions');
+                } else if (error.response?.status === 404) {
+                    console.error('🚫 Not found - API endpoint may not exist');
+                } else if (error.response?.status === 500) {
+                    console.error('🚫 Server error - backend issue');
+                }
+            } else {
+                console.error('❌ Unexpected error type:', typeof error, error);
             }
         } finally {
             setUpdatingItemId(null);
+            console.log('🏁 Status update process completed');
         }
     };
 
