@@ -286,7 +286,8 @@ const PackagesContent: React.FC = () => {
             });
 
             setUpdatingItemId(item.id);
-            setDropdownOpenId(null);
+            // Don't close dropdown immediately - let it close after operation completes
+            // setDropdownOpenId(null);
 
             const action = newStatus === 'Đồng ý' ? 'approve' : 'reject';
             console.log('🔄 Action to perform:', action);
@@ -321,6 +322,9 @@ const PackagesContent: React.FC = () => {
 
             setApiPackagesData(combinedData);
             console.log('✅ Data refreshed successfully');
+
+            // Close dropdown after successful operation
+            setDropdownOpenId(null);
         } catch (error) {
             console.error('❌ Error updating status:', error);
             if (error instanceof AxiosError) {
@@ -348,6 +352,9 @@ const PackagesContent: React.FC = () => {
             } else {
                 console.error('❌ Unexpected error type:', typeof error, error);
             }
+
+            // Close dropdown even on error
+            setDropdownOpenId(null);
         } finally {
             setUpdatingItemId(null);
             console.log('🏁 Status update process completed');
@@ -608,7 +615,11 @@ const PackagesContent: React.FC = () => {
                                     {item.status === 'Đang chờ' && (item.originalType === 'advertisement' || item.originalType === 'jobposting') && (
                                         <div className="relative" ref={actionDropdownRef}>
                                             <button
-                                                onClick={() => setDropdownOpenId(dropdownOpenId === item.id ? null : item.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    console.log('🖱️ Three-dots button clicked for item:', item.id);
+                                                    setDropdownOpenId(dropdownOpenId === item.id ? null : item.id);
+                                                }}
                                                 className="text-gray-400 hover:text-gray-600 p-1"
                                                 disabled={updatingItemId === item.id}
                                             >
@@ -619,17 +630,32 @@ const PackagesContent: React.FC = () => {
                                                 )}
                                             </button>
                                             {dropdownOpenId === item.id && (
-                                                <div className="origin-top-right absolute right-0 mt-2 w-32 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                                <div
+                                                    className="origin-top-right absolute right-0 mt-2 w-32 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <div className="py-1">
                                                         <button
-                                                            onClick={() => handleStatusUpdate(item, 'Đồng ý')}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                console.log('✅ Approve button clicked for item:', item.id);
+                                                                handleStatusUpdate(item, 'Đồng ý');
+                                                            }}
                                                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                                            disabled={updatingItemId === item.id}
                                                         >
                                                             Đồng ý
                                                         </button>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(item, 'Từ chối')}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                console.log('❌ Reject button clicked for item:', item.id);
+                                                                handleStatusUpdate(item, 'Từ chối');
+                                                            }}
                                                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                                            disabled={updatingItemId === item.id}
                                                         >
                                                             Từ chối
                                                         </button>
