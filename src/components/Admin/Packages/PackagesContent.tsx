@@ -3,6 +3,8 @@ import { IoFunnelOutline, IoCalendarOutline, IoChevronDownOutline, IoRefreshOutl
 import { AdminService, PackageDisplayData, AdvertisementModel, JobPostingModel, SubscriptionModel } from '../../../services';
 import { AxiosError } from 'axios';
 import JobPostingDetailModal from '../JobPostingDetailModal';
+import Swal from 'sweetalert2';
+import { downloadFileFromUrl, getFilenameFromUrl } from '../../../utils/fileDownload';
 
 interface ModalData {
     name: string;
@@ -201,6 +203,40 @@ const PackagesContent: React.FC = () => {
     const closeImageModal = () => {
         setShowImageModal(false);
         setModalData(null);
+    };
+
+    // Handle image download
+    const handleImageDownload = async () => {
+        if (!modalData?.imageUrl) {
+            Swal.fire('Lỗi', 'Không có hình ảnh để tải xuống', 'error');
+            return;
+        }
+
+        try {
+            console.log('🚀 Starting image download...');
+
+            // Generate filename based on advertisement info
+            const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD format
+            const baseFilename = `quangcao_${modalData.type}_${timestamp}`;
+
+            // Try to get original filename, or use generated one with appropriate extension
+            let filename = getFilenameFromUrl(modalData.imageUrl);
+            if (!filename || filename === 'cv-document.pdf') {
+                // If we can't get a good filename, create one with proper extension
+                const hasExtension = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(modalData.imageUrl);
+                const extension = hasExtension ? modalData.imageUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)?.[0] || '.jpg' : '.jpg';
+                filename = `${baseFilename}${extension}`;
+            }
+
+            // Use existing download utility
+            await downloadFileFromUrl(modalData.imageUrl, filename);
+
+            console.log('✅ Image download completed');
+
+        } catch (error) {
+            console.error('❌ Error downloading image:', error);
+            Swal.fire('Lỗi', 'Không thể tải xuống hình ảnh. Vui lòng thử lại.', 'error');
+        }
     };
 
     const openJobDetailModal = async (jobPostingId: number) => {
@@ -647,21 +683,42 @@ const PackagesContent: React.FC = () => {
 
                                     {/* Image Display */}
                                     <div className="flex flex-col items-center justify-center h-64">
-                                        <img
-                                            src="/hiring.png"
-                                            alt="Advertisement"
-                                            className="max-w-full max-h-full object-contain rounded-lg"
-                                        />
+                                        {modalData.imageUrl ? (
+                                            <img
+                                                src={modalData.imageUrl}
+                                                alt="Advertisement"
+                                                className="max-w-full max-h-full object-contain rounded-lg"
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.src = "/hiring.png";
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center text-gray-400">
+                                                <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <p className="text-sm">Không có hình ảnh</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* Upload Button positioned outside the image box */}
                                 <div className="flex justify-center mt-4">
                                     <button
-                                        className="px-6 py-2 text-sm rounded-lg border hover:bg-gray-50 transition-colors"
-                                        style={{ color: '#309689', borderColor: '#309689' }}
+                                        onClick={handleImageDownload}
+                                        disabled={!modalData.imageUrl}
+                                        className={`px-6 py-2 text-sm rounded-lg border transition-colors ${modalData.imageUrl
+                                            ? 'hover:bg-gray-50'
+                                            : 'opacity-50 cursor-not-allowed'
+                                            }`}
+                                        style={{
+                                            color: modalData.imageUrl ? '#309689' : '#9CA3AF',
+                                            borderColor: modalData.imageUrl ? '#309689' : '#9CA3AF'
+                                        }}
                                     >
-                                        Tải Hình Ảnh
+                                        {modalData.imageUrl ? 'Tải Hình Ảnh' : 'Không có hình ảnh'}
                                     </button>
                                 </div>
                             </div>

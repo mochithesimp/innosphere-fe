@@ -8,6 +8,7 @@ import { CreateAdvertisementModel, AdvertisementService, AdvertisementPackageMod
 import { EmployerService } from '../../services/employerService';
 import AdvertisementModal, { AdvertisementFormData } from '../../components/Advertisement/AdvertisementModal';
 import AdvertisementPaymentModal from '../../components/Advertisement/AdvertisementPaymentModal';
+import { FirebaseStorageService } from '../../services/firebaseStorageService';
 
 const AdsPage: React.FC = () => {
     const [packages, setPackages] = useState<AdvertisementPackageModel[]>([]);
@@ -109,12 +110,33 @@ const AdsPage: React.FC = () => {
         if (!advertisementData || !employerId || !selectedPackage) return;
 
         try {
-            // Handle image upload - for now, use the filename as imageUrl
+            // Handle image upload to Firebase
             let imageUrl = "";
             if (advertisementData.imageFile) {
-                // In real implementation, you would upload to server and get the URL
-                // For now, we'll use the filename as specified in requirements
-                imageUrl = advertisementData.imageFile.name;
+                try {
+                    console.log('🚀 Starting image upload to Firebase...');
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        throw new Error('No authentication token found');
+                    }
+
+                    const userId = getUserIdFromToken(token);
+                    if (!userId) {
+                        throw new Error('Unable to get user ID from token');
+                    }
+
+                    // Upload image to Firebase Storage
+                    imageUrl = await FirebaseStorageService.uploadImage(
+                        advertisementData.imageFile,
+                        userId,
+                        'advertisements'
+                    );
+                    console.log('✅ Image uploaded successfully to Firebase:', imageUrl);
+                } catch (uploadError) {
+                    console.error('❌ Error uploading image to Firebase:', uploadError);
+                    Swal.fire('Lỗi', 'Không thể tải lên hình ảnh. Vui lòng thử lại.', 'error');
+                    return;
+                }
             }
 
             // Calculate dates - start now, end after package duration
@@ -147,6 +169,7 @@ const AdsPage: React.FC = () => {
                 transactionId: transactionId
             };
 
+            console.log('📤 Creating advertisement with Firebase image URL:', createAdData);
             await AdvertisementService.createAdvertisement(createAdData);
 
             // Close modals and show success message
