@@ -31,10 +31,9 @@ export const checkEmployerProfileAndRedirect = async (
             return true; // Profile exists, allow normal flow
         } else {
             console.log('❌ Employer profile returned null, redirecting to business-info');
-            // Add small delay to ensure proper navigation
-            setTimeout(() => {
-                navigate('/employer/business-info');
-            }, 100);
+            // Use longer delay and immediate navigation to prevent race conditions
+            console.log('📍 Navigating to /employer/business-info...');
+            navigate('/employer/business-info');
             return false; // Profile doesn't exist, redirected
         }
     } catch (error) {
@@ -49,10 +48,9 @@ export const checkEmployerProfileAndRedirect = async (
 
             if (axiosError.response?.status === 404) {
                 console.log('📋 Employer profile not found (404), redirecting to business-info');
-                // Add small delay to ensure proper navigation
-                setTimeout(() => {
-                    navigate('/employer/business-info');
-                }, 100);
+                // Immediate navigation on 404
+                console.log('📍 Navigating to /employer/business-info...');
+                navigate('/employer/business-info');
                 return false;
             }
         }

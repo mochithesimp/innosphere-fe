@@ -75,7 +75,15 @@ function App() {
             <Route path="settings" element={<AdminPage />} />
           </Route>
 
-          {/* Employer routes using nested routes with EmployerLayout */}
+          {/* Employer profile setup routes (must be outside EmployerLayout) */}
+          <Route path="/employer/business-info" element={<BusinessInfoPage />} />
+          <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
+          <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
+          <Route path="/employer/contact-info" element={<ContactInfoPage />} />
+          <Route path="/employer/setup-complete" element={<CompletionPage />} />
+
+          {/* Employer dashboard routes using nested routes with EmployerLayout */}
+          {/* EmployerLayout will check profile and redirect to business-info if needed */}
           <Route path="/employer" element={<EmployerLayout />}>
             <Route index element={<Navigate to="/employer/dashboard" replace />} />
             <Route path="dashboard" element={<OverviewContent />} />
@@ -87,13 +95,6 @@ function App() {
             <Route path="plans" element={<PlanAndPaymentPage />} />
             <Route path="settings" element={<SettingsContent />} />
           </Route>
-
-          {/* Legacy employer routes (these can be migrated to nested routes later) */}
-          <Route path="/employer/business-info" element={<BusinessInfoPage />} />
-          <Route path="/employer/establishment-info" element={<EstablishmentInfoPage />} />
-          <Route path="/employer/social-media-info" element={<SocialMediaInfoPage />} />
-          <Route path="/employer/contact-info" element={<ContactInfoPage />} />
-          <Route path="/employer/setup-complete" element={<CompletionPage />} />
         </Routes>
       </Router>
     </div>

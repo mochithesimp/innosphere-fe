@@ -1,27 +1,13 @@
-import React, { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { ReactNode } from 'react';
 import Header from '../Header';
 import Sidebar from './Sidebar';
-import { checkEmployerProfileAndRedirect } from '../../../utils/employerAuth';
 
 interface DashboardLayoutProps {
     children: ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-    const navigate = useNavigate();
-
-    // Check employer profile on component mount
-    useEffect(() => {
-        const checkProfile = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                await checkEmployerProfileAndRedirect(navigate, token);
-            }
-        };
-
-        checkProfile();
-    }, [navigate]);
+    // Note: Profile checking is now handled by EmployerLayout to prevent duplicate checks
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
