@@ -718,7 +718,11 @@ const EmployeeSettings: React.FC = () => {
                 });
 
                 // Refresh the worker data
-                loadWorkerData();
+                await loadWorkerData();
+
+                // Dispatch custom event to notify other components (like Header) to refresh
+                console.log('📢 Dispatching workerProfileUpdated event...');
+                window.dispatchEvent(new CustomEvent('workerProfileUpdated'));
             }
         } catch (error) {
             console.error('❌ Error creating/updating worker profile:', error);

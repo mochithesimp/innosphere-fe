@@ -235,6 +235,10 @@ const SettingsContent: React.FC = () => {
             await EmployerService.updateEmployerProfile(profileData);
 
             Swal.fire('Thành công', 'Hồ sơ công ty đã được cập nhật thành công!', 'success');
+
+            // Dispatch custom event to notify other components (like Header) to refresh
+            console.log('📢 Dispatching employerProfileUpdated event...');
+            window.dispatchEvent(new CustomEvent('employerProfileUpdated'));
         } catch (error) {
             console.error('❌ Error saving employer profile:', error);
             Swal.fire('Lỗi', 'Không thể lưu hồ sơ. Vui lòng thử lại.', 'error');

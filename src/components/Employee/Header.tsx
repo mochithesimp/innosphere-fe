@@ -7,18 +7,33 @@ const Header: React.FC = () => {
     const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
 
     // Load worker profile to get avatar
+    const loadWorkerProfile = async () => {
+        try {
+            const profile = await ResumeService.getWorkerProfile();
+            setWorkerProfile(profile);
+            console.log('🔄 Header: Worker profile loaded/refreshed:', profile);
+        } catch (error) {
+            console.error('Error loading worker profile:', error);
+            // Don't show error to user, just use default avatar
+        }
+    };
+
     useEffect(() => {
-        const loadWorkerProfile = async () => {
-            try {
-                const profile = await ResumeService.getWorkerProfile();
-                setWorkerProfile(profile);
-            } catch (error) {
-                console.error('Error loading worker profile:', error);
-                // Don't show error to user, just use default avatar
-            }
+        loadWorkerProfile();
+
+        // Listen for profile update events
+        const handleProfileUpdate = () => {
+            console.log('📢 Header: Received profile update event, refreshing...');
+            loadWorkerProfile();
         };
 
-        loadWorkerProfile();
+        // Add event listener for profile updates
+        window.addEventListener('workerProfileUpdated', handleProfileUpdate);
+
+        // Cleanup event listener on component unmount
+        return () => {
+            window.removeEventListener('workerProfileUpdated', handleProfileUpdate);
+        };
     }, []);
 
     return (

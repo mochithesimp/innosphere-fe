@@ -72,32 +72,55 @@ const HeroBanner: React.FC = () => {
   }, []);
 
   // Load worker and employer profiles to get avatars
-  useEffect(() => {
-    const loadProfiles = async () => {
-      if (isLoggedIn && token) {
-        const role = getRoleFromToken(token);
+  const loadProfiles = async () => {
+    if (isLoggedIn && token) {
+      const role = getRoleFromToken(token);
 
-        if (role === "Worker") {
-          try {
-            const profile = await ResumeService.getWorkerProfile();
-            setWorkerProfile(profile);
-          } catch (error) {
-            console.error('Error loading worker profile:', error);
-            // Don't show error to user, just use default avatar
-          }
-        } else if (role === "Employer") {
-          try {
-            const profile = await EmployerService.getEmployerProfile();
-            setEmployerProfile(profile);
-          } catch (error) {
-            console.error('Error loading employer profile:', error);
-            // Don't show error to user, just use default avatar
-          }
+      if (role === "Worker") {
+        try {
+          const profile = await ResumeService.getWorkerProfile();
+          setWorkerProfile(profile);
+          console.log('🔄 HeroBanner: Worker profile loaded/refreshed:', profile);
+        } catch (error) {
+          console.error('Error loading worker profile:', error);
+          // Don't show error to user, just use default avatar
+        }
+      } else if (role === "Employer") {
+        try {
+          const profile = await EmployerService.getEmployerProfile();
+          setEmployerProfile(profile);
+          console.log('🔄 HeroBanner: Employer profile loaded/refreshed:', profile);
+        } catch (error) {
+          console.error('Error loading employer profile:', error);
+          // Don't show error to user, just use default avatar
         }
       }
+    }
+  };
+
+  useEffect(() => {
+    loadProfiles();
+
+    // Listen for profile update events
+    const handleWorkerProfileUpdate = () => {
+      console.log('📢 HeroBanner: Received worker profile update event, refreshing...');
+      loadProfiles();
     };
 
-    loadProfiles();
+    const handleEmployerProfileUpdate = () => {
+      console.log('📢 HeroBanner: Received employer profile update event, refreshing...');
+      loadProfiles();
+    };
+
+    // Add event listeners for profile updates
+    window.addEventListener('workerProfileUpdated', handleWorkerProfileUpdate);
+    window.addEventListener('employerProfileUpdated', handleEmployerProfileUpdate);
+
+    // Cleanup event listeners on component unmount
+    return () => {
+      window.removeEventListener('workerProfileUpdated', handleWorkerProfileUpdate);
+      window.removeEventListener('employerProfileUpdated', handleEmployerProfileUpdate);
+    };
   }, [isLoggedIn, token]);
 
 
