@@ -75,10 +75,13 @@ export const put = async (path: string, data: any, options = {}) => {
   } catch (error) {
     if (error instanceof AxiosError) {
       console.error("Error updating data:", error.message);
+      console.error("Status code:", error.response?.status);
+      console.error("Response data:", error.response?.data);
     } else {
       console.error("Unexpected error:", error);
     }
-    return null;
+    // Re-throw the error so calling services can handle it properly
+    throw error;
   }
 };
 
