@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     RiDashboardLine,
-    RiUserLine,
     RiFileList3Line,
     RiBriefcaseLine,
     RiBookmarkLine,
@@ -28,8 +27,6 @@ const Sidebar: React.FC = () => {
         const path = location.pathname;
         if (path.includes('/employer/dashboard')) {
             setActiveItem('overview');
-        } else if (path.includes('/employer/profile')) {
-            setActiveItem('profile');
         } else if (path.includes('/employer/post-job') || path.includes('/employer/create-job')) {
             setActiveItem('post-job');
         } else if (path.includes('/employer/my-jobs') || path.includes('/employer/job-applications')) {
@@ -38,8 +35,6 @@ const Sidebar: React.FC = () => {
             setActiveItem('saved-candidates');
         } else if (path.includes('/employer/plans')) {
             setActiveItem('plans');
-        } else if (path.includes('/employer/companies')) {
-            setActiveItem('companies');
         } else if (path.includes('/employer/settings')) {
             setActiveItem('settings');
         }
@@ -51,12 +46,6 @@ const Sidebar: React.FC = () => {
             label: 'Tổng quan',
             path: '/employer/dashboard',
             icon: <RiDashboardLine className="h-5 w-5" />
-        },
-        {
-            id: 'profile',
-            label: 'Hồ sơ nhà tuyển dụng',
-            path: '/employer/profile',
-            icon: <RiUserLine className="h-5 w-5" />
         },
         {
             id: 'post-job',
@@ -82,12 +71,6 @@ const Sidebar: React.FC = () => {
             id: 'plans',
             label: 'Lên kế hoạch và thanh toán',
             path: '/employer/plans',
-            icon: <RiBarChartBoxLine className="h-5 w-5" />
-        },
-        {
-            id: 'companies',
-            label: 'Tất cả doanh nghiệp',
-            path: '/employer/companies',
             icon: <RiBarChartBoxLine className="h-5 w-5" />
         },
         {
