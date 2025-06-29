@@ -519,7 +519,15 @@ const PlanAndPaymentContent: React.FC = () => {
                                 {currentActivePlan ? currentActivePlan.startDate : 'Không có ngày bắt đầu'}
                             </span>
                         </p>
-                        <p className="text-sm text-gray-500 mt-1 text-left">Bạn phải trả số tiền này mỗi tháng một lần.</p>
+                        <p className="text-sm text-gray-500 mt-1 text-left">
+                            {currentActivePlan ?
+                                (currentActivePlan.plan === 'Cao Cấp'
+                                    ? 'Bạn phải trả số tiền này mỗi 3 tháng một lần.'
+                                    : 'Bạn phải trả số tiền này mỗi tháng một lần.'
+                                )
+                                : 'Bạn phải trả số tiền này mỗi tháng một lần.'
+                            }
+                        </p>
 
                         <button className="mt-5 w-full py-3 bg-[#309689] text-white rounded-md hover:bg-[#277b70] flex items-center justify-center">
                             Trả Ngay
