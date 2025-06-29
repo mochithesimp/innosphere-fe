@@ -24,7 +24,20 @@ const PlanAndPaymentContent: React.FC = () => {
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const totalPages = 5;
+    const itemsPerPage = 5;
+
+    // Calculate pagination values
+    const totalPages = Math.max(1, Math.ceil(transactions.length / itemsPerPage));
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentTransactions = transactions.slice(startIndex, endIndex);
+
+    // Reset to page 1 when transactions change
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(1);
+        }
+    }, [transactions.length, totalPages, currentPage]);
 
     // Function to get plan name from subscriptionPackageId
     const getPlanName = (subscriptionPackageId: number): string => {
@@ -48,16 +61,77 @@ const PlanAndPaymentContent: React.FC = () => {
         }).format(amount);
     };
 
-    // Function to format date
+    // Function to format date without time
     const formatDate = (dateString: string): string => {
-        return new Date(dateString).toLocaleDateString('vi-VN', {
+        return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            day: 'numeric'
         });
     };
+
+    // Function to calculate expiry date based on plan
+    const calculateExpiryDate = (startDate: string, plan: string): Date => {
+        const start = new Date(startDate);
+        const months = plan === 'Cao Cấp' ? 3 : 1;
+        const expiry = new Date(start);
+        expiry.setMonth(expiry.getMonth() + months);
+        return expiry;
+    };
+
+    // Function to get status based on expiry date
+    const getTransactionStatus = (startDate: string, plan: string): { text: string; style: string } => {
+        const expiryDate = calculateExpiryDate(startDate, plan);
+        const currentDate = new Date();
+
+        if (currentDate > expiryDate) {
+            return {
+                text: 'Hết hạn',
+                style: 'bg-red-100 text-red-800 border border-red-200'
+            };
+        } else {
+            return {
+                text: 'Hoạt động',
+                style: 'bg-green-100 text-green-800 border border-green-200'
+            };
+        }
+    };
+
+    // Function to format next invoice date
+    const formatNextInvoiceDate = (startDate: string, plan: string): string => {
+        const nextDate = calculateExpiryDate(startDate, plan);
+        return nextDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    // Get current active plan (most recent transaction that is not expired)
+    const getCurrentActivePlan = (): { plan: string; amount: number; nextInvoiceDate: string; startDate: string } | null => {
+        const validTransactions = transactions.filter(t => {
+            const status = getTransactionStatus(t.rawData.startDate, t.plan);
+            return status.text !== 'Hết hạn';
+        });
+
+        if (validTransactions.length === 0) {
+            return null;
+        }
+
+        // Get most recent valid transaction
+        const mostRecent = validTransactions[0]; // Already sorted by date desc
+        const rawData = mostRecent.rawData;
+        const amount = 'amountPaid' in rawData ? rawData.amountPaid : rawData.price;
+
+        return {
+            plan: mostRecent.plan,
+            amount: amount,
+            nextInvoiceDate: formatNextInvoiceDate(rawData.startDate, mostRecent.plan),
+            startDate: formatDate(rawData.startDate)
+        };
+    };
+
+    const currentActivePlan = getCurrentActivePlan();
 
     // Fetch transactions data from both APIs
     const fetchTransactionsData = async () => {
@@ -75,49 +149,102 @@ const PlanAndPaymentContent: React.FC = () => {
                 throw new Error('Cannot get user ID from token');
             }
 
-            // Convert userId to number for API calls
-            const employerId = parseInt(userId);
+            console.log('🔍 Debug - UserID from token:', userId);
+
+            // Get employerId from employer profile instead of using userId directly
+            console.log('🔍 Debug - Getting employer profile to get employerId...');
+            const employerProfile = await SubscriptionService.getEmployerProfile();
+            if (!employerProfile) {
+                throw new Error('Cannot get employer profile');
+            }
+
+            const employerId = employerProfile.employerId;
+            console.log('🔍 Debug - EmployerID from profile:', employerId);
 
             // Fetch both subscription and advertisement data
-            const [subscriptions, advertisements] = await Promise.all([
-                SubscriptionService.getSubscriptionsByEmployer(employerId),
-                AdvertisementService.getAdvertisementsByEmployer(employerId)
-            ]);
+            console.log('🔍 Debug - Starting API calls...');
 
-            console.log('Fetched subscriptions:', subscriptions);
-            console.log('Fetched advertisements:', advertisements);
+            let subscriptions: Subscription[] = [];
+            let advertisements: AdvertisementModel[] = [];
+
+            try {
+                console.log('🔍 Debug - Calling subscription API...');
+                console.log(`🌐 Subscription URL: ${import.meta.env.VITE_API_BASE_URL || 'https://103.163.24.72'}/api/subscription/employer/${employerId}`);
+                subscriptions = await SubscriptionService.getSubscriptionsByEmployer(employerId);
+                console.log('✅ Fetched subscriptions:', subscriptions);
+                console.log('📊 Subscription response length:', subscriptions.length);
+                console.log('📋 First subscription:', subscriptions[0]);
+            } catch (subError) {
+                console.error('❌ Subscription API Error:', subError);
+            }
+
+            try {
+                console.log('🔍 Debug - Calling advertisement API...');
+                console.log(`🌐 Advertisement URL: /api/advertisement/employer/${employerId}`);
+                advertisements = await AdvertisementService.getAdvertisementsByEmployer(employerId);
+                console.log('✅ Fetched advertisements:', advertisements);
+                console.log('📊 Advertisement response length:', advertisements.length);
+                console.log('📋 First advertisement:', advertisements[0]);
+            } catch (adError) {
+                console.error('❌ Advertisement API Error:', adError);
+            }
+
+            // Ensure arrays are valid
+            if (!Array.isArray(subscriptions)) {
+                console.warn('⚠️ Subscriptions is not an array:', subscriptions);
+                subscriptions = [];
+            }
+
+            if (!Array.isArray(advertisements)) {
+                console.warn('⚠️ Advertisements is not an array:', advertisements);
+                advertisements = [];
+            }
+
+            console.log('🔍 Debug - Processing data...');
+            console.log('📊 Subscriptions count:', subscriptions.length);
+            console.log('📊 Advertisements count:', advertisements.length);
 
             // Convert subscription data to CombinedTransaction format
-            const subscriptionTransactions: CombinedTransaction[] = subscriptions.map(sub => ({
-                id: `#${sub.id}`,
-                date: formatDate(sub.startDate),
-                type: 'Gói thành viên',
-                plan: getPlanName(sub.subscriptionPackageId),
-                amount: formatAmount(sub.amountPaid),
-                transactionId: sub.transactionId,
-                sortDate: new Date(sub.startDate),
-                rawData: sub
-            }));
+            const subscriptionTransactions: CombinedTransaction[] = subscriptions.map(sub => {
+                console.log('🔍 Processing subscription:', sub);
+                return {
+                    id: `#${sub.id}`,
+                    date: formatDate(sub.startDate),
+                    type: 'Gói thành viên',
+                    plan: getPlanName(sub.subscriptionPackageId),
+                    amount: formatAmount(sub.amountPaid),
+                    transactionId: sub.transactionId || '',
+                    sortDate: new Date(sub.startDate),
+                    rawData: sub
+                };
+            });
 
             // Convert advertisement data to CombinedTransaction format
-            const advertisementTransactions: CombinedTransaction[] = advertisements.map(ad => ({
-                id: `#${ad.id}`,
-                date: formatDate(ad.startDate),
-                type: 'Quảng cáo',
-                plan: ad.adTitle,
-                amount: formatAmount(ad.price),
-                transactionId: ad.transactionId,
-                sortDate: new Date(ad.startDate),
-                rawData: ad
-            }));
+            const advertisementTransactions: CombinedTransaction[] = advertisements.map(ad => {
+                console.log('🔍 Processing advertisement:', ad);
+                return {
+                    id: `#${ad.id}`,
+                    date: formatDate(ad.startDate),
+                    type: 'Quảng cáo',
+                    plan: ad.adTitle || 'Không có tiêu đề',
+                    amount: formatAmount(ad.price),
+                    transactionId: ad.transactionId || '',
+                    sortDate: new Date(ad.startDate),
+                    rawData: ad
+                };
+            });
 
             // Combine and sort by date (newest first)
             const combinedTransactions = [...subscriptionTransactions, ...advertisementTransactions]
                 .sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
 
+            console.log('🎯 Final combined transactions:', combinedTransactions);
+            console.log('📊 Total transactions:', combinedTransactions.length);
+
             setTransactions(combinedTransactions);
+
         } catch (error) {
-            console.error('Error fetching transactions:', error);
+            console.error('❌ Error fetching transactions:', error);
             setError(error instanceof Error ? error.message : 'Failed to fetch transactions');
         } finally {
             setIsLoading(false);
@@ -299,7 +426,9 @@ const PlanAndPaymentContent: React.FC = () => {
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div className="p-6">
                         <h2 className="text-md font-medium text-gray-500 mb-2 text-left">Gói hiện tại</h2>
-                        <h3 className="text-2xl font-semibold text-gray-800 mb-4 text-left">Cao cấp</h3>
+                        <h3 className="text-2xl font-semibold text-gray-800 mb-4 text-left">
+                            {currentActivePlan ? currentActivePlan.plan : 'Không có gói nào'}
+                        </h3>
 
                         <div className="flex space-x-3 mb-4 justify-start">
                             <button className="px-8 py-2 bg-gray-100 text-[#309689] rounded-md hover:bg-gray-200 text-left">
@@ -378,10 +507,18 @@ const PlanAndPaymentContent: React.FC = () => {
                         <h2 className="text-md font-medium text-gray-500 mb-2 text-left">Hóa đơn tiếp theo</h2>
 
                         <div className="mb-2 mt-4 text-left">
-                            <h3 className="text-2xl font-semibold text-[#309689]">1.350.000VND</h3>
+                            <h3 className="text-2xl font-semibold text-[#309689]">
+                                {currentActivePlan ? formatAmount(currentActivePlan.amount) : '0 VND'}
+                            </h3>
                         </div>
-                        <p className="text-gray-600 font-medium text-left">Feb 29, 2025</p>
-                        <p className="text-sm text-gray-500 mt-1 text-left">Gói bắt đầu: <span className="font-bold">Jan 29, 2025</span></p>
+                        <p className="text-gray-600 font-medium text-left">
+                            {currentActivePlan ? currentActivePlan.nextInvoiceDate : 'Không có ngày thanh toán'}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1 text-left">
+                            Gói bắt đầu: <span className="font-bold">
+                                {currentActivePlan ? currentActivePlan.startDate : 'Không có ngày bắt đầu'}
+                            </span>
+                        </p>
                         <p className="text-sm text-gray-500 mt-1 text-left">Bạn phải trả số tiền này mỗi tháng một lần.</p>
 
                         <button className="mt-5 w-full py-3 bg-[#309689] text-white rounded-md hover:bg-[#277b70] flex items-center justify-center">
@@ -476,64 +613,106 @@ const PlanAndPaymentContent: React.FC = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {transactions.map((transaction) => (
-                                    <tr key={`${transaction.type}-${transaction.id}`}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.id}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.date}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.type === 'Gói thành viên'
+                                {currentTransactions.map((transaction) => {
+                                    const status = getTransactionStatus(transaction.rawData.startDate, transaction.plan);
+                                    return (
+                                        <tr key={`${transaction.type}-${transaction.id}`}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.id}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.date}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.type === 'Gói thành viên'
                                                     ? 'bg-blue-100 text-blue-800'
                                                     : 'bg-green-100 text-green-800'
-                                                }`}>
-                                                {transaction.type}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.plan}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left font-medium">{transaction.amount}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {transaction.transactionId && transaction.transactionId.trim() !== '' ? (
-                                                <button
-                                                    onClick={() => handleDownloadReceipt(transaction)}
-                                                    disabled={downloadingId === transaction.transactionId}
-                                                    className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                >
-                                                    {downloadingId === transaction.transactionId ? (
-                                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
-                                                    ) : (
-                                                        <RiDownload2Line size={20} />
-                                                    )}
-                                                </button>
-                                            ) : (
-                                                <span className="text-gray-300">N/A</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    }`}>
+                                                    {transaction.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.plan}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.style}`}>
+                                                    {status.text}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left font-medium">{transaction.amount}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {transaction.transactionId && transaction.transactionId.trim() !== '' ? (
+                                                    <button
+                                                        onClick={() => handleDownloadReceipt(transaction)}
+                                                        disabled={downloadingId === transaction.transactionId}
+                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                                    >
+                                                        {downloadingId === transaction.transactionId ? (
+                                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+                                                        ) : (
+                                                            <RiDownload2Line size={20} />
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-gray-300">N/A</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}
                 </div>
 
                 {/* Pagination */}
-                {transactions.length > 0 && (
-                    <div className="flex justify-center mt-4 space-x-1">
+                {transactions.length > 0 && totalPages > 1 && (
+                    <div className="flex justify-center items-center mt-4 space-x-2">
+                        {/* Previous Button */}
+                        <button
+                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-2 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Trước
+                        </button>
+
+                        {/* Page Numbers */}
                         {Array.from({ length: totalPages }, (_, i) => (
                             <button
                                 key={i + 1}
                                 onClick={() => handlePageChange(i + 1)}
                                 className={`px-3 py-2 text-sm rounded-md ${currentPage === i + 1
-                                        ? 'bg-[#309689] text-white'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-[#309689] text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 {i + 1}
                             </button>
                         ))}
+
+                        {/* Next Button */}
+                        <button
+                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-2 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Sau
+                        </button>
+
+                        {/* Page Info */}
+                        <span className="text-sm text-gray-500 ml-4">
+                            Trang {currentPage} / {totalPages} ({transactions.length} giao dịch)
+                        </span>
+                    </div>
+                )}
+
+                {/* Show info when less than or equal to itemsPerPage */}
+                {transactions.length > 0 && transactions.length <= itemsPerPage && (
+                    <div className="flex justify-center mt-4">
+                        <span className="text-sm text-gray-500">
+                            Hiển thị {transactions.length} giao dịch
+                        </span>
                     </div>
                 )}
             </div>
