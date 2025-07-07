@@ -14,8 +14,8 @@ const AdminHeader: React.FC = () => {
                 return 'Giao dịch';
             case '/admin/accounts':
                 return 'Tài khoản';
-            case '/admin/investments':
-                return 'Đầu tư';
+            case '/admin/statistics':
+                return 'Thống kê';
             case '/admin/credit-cards':
                 return 'Thẻ tín dụng';
             case '/admin/loans':

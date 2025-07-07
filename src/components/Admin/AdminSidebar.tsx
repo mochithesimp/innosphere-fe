@@ -41,10 +41,10 @@ const AdminSidebar: React.FC = () => {
             path: '/admin/accounts'
         },
         {
-            id: 'investments',
-            label: 'Đầu tư',
+            id: 'statistics',
+            label: 'Thống kê',
             icon: <IoStatsChartOutline className="h-5 w-5" />,
-            path: '/admin/investments'
+            path: '/admin/statistics'
         },
         {
             id: 'credit-cards',

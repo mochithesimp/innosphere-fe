@@ -5,6 +5,7 @@ import TransactionsContent from '../../components/Admin/Transactions/Transaction
 import AccountsContent from '../../components/Admin/Accounts/AccountsContent';
 import PackagesContent from '../../components/Admin/Packages/PackagesContent';
 import SettingsContent from '../../components/Admin/Settings/SettingsContent';
+import StatisticsContent from '../../components/Admin/Statistics/StatisticsContent';
 
 const AdminPage: React.FC = () => {
     const location = useLocation();
@@ -17,8 +18,8 @@ const AdminPage: React.FC = () => {
                 return <TransactionsContent />;
             case '/admin/accounts':
                 return <AccountsContent />;
-            case '/admin/investments':
-                return <div className="p-6">Đầu tư content coming soon...</div>;
+            case '/admin/statistics':
+                return <StatisticsContent />;
             case '/admin/credit-cards':
                 return <div className="p-6">Thẻ tín dụng content coming soon...</div>;
             case '/admin/loans':
