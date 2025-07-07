@@ -1,16 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 interface CategoryCardProps {
     icon: React.ReactNode;
     title: string;
     count: number;
-    to: string;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ icon, title, count, to }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({ icon, title, count }) => {
     return (
-        <Link to={to} className="bg-white rounded-lg p-6 text-center hover:shadow-md transition-all border border-gray-100">
+        <div className="bg-white rounded-lg p-6 text-center hover:shadow-md transition-all border border-gray-100 cursor-default">
             <div className="flex justify-center mb-4">
                 <div className="bg-[#ecf8f6] p-4 rounded-full">
                     {icon}
@@ -20,7 +18,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ icon, title, count, to }) =
             <p className="text-sm bg-[#ecf8f6] text-[#309689] py-1 px-3 rounded-full inline-block">
                 {count.toLocaleString()} công việc
             </p>
-        </Link>
+        </div>
     );
 };
 
@@ -33,8 +31,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Phục vụ & Thu ngân',
-            count: 1254,
-            to: '/categories/service'
+            count: 1254
         },
         {
             icon: (
@@ -43,8 +40,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Pha chế & Bếp',
-            count: 816,
-            to: '/categories/cooking'
+            count: 816
         },
         {
             icon: (
@@ -53,8 +49,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Hỗ trợ sự kiện',
-            count: 2082,
-            to: '/categories/events'
+            count: 2082
         },
         {
             icon: (
@@ -63,8 +58,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Sắp xếp hàng hóa',
-            count: 1520,
-            to: '/categories/stocking'
+            count: 1520
         },
         {
             icon: (
@@ -73,8 +67,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Bán hàng & Tiếp thị',
-            count: 1022,
-            to: '/categories/sales'
+            count: 1022
         },
         {
             icon: (
@@ -83,8 +76,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Vệ sinh & Dọn dẹp',
-            count: 1496,
-            to: '/categories/cleaning'
+            count: 1496
         },
         {
             icon: (
@@ -93,8 +85,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Hỗ trợ kỹ thuật',
-            count: 1529,
-            to: '/categories/tech-support'
+            count: 1529
         },
         {
             icon: (
@@ -103,8 +94,7 @@ const JobCategoryGrid: React.FC = () => {
                 </svg>
             ),
             title: 'Công việc khác',
-            count: 1244,
-            to: '/categories/other'
+            count: 1244
         }
     ];
 
@@ -122,7 +112,6 @@ const JobCategoryGrid: React.FC = () => {
                             icon={category.icon}
                             title={category.title}
                             count={category.count}
-                            to={category.to}
                         />
                     ))}
                 </div>

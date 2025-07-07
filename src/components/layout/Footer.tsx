@@ -35,10 +35,10 @@ const Footer: React.FC = () => {
                     <div className="text-left">
                         <h3 className="text-xl font-semibold mb-6">Danh Mục Công Việc</h3>
                         <ul className="space-y-4 text-left">
-                            <li><Link to="/jobs/fb" className="text-gray-300 hover:text-[#309689]">F&B</Link></li>
-                            <li><Link to="/jobs/retail" className="text-gray-300 hover:text-[#309689]">Retail</Link></li>
-                            <li><Link to="/jobs/events" className="text-gray-300 hover:text-[#309689]">Sự Kiện</Link></li>
-                            <li><Link to="/jobs/flexible" className="text-gray-300 hover:text-[#309689]">Công việc linh hoạt khác</Link></li>
+                            <li><span className="text-gray-300 cursor-default">F&B</span></li>
+                            <li><span className="text-gray-300 cursor-default">Retail</span></li>
+                            <li><span className="text-gray-300 cursor-default">Sự Kiện</span></li>
+                            <li><span className="text-gray-300 cursor-default">Công việc linh hoạt khác</span></li>
                         </ul>
                     </div>
 

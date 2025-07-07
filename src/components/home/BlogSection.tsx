@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { HiOutlineArrowRight } from 'react-icons/hi';
 
 const blogPosts = [
@@ -32,9 +31,9 @@ const BlogSection: React.FC = () => {
                             Cập nhật những xu hướng tuyển dụng mới nhất và mẹo tìm việc hiệu quả.
                         </p>
                     </div>
-                    <Link to="/blog" className="text-[#309689] text-lg font-medium hover:underline">
+                    <span className="text-[#309689] text-lg font-medium cursor-default">
                         Tất cả
-                    </Link>
+                    </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8">
@@ -60,13 +59,10 @@ const BlogSection: React.FC = () => {
 
                                 <h3 className="text-2xl font-bold mb-4 leading-tight text-left">{post.title}</h3>
 
-                                <Link
-                                    to={`/blog/${post.slug}`}
-                                    className="text-[#309689] font-medium hover:underline flex items-center mt-4 group text-left"
-                                >
+                                <span className="text-[#309689] font-medium cursor-default flex items-center mt-4 group text-left">
                                     Xem thêm
                                     <HiOutlineArrowRight className="ml-2 group-hover:ml-3 transition-all" />
-                                </Link>
+                                </span>
                             </div>
                         </div>
                     ))}
