@@ -5,8 +5,6 @@ import {
     IoReceiptOutline,
     IoPersonOutline,
     IoStatsChartOutline,
-    IoWalletOutline,
-    IoConstructOutline,
     IoLayersOutline,
     IoSettingsOutline
 } from 'react-icons/io5';
@@ -45,24 +43,6 @@ const AdminSidebar: React.FC = () => {
             label: 'Thống kê',
             icon: <IoStatsChartOutline className="h-5 w-5" />,
             path: '/admin/statistics'
-        },
-        {
-            id: 'credit-cards',
-            label: 'Thẻ tín dụng',
-            icon: <IoWalletOutline className="h-5 w-5" />,
-            path: '/admin/credit-cards'
-        },
-        {
-            id: 'loans',
-            label: 'Khoản vay',
-            icon: <IoConstructOutline className="h-5 w-5" />,
-            path: '/admin/loans'
-        },
-        {
-            id: 'services',
-            label: 'Dịch vụ',
-            icon: <IoLayersOutline className="h-5 w-5" />,
-            path: '/admin/services'
         },
         {
             id: 'packages',

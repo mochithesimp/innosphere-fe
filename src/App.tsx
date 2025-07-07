@@ -95,9 +95,6 @@ function App() {
             <Route path="orders" element={<AdminPage />} />
             <Route path="accounts" element={<AdminPage />} />
             <Route path="statistics" element={<AdminPage />} />
-            <Route path="credit-cards" element={<AdminPage />} />
-            <Route path="loans" element={<AdminPage />} />
-            <Route path="services" element={<AdminPage />} />
             <Route path="packages" element={<AdminPage />} />
             <Route path="settings" element={<AdminPage />} />
           </Route>
