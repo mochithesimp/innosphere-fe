@@ -1,6 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getVisitorStats, formatTime } from '../../../utils/visitorTracking';
+
+interface DailyStats {
+    date: string;
+    uniqueVisitors: number;
+    totalPageViews: number;
+    visitors: string[];
+}
 
 const StatisticsContent: React.FC = () => {
+    const [visitorStats, setVisitorStats] = useState<{
+        todayUniqueVisitors: number;
+        todayPageViews: number;
+        totalUniqueVisitors: number;
+        last30DaysStats: DailyStats[];
+        currentVisitorId: string;
+        totalTimeSpent: number;
+        totalTimeSpentAllTime: number;
+    }>({
+        todayUniqueVisitors: 0,
+        todayPageViews: 0,
+        totalUniqueVisitors: 0,
+        last30DaysStats: [],
+        currentVisitorId: 'unknown',
+        totalTimeSpent: 0,
+        totalTimeSpentAllTime: 0
+    });
+
+    useEffect(() => {
+        // Load visitor statistics
+        const loadStats = () => {
+            const stats = getVisitorStats();
+            setVisitorStats({
+                ...stats,
+                totalTimeSpent: stats.totalTimeSpent || 0,
+                totalTimeSpentAllTime: stats.totalTimeSpentAllTime || 0
+            });
+        };
+
+        // Load initial stats
+        loadStats();
+
+        // Update stats every 5 seconds to show real-time data
+        const interval = setInterval(loadStats, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="space-y-6">
             {/* Header Cards Row */}
@@ -27,10 +73,10 @@ const StatisticsContent: React.FC = () => {
                 <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                         <div className="text-left">
-                            <p className="text-sm text-gray-500 mb-1 text-left">Today's Users</p>
-                            <p className="text-xl font-bold text-gray-900 text-left">2,300</p>
+                            <p className="text-sm text-gray-500 mb-1 text-left">Today's Visitor</p>
+                            <p className="text-xl font-bold text-gray-900 text-left">{visitorStats.todayUniqueVisitors}</p>
                             <div className="flex items-center mt-2">
-                                <span className="text-sm text-green-600 font-medium text-left">+3%</span>
+                                <span className="text-sm text-green-600 font-medium text-left">Unique visitors</span>
                             </div>
                         </div>
                         <div className="bg-teal-100 p-3 rounded-lg">
@@ -45,10 +91,10 @@ const StatisticsContent: React.FC = () => {
                 <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                         <div className="text-left">
-                            <p className="text-sm text-gray-500 mb-1 text-left">New Clients</p>
-                            <p className="text-xl font-bold text-gray-900 text-left">+3,052</p>
+                            <p className="text-sm text-gray-500 mb-1 text-left">Total Visitors</p>
+                            <p className="text-xl font-bold text-gray-900 text-left">{visitorStats.totalUniqueVisitors}</p>
                             <div className="flex items-center mt-2">
-                                <span className="text-sm text-red-500 font-medium text-left">-14%</span>
+                                <span className="text-sm text-blue-500 font-medium text-left">Last 30 days</span>
                             </div>
                         </div>
                         <div className="bg-teal-100 p-3 rounded-lg">
@@ -59,19 +105,19 @@ const StatisticsContent: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Sales Card */}
+                {/* Access Time Card */}
                 <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                         <div className="text-left">
-                            <p className="text-sm text-gray-500 mb-1 text-left">Sales</p>
-                            <p className="text-xl font-bold text-gray-900 text-left">$173,000</p>
+                            <p className="text-sm text-gray-500 mb-1 text-left">Access Time</p>
+                            <p className="text-xl font-bold text-gray-900 text-left">{formatTime(visitorStats.totalTimeSpent)}</p>
                             <div className="flex items-center mt-2">
-                                <span className="text-sm text-green-600 font-medium text-left">+8%</span>
+                                <span className="text-sm text-blue-600 font-medium text-left">Active time</span>
                             </div>
                         </div>
                         <div className="bg-teal-100 p-3 rounded-lg">
                             <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
@@ -120,8 +166,8 @@ const StatisticsContent: React.FC = () => {
                                 </svg>
                             </div>
                             <div className="text-left">
-                                <p className="text-white font-semibold text-left">Clicks</p>
-                                <p className="text-white font-bold text-lg text-left">2,42m</p>
+                                <p className="text-white font-semibold text-left">Page Views</p>
+                                <p className="text-white font-bold text-lg text-left">{visitorStats.todayPageViews}</p>
                             </div>
                         </div>
                         <div className="flex items-center">

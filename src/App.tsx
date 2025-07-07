@@ -1,6 +1,26 @@
 import './App.css'
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { usePageTracking } from './hooks/usePageTracking'
+import { startTimeTracking, stopTimeTracking } from './utils/visitorTracking'
 import LoginPage from './pages/Auth/LoginPage'
+
+// Component to handle page tracking inside Router context
+const AppContent: React.FC = () => {
+  usePageTracking();
+
+  // Start time tracking when component mounts
+  React.useEffect(() => {
+    startTimeTracking();
+
+    // Cleanup on unmount
+    return () => {
+      stopTimeTracking();
+    };
+  }, []);
+
+  return null;
+};
 import RegisterPage from './pages/Auth/RegisterPage'
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage'
 import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
@@ -35,11 +55,15 @@ import PlanAndPaymentPage from './pages/Employer/PlanAndPaymentPage'
 // Admin imports
 import AdminLayout from './components/Admin/AdminLayout'
 import AdminPage from './pages/Admin/AdminPage'
+import VisitorTrackingDemo from './components/VisitorTrackingDemo'
+import TimeTrackingTest from './pages/TimeTrackingTest'
+import AggregatedTimeDemo from './pages/AggregatedTimeDemo'
 
 function App() {
   return (
     <div className="fixed inset-0 overflow-auto bg-white">
       <Router>
+        <AppContent />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -52,6 +76,9 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/ads" element={<AdsPage />} />
+          <Route path="/visitor-demo" element={<VisitorTrackingDemo />} />
+          <Route path="/time-test" element={<TimeTrackingTest />} />
+          <Route path="/aggregated-time-demo" element={<AggregatedTimeDemo />} />
 
           {/* Employee routes */}
           <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
