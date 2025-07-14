@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { RiCheckLine, RiDownload2Line } from 'react-icons/ri';
 import { FiInfo, FiAlertCircle } from 'react-icons/fi';
+import { IoCloseOutline } from 'react-icons/io5';
 import { getUserIdFromToken } from '../../../utils/jwtHelper';
 import { SubscriptionService, Subscription } from '../../../services/subscriptionService';
 import { AdvertisementService, AdvertisementModel } from '../../../services/advertisementService';
 import PaymentReceiptService from '../../../services/paymentReceiptService';
+import Swal from 'sweetalert2';
+import { downloadFileFromUrl, getFilenameFromUrl } from '../../../utils/fileDownload';
 
 interface CombinedTransaction {
     id: string;
@@ -23,6 +26,8 @@ const PlanAndPaymentContent: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [modalImageData, setModalImageData] = useState<{ adTitle: string; imageUrl: string } | null>(null);
 
     const itemsPerPage = 5;
 
@@ -133,6 +138,17 @@ const PlanAndPaymentContent: React.FC = () => {
 
     const currentActivePlan = getCurrentActivePlan();
 
+    // Add status logic for advertisements
+    const getAdvertisementStatus = (adStatus: string) => {
+        if (adStatus === 'APPROVED' || adStatus === 'ACTIVE') {
+            return { text: 'Hoạt động', style: 'bg-green-100 text-green-800 border border-green-200', canDownload: true };
+        } else if (adStatus === 'REJECTED' || adStatus === 'INACTIVE') {
+            return { text: 'Từ chối', style: 'bg-red-100 text-red-800 border border-red-200', canDownload: false };
+        } else {
+            return { text: 'Chờ xử lý', style: 'bg-yellow-100 text-yellow-800 border border-yellow-200', canDownload: false };
+        }
+    };
+
     // Fetch transactions data from both APIs
     const fetchTransactionsData = async () => {
         try {
@@ -226,7 +242,7 @@ const PlanAndPaymentContent: React.FC = () => {
                     id: `#${ad.id}`,
                     date: formatDate(ad.startDate),
                     type: 'Quảng cáo',
-                    plan: ad.adTitle || 'Không có tiêu đề',
+                    plan: ad.adPosition || 'Không có vị trí',
                     amount: formatAmount(ad.price),
                     transactionId: ad.transactionId || '',
                     sortDate: new Date(ad.startDate),
@@ -265,7 +281,7 @@ const PlanAndPaymentContent: React.FC = () => {
                 const subscription = transaction.rawData as Subscription;
                 await PaymentReceiptService.downloadReceipt(
                     transaction.transactionId,
-                    'Khách hàng', // You can get this from employer profile if needed
+                    'Khách hàng',
                     transaction.plan,
                     {
                         amountPaid: subscription.amountPaid,
@@ -275,14 +291,22 @@ const PlanAndPaymentContent: React.FC = () => {
                 );
             } else {
                 const advertisement = transaction.rawData as AdvertisementModel;
+                const adStatus = getAdvertisementStatus(advertisement.adStatus);
+                if (!adStatus.canDownload) {
+                    alert('Không thể tải biên lai cho quảng cáo chưa được duyệt hoặc bị từ chối.');
+                    return;
+                }
                 await PaymentReceiptService.downloadReceipt(
                     transaction.transactionId,
-                    'Khách hàng', // You can get this from employer profile if needed
-                    `Quảng cáo ${advertisement.adTitle}`,
+                    'Khách hàng',
+                    `Quảng cáo vị trí: ${advertisement.adPosition}`,
                     {
                         amountPaid: advertisement.price,
                         startDate: advertisement.startDate,
-                        paymentStatus: 'PAID'
+                        paymentStatus: 'PAID',
+                        ...(advertisement.adTitle && { adTitle: advertisement.adTitle }),
+                        ...(advertisement.adPosition && { adPosition: advertisement.adPosition }),
+                        ...(advertisement.adStatus && { adStatus: advertisement.adStatus })
                     }
                 );
             }
@@ -296,7 +320,20 @@ const PlanAndPaymentContent: React.FC = () => {
 
     // Download all receipts
     const handleDownloadAllReceipts = async () => {
-        const transactionsWithId = transactions.filter(t => t.transactionId && t.transactionId.trim() !== '');
+        const transactionsWithId = transactions.filter(t => {
+            if (!t.transactionId || t.transactionId.trim() === '') return false;
+            if (t.type === 'Quảng cáo') {
+                const ad = t.rawData as AdvertisementModel;
+                const adStatus = getAdvertisementStatus(ad.adStatus);
+                return adStatus.canDownload;
+            }
+            // For subscriptions, only allow if status is 'Hoạt động'
+            if (t.type === 'Gói thành viên') {
+                const status = getTransactionStatus(t.rawData.startDate, t.plan);
+                return status.text === 'Hoạt động';
+            }
+            return true;
+        });
 
         if (transactionsWithId.length === 0) {
             alert('Không có giao dịch nào có mã để tải về');
@@ -417,6 +454,35 @@ const PlanAndPaymentContent: React.FC = () => {
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
+    };
+
+    const openImageModal = (adTitle: string, imageUrl: string) => {
+        setModalImageData({ adTitle, imageUrl });
+        setShowImageModal(true);
+    };
+
+    const closeImageModal = () => {
+        setShowImageModal(false);
+        setModalImageData(null);
+    };
+
+    const handleImageDownload = async () => {
+        if (!modalImageData?.imageUrl) {
+            Swal.fire('Lỗi', 'Không có hình ảnh để tải xuống', 'error');
+            return;
+        }
+        try {
+            const timestamp = new Date().toISOString().slice(0, 10);
+            let filename = getFilenameFromUrl(modalImageData.imageUrl);
+            if (!filename || filename === 'cv-document.pdf') {
+                const hasExtension = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(modalImageData.imageUrl);
+                const extension = hasExtension ? modalImageData.imageUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)?.[0] || '.jpg' : '.jpg';
+                filename = `quangcao_${timestamp}${extension}`;
+            }
+            await downloadFileFromUrl(modalImageData.imageUrl, filename);
+        } catch {
+            Swal.fire('Lỗi', 'Không thể tải xuống hình ảnh. Vui lòng thử lại.', 'error');
+        }
     };
 
     return (
@@ -628,7 +694,16 @@ const PlanAndPaymentContent: React.FC = () => {
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {currentTransactions.map((transaction) => {
-                                    const status = getTransactionStatus(transaction.rawData.startDate, transaction.plan);
+                                    let status, canDownload = true;
+                                    if (transaction.type === 'Quảng cáo') {
+                                        const ad = transaction.rawData as AdvertisementModel;
+                                        const adStatus = getAdvertisementStatus(ad.adStatus);
+                                        status = { text: adStatus.text, style: adStatus.style };
+                                        canDownload = adStatus.canDownload;
+                                    } else {
+                                        status = getTransactionStatus(transaction.rawData.startDate, transaction.plan);
+                                        canDownload = status.text === 'Hoạt động';
+                                    }
                                     return (
                                         <tr key={`${transaction.type}-${transaction.id}`}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.id}</td>
@@ -641,15 +716,24 @@ const PlanAndPaymentContent: React.FC = () => {
                                                     {transaction.type}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">{transaction.plan}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.style}`}>
-                                                    {status.text}
-                                                </span>
+                                                {transaction.plan}
+                                                {transaction.type === 'Quảng cáo' && (transaction.rawData as AdvertisementModel).imageUrl && (
+                                                    <button
+                                                        onClick={() => openImageModal((transaction.rawData as AdvertisementModel).adTitle || '', (transaction.rawData as AdvertisementModel).imageUrl)}
+                                                        className="ml-2 px-3 py-1 text-xs rounded-full hover:bg-gray-50"
+                                                        style={{ color: '#123288', borderColor: '#123288', border: '1px solid #123288' }}
+                                                    >
+                                                        Xem ảnh
+                                                    </button>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.style}`}>{status.text}</span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left font-medium">{transaction.amount}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {transaction.transactionId && transaction.transactionId.trim() !== '' ? (
+                                                {canDownload && transaction.transactionId && transaction.transactionId.trim() !== '' ? (
                                                     <button
                                                         onClick={() => handleDownloadReceipt(transaction)}
                                                         disabled={downloadingId === transaction.transactionId}
@@ -724,6 +808,57 @@ const PlanAndPaymentContent: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Image Modal */}
+            {showImageModal && modalImageData && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-900">
+                                Quảng cáo: <span className="font-bold">{modalImageData.adTitle}</span>
+                            </h2>
+                            <button
+                                onClick={closeImageModal}
+                                className="p-2 hover:bg-gray-100 rounded-full"
+                            >
+                                <IoCloseOutline className="h-6 w-6 text-gray-500" />
+                            </button>
+                        </div>
+                        {/* Modal Content */}
+                        <div className="p-6">
+                            <div className="mb-6">
+                                <label className="block text-left text-sm font-medium text-gray-700 mb-2">
+                                    Hình ảnh
+                                </label>
+                                {modalImageData.imageUrl ? (
+                                    <img
+                                        src={modalImageData.imageUrl}
+                                        alt="Advertisement"
+                                        className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                                        onError={e => { (e.target as HTMLImageElement).src = '/hiring.png'; }}
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-gray-400">
+                                        <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <p className="text-sm">Không có hình ảnh</p>
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={handleImageDownload}
+                                disabled={!modalImageData.imageUrl}
+                                className={`px-6 py-2 text-sm rounded-lg border transition-colors ${modalImageData.imageUrl ? 'hover:bg-gray-50' : 'opacity-50 cursor-not-allowed'}`}
+                                style={{ color: modalImageData.imageUrl ? '#309689' : '#9CA3AF', borderColor: modalImageData.imageUrl ? '#309689' : '#9CA3AF' }}
+                            >
+                                {modalImageData.imageUrl ? 'Tải Hình Ảnh' : 'Không có hình ảnh'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
