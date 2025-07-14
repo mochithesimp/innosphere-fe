@@ -15,6 +15,7 @@ const OverviewContent: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showJobApplications, setShowJobApplications] = useState(false);
     const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+    const [employerName, setEmployerName] = useState<string>('');
 
     // Add CSS styling for the view profile button
     useEffect(() => {
@@ -231,10 +232,22 @@ const OverviewContent: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        const fetchEmployerName = async () => {
+            try {
+                const profile = await SubscriptionService.getEmployerProfile();
+                setEmployerName(profile?.companyName || 'Employer');
+            } catch {
+                setEmployerName('Employer');
+            }
+        };
+        fetchEmployerName();
+    }, []);
+
     return (
         <div>
             <div className="mb-8 text-left">
-                <h1 className="text-xl font-semibold">Hello, Anh Vũ</h1>
+                <h1 className="text-xl font-semibold">Hello, {employerName}</h1>
                 <p className="text-gray-600 text-sm">Đây là thống tin ứng tuyển và hoạt động hàng ngày</p>
             </div>
 

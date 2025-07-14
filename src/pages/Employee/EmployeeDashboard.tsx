@@ -12,6 +12,7 @@ import RatingModal from '../../components/Employee/RatingModal';
 import { WorkerService } from '../../services';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../services/jobApplicationService';
 import { isJobApplicationRated } from '../../utils/ratingUtils';
+import { ResumeService } from '../../services/resumeService';
 
 import { IoLocationOutline } from "react-icons/io5";
 
@@ -44,6 +45,7 @@ const EmployeeDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [hasProfile, setHasProfile] = useState<boolean>(false);
     const [profileLoading, setProfileLoading] = useState<boolean>(true);
+    const [employeeName, setEmployeeName] = useState<string>('');
 
     // State for job applications data
     const [apiJobApplications, setApiJobApplications] = useState<JobItem[]>([]);
@@ -383,6 +385,18 @@ const EmployeeDashboard: React.FC = () => {
     const sortedJobData = allJobData.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
     const displayedJobs = sortedJobData.slice(0, 4);
 
+    useEffect(() => {
+        const fetchEmployeeName = async () => {
+            try {
+                const profile = await ResumeService.getWorkerProfile();
+                setEmployeeName(profile?.fullName || 'Employee');
+            } catch {
+                setEmployeeName('Employee');
+            }
+        };
+        fetchEmployeeName();
+    }, []);
+
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             {/* Header component with bottom border */}
@@ -401,7 +415,7 @@ const EmployeeDashboard: React.FC = () => {
                     {/* Dashboard Content */}
                     <div className="flex-1 p-6 overflow-auto">
                         <div className="mb-8 text-left">
-                            <h1 className="text-xl font-semibold">Hello, Anh Vũ Lê</h1>
+                            <h1 className="text-xl font-semibold">Hello, {employeeName}</h1>
                             <p className="text-gray-600 text-sm">Đây là các hoạt động hàng ngày và thông báo công việc của bạn</p>
                         </div>
 
