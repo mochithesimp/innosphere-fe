@@ -456,8 +456,8 @@ const PostJobContent: React.FC = () => {
         window.handleTieuChuanClick = () => {
             handleSelectPlan({
                 name: 'Tiêu chuẩn',
-                price: '1000000',
-                formattedPrice: '1.000.000VNĐ',
+                price: '1500000',
+                formattedPrice: '1.500.000VNĐ',
                 subscriptionPackageId: 1
             });
         };
@@ -466,8 +466,8 @@ const PostJobContent: React.FC = () => {
         window.handleCaoCapClick = () => {
             handleSelectPlan({
                 name: 'Cao cấp',
-                price: '1350000',
-                formattedPrice: '1.350.000VNĐ',
+                price: '4600000',
+                formattedPrice: '4.600.000VNĐ',
                 subscriptionPackageId: 2
             });
         };
@@ -476,8 +476,8 @@ const PostJobContent: React.FC = () => {
         window.handleDoanhNghiepClick = () => {
             handleSelectPlan({
                 name: 'Doanh Nghiệp',
-                price: '3000000',
-                formattedPrice: '3.000.000VNĐ',
+                price: '10000000',
+                formattedPrice: '10.000.000VNĐ',
                 subscriptionPackageId: 3
             });
         };
@@ -538,7 +538,7 @@ const PostJobContent: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                     <h3 className="text-lg font-medium mb-4">Tiêu Chuẩn</h3>
                     <div className="text-xl font-bold text-[#309689] mb-4">
-                        1.000.000VNĐ <span className="text-sm font-normal text-gray-500">/tháng</span>
+                        1.500.000VNĐ <span className="text-sm font-normal text-gray-500">/tháng</span>
                     </div>
                     <div className="space-y-2 mb-6">
                         <div className="flex items-start">
@@ -576,7 +576,7 @@ const PostJobContent: React.FC = () => {
                     </div>
                     <h3 className="text-xl font-bold text-[#309689] mb-4 text-center">Cao Cấp</h3>
                     <div className="text-xl font-bold text-[#309689] mb-4">
-                        1.350.000VNĐ <span className="text-sm font-normal text-gray-500">/tháng</span>
+                        4.600.000VNĐ <span className="text-sm font-normal text-gray-500">/tháng</span>
                     </div>
                     <div className="space-y-2 mb-6">
                         <div className="flex items-start">
@@ -611,7 +611,7 @@ const PostJobContent: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                     <h3 className="text-lg font-medium mb-4">Doanh Nghiệp</h3>
                     <div className="text-xl font-bold text-[#309689] mb-4">
-                        3.000.000VNĐ <span className="text-sm font-normal text-gray-500">/3 Months</span>
+                        10.000.000VNĐ <span className="text-sm font-normal text-gray-500">/3 Months</span>
                     </div>
                     <div className="space-y-2 mb-6">
                         <div className="flex items-start">
