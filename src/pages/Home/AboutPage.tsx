@@ -1,28 +1,81 @@
 import React from 'react';
 import Footer from '../../components/layout/Footer';
 import Header from '../../components/layout/Header';
-import { HiOutlineArrowRight } from 'react-icons/hi';
+import { AdminService } from '../../services/adminService';
 
-const blogPosts = [
+interface BlogPost {
+    id: number;
+    category: string;
+    date: string;
+    title: string;
+    image: string;
+    slug: string;
+    employerUserName?: string;
+}
+
+const hardcodedPosts: BlogPost[] = [
     {
         id: 1,
-        category: 'News',
+        category: 'Ads',
         date: '20 Tháng 3, 2025',
         title: 'Cải Thiện Tinh Thần Nơi Làm Việc : Các Chiến Lược Nâng Cao Năng Suất Nhân Viên Trong Năm 2025',
         image: '/image 6.png',
-        slug: 'cai-thien-tinh-than-noi-lam-viec'
+        slug: 'cai-thien-tinh-than-noi-lam-viec',
     },
     {
         id: 2,
-        category: 'Tips',
+        category: 'Ads',
         date: '25 Tháng 3, 2025',
         title: 'Tránh 6 Lỗi Phổ Biến Nhất Trong Phỏng Vấn Xin Việc',
         image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070',
-        slug: 'tranh-6-loi-pho-bien-nhat-trong-phong-van-xin-viec'
+        slug: 'tranh-6-loi-pho-bien-nhat-trong-phong-van-xin-viec',
     }
 ];
 
 const AboutPage: React.FC = () => {
+    const [adPosts, setAdPosts] = React.useState<BlogPost[]>(hardcodedPosts);
+
+    React.useEffect(() => {
+        AdminService.getAllAdvertisements()
+            .then((ads) => {
+                const formatDate = (dateStr: string) => {
+                    const date = new Date(dateStr);
+                    return `${date.getDate().toString().padStart(2, '0')} Tháng ${date.getMonth() + 1}, ${date.getFullYear()}`;
+                };
+                const posts = [3, 4].map((idx, i) => {
+                    const ad = ads[idx];
+                    const fallbackImage = (hardcodedPosts[i] && hardcodedPosts[i].image) || 'https://via.placeholder.com/600x400?text=Blog+Image';
+                    if (ad) {
+                        return {
+                            id: ad.id,
+                            category: 'Ads',
+                            date: formatDate(ad.startDate),
+                            title: ad.adTitle,
+                            image: ad.imageUrl || fallbackImage,
+                            slug: '',
+                            employerUserName: ad.employerUserName || undefined
+                        };
+                    } else if (hardcodedPosts[i]) {
+                        return hardcodedPosts[i];
+                    } else {
+                        return {
+                            id: idx,
+                            category: 'Ads',
+                            date: '',
+                            title: '',
+                            image: fallbackImage,
+                            slug: '',
+                            employerUserName: undefined
+                        };
+                    }
+                });
+                setAdPosts(posts);
+            })
+            .catch(() => {
+                setAdPosts(hardcodedPosts);
+            });
+    }, []);
+
     return (
         <div className="min-h-screen bg-white">
             <Header />
@@ -289,50 +342,45 @@ const AboutPage: React.FC = () => {
             </div>
 
             {/* Blog Section */}
-            <section className="py-16 bg-white">
-                <div className="container mx-auto px-4 max-w-[90%]">
-                    <div className="flex justify-between items-center mb-8">
-                        <div className="text-left">
-                            <h2 className="text-4xl font-bold text-black text-left">Tin Tức & Blog</h2>
-                        </div>
-                        <span className="text-[#309689] text-lg font-medium cursor-default">
-                            Tất cả
-                        </span>
+            <div className="container mx-auto px-4 max-w-[90%]">
+                <div className="mb-8">
+                    <div className="text-left">
+                        <h2 className="text-4xl font-bold text-black text-left">Tin Tức & Quảng cáo</h2>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8">
-                        {blogPosts.map((post) => (
-                            <div key={post.id} className="rounded-xl shadow-sm overflow-hidden bg-white">
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8">
+                    {adPosts.map((post, i) => {
+                        const isHardcoded =
+                            (hardcodedPosts[i] && post.id === hardcodedPosts[i].id && post.title === hardcodedPosts[i].title && !post.employerUserName);
+                        return (
+                            <div key={post.id || i} className="rounded-xl shadow-sm overflow-hidden bg-white">
                                 <div className="relative overflow-hidden">
                                     <img
                                         src={post.image}
                                         alt={post.title}
                                         className="w-full h-72 object-cover transition-transform hover:scale-105 duration-500"
+                                        style={{ objectFit: 'cover', width: '100%', height: '18rem' }}
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
-                                            target.src = "https://via.placeholder.com/600x400?text=Blog+Image";
+                                            target.src = (hardcodedPosts[i] && hardcodedPosts[i].image) || 'https://via.placeholder.com/600x400?text=Blog+Image';
                                         }}
                                     />
                                     <div className="absolute top-4 left-4 bg-[#309689] text-white py-1 px-4 rounded-full text-sm">
-                                        {post.category}
+                                        Ads
                                     </div>
                                 </div>
-
                                 <div className="p-6 text-left">
-                                    <div className="text-gray-500 text-sm mb-3 font-medium text-left">{post.date}</div>
-
-                                    <h3 className="text-2xl font-bold mb-4 leading-tight text-left">{post.title}</h3>
-
-                                    <span className="text-[#309689] font-medium cursor-default flex items-center mt-4 group text-left">
-                                        Xem thêm
-                                        <HiOutlineArrowRight className="ml-2 group-hover:ml-3 transition-all" />
-                                    </span>
+                                    <div className="text-gray-500 text-sm mb-3 font-medium text-left">{isHardcoded ? hardcodedPosts[i].date : post.date}</div>
+                                    <h3 className="text-2xl font-bold mb-2 leading-tight text-left">{isHardcoded ? hardcodedPosts[i].title : post.title}</h3>
+                                    {post.employerUserName && !isHardcoded && (
+                                        <div className="text-gray-700 text-base mb-2 text-left font-medium">{post.employerUserName}</div>
+                                    )}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
-            </section>
+            </div>
 
             <Footer />
         </div>

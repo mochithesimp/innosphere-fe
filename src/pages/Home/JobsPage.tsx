@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Footer from '../../components/layout/Footer';
 import Header from '../../components/layout/Header';
 import { JobService, JobPostingApiResponse, JobSearchFilters } from '../../services';
+import { AdminService } from '../../services/adminService';
 
 // Interface for display data (hybrid of API + static)
 interface JobProps {
@@ -332,16 +333,33 @@ const TagSection = () => {
     );
 };
 
-const HiringBanner = () => {
+const HiringBanner: React.FC = () => {
+    const [adImage, setAdImage] = React.useState<string | null>(null);
+    const defaultImage = "/hiring.png";
+
+    React.useEffect(() => {
+        let isMounted = true;
+        AdminService.getAllAdvertisements()
+            .then((ads) => {
+                if (isMounted && Array.isArray(ads) && ads.length > 0 && ads[0].imageUrl) {
+                    setAdImage(ads[0].imageUrl);
+                }
+            })
+            .catch(() => {
+                // Ignore error, fallback to default
+            });
+        return () => { isMounted = false; };
+    }, []);
+
     return (
         <div className="rounded-lg mb-4">
             <img
-                src="/hiring.png"
+                src={adImage || defaultImage}
                 alt="We are hiring - Apply Today!"
                 className="w-full h-auto rounded-lg shadow-sm"
                 onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "https://placehold.co/600x300/ffcc00/ffffff?text=WE+ARE+HIRING";
+                    target.src = defaultImage;
                 }}
             />
         </div>
