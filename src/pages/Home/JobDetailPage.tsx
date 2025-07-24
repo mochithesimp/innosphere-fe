@@ -163,18 +163,18 @@ const JobDetailPage: React.FC = () => {
             <Header />
 
             {/* Black banner with title */}
-            <div className="bg-black text-white py-16">
+            <div className="bg-black text-white py-8 md:py-16">
                 <div className="container mx-auto px-4 max-w-6xl">
-                    <h1 className="text-5xl font-bold text-center">Chi Tiết Công Việc</h1>
+                    <h1 className="text-3xl md:text-5xl font-bold text-center">Chi Tiết Công Việc</h1>
                 </div>
             </div>
 
             {/* Job details content */}
-            <div className="container mx-auto px-4 max-w-6xl py-16 mt-6">
+            <div className="container mx-auto px-4 max-w-6xl py-8 md:py-16 mt-4 md:mt-6">
                 {/* Top section with job title and metadata */}
-                <div className="mb-12">
+                <div className="mb-8 md:mb-12">
                     {/* Time posted badge */}
-                    <div className="flex items-center mb-6">
+                    <div className="flex items-center mb-4 md:mb-6">
                         <div className="text-[#309689] bg-[#ecf8f6] text-sm py-1 px-3 rounded-full">
                             {getTimeAgo(jobData.postedAt)}
                         </div>
@@ -197,14 +197,14 @@ const JobDetailPage: React.FC = () => {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold mb-1 text-left">{jobData.title}</h2>
+                            <h2 className="text-xl md:text-2xl font-bold mb-1 text-left">{jobData.title}</h2>
                             <p className="text-gray-700 text-left">{jobData.companyName}</p>
                         </div>
                     </div>
 
                     {/* Job metadata icons with Apply button */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                        <div className="grid grid-cols-2 md:flex md:items-center gap-4 md:gap-10">
                             <div className="flex items-center text-gray-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -233,22 +233,24 @@ const JobDetailPage: React.FC = () => {
                         </div>
 
                         {/* Apply button */}
-                        <div style={{ width: '180px' }}>
-                            <div
+                        <div className="w-full md:w-[180px]">
+                            <button
+                                onClick={openModal}
                                 style={{
                                     backgroundColor: '#37A594',
-                                    borderRadius: '4px',
-                                    padding: '12px 0',
-                                    textAlign: 'center',
                                     color: 'white',
+                                    padding: '12px 0',
+                                    borderRadius: '4px',
                                     fontWeight: '500',
                                     width: '100%',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    transition: 'background-color 0.2s'
                                 }}
-                                onClick={openModal}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#277a6e'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#37A594'}
                             >
                                 Ứng Tuyển
-                            </div>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -256,7 +258,7 @@ const JobDetailPage: React.FC = () => {
                 {/* Main Content with sidebar */}
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Left Content */}
-                    <div className="md:w-3/4">
+                    <div className="w-full md:w-3/4 order-2 md:order-1">
                         {/* Job description */}
                         <div className="mb-8">
                             <h3 className="text-xl font-bold mb-4 text-left">Chi tiết công việc</h3>
@@ -368,102 +370,104 @@ const JobDetailPage: React.FC = () => {
                         </div>
 
                         {/* Related jobs section */}
-                        <div className="mb-12 pt-8">
-                            <h2 className="text-3xl font-bold mb-6 text-left">Công việc liên quan</h2>
+                        <div className="mt-8 md:mt-12">
+                            <h2 className="text-2xl md:text-3xl font-bold mb-6 text-left">Công việc liên quan</h2>
 
-                            {relatedJobs.map((relatedJob) => (
-                                <div key={relatedJob.id} className="border-b border-gray-200 py-6">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
-                                            {getTimeAgo(relatedJob.postedAt)}
-                                        </div>
-                                        <button className="text-gray-400 hover:text-gray-600">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <div className="mr-4">
-                                            <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
-                                                <img
-                                                    src="https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"
-                                                    alt={relatedJob.companyName}
-                                                    className="w-full h-full object-cover"
-                                                />
+                            {/* Related jobs cards */}
+                            <div className="space-y-6">
+                                {relatedJobs.map((relatedJob) => (
+                                    <div key={relatedJob.id} className="border-b border-gray-200 py-6">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div className="bg-[#ecf8f6] text-[#309689] text-sm py-1 px-3 rounded-full">
+                                                {getTimeAgo(relatedJob.postedAt)}
                                             </div>
+                                            <button className="text-gray-400 hover:text-gray-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                                </svg>
+                                            </button>
                                         </div>
 
-                                        <div className="flex-1 text-left">
-                                            <div className="mb-4">
-                                                <h3 className="font-bold text-xl mb-1">{relatedJob.title}</h3>
-                                                <p className="text-gray-700">{relatedJob.companyName}</p>
-                                            </div>
-
-                                            <div className="flex flex-wrap items-center justify-between">
-                                                <div className="flex flex-wrap gap-5 items-center">
-                                                    <div className="flex items-center text-gray-600">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                        </svg>
-                                                        <span>F&B</span>
-                                                    </div>
-
-                                                    <div className="flex items-center text-gray-600">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        <span>{formatTime(relatedJob.startTime)}-{formatTime(relatedJob.endTime)}</span>
-                                                    </div>
-
-                                                    <div className="flex items-center text-gray-600">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        <span>{relatedJob.hourlyRate?.toLocaleString()}đ/giờ</span>
-                                                    </div>
-
-                                                    <div className="flex items-center text-gray-600">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        </svg>
-                                                        <span>{relatedJob.cityName || relatedJob.location || 'Vị trí không xác định'}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div
-                                                    style={{
-                                                        backgroundColor: '#37A594',
-                                                        color: 'white',
-                                                        padding: '8px 24px',
-                                                        borderRadius: '6px',
-                                                        fontWeight: '500',
-                                                        fontSize: '14px',
-                                                        display: 'inline-block',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                    onClick={() => window.location.href = `/job-detail?id=${relatedJob.id}`}
-                                                >
-                                                    Chi Tiết
+                                        <div className="flex flex-col md:flex-row">
+                                            <div className="mb-4 md:mb-0 md:mr-4">
+                                                <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                                    <img
+                                                        src="https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"
+                                                        alt={relatedJob.companyName}
+                                                        className="w-full h-full object-cover"
+                                                    />
                                                 </div>
                                             </div>
+
+                                            <div className="flex-1">
+                                                <div className="mb-4">
+                                                    <h3 className="text-lg md:text-xl font-bold mb-1">{relatedJob.title}</h3>
+                                                    <p className="text-gray-700">{relatedJob.companyName}</p>
+                                                </div>
+
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                                                    <div className="grid grid-cols-2 md:flex md:items-center gap-4 md:gap-5">
+                                                        <div className="flex items-center text-gray-600">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                            </svg>
+                                                            <span>F&B</span>
+                                                        </div>
+                                                        <div className="flex items-center text-gray-600">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <span>{formatTime(relatedJob.startTime)}-{formatTime(relatedJob.endTime)}</span>
+                                                        </div>
+                                                        <div className="flex items-center text-gray-600">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <span>{relatedJob.hourlyRate?.toLocaleString()}đ/giờ</span>
+                                                        </div>
+                                                        <div className="flex items-center text-gray-600">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            </svg>
+                                                            <span>{relatedJob.cityName || relatedJob.location || 'Vị trí không xác định'}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => window.location.href = `/job-detail?id=${relatedJob.id}`}
+                                                        style={{
+                                                            backgroundColor: '#37A594',
+                                                            color: 'white',
+                                                            padding: '8px 24px',
+                                                            borderRadius: '6px',
+                                                            fontWeight: '500',
+                                                            cursor: 'pointer',
+                                                            transition: 'background-color 0.2s'
+                                                        }}
+                                                        className="w-full md:w-auto mt-4 md:mt-0"
+                                                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#277a6e'}
+                                                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#37A594'}
+                                                    >
+                                                        Chi Tiết
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
 
-                            {relatedJobs.length === 0 && (
-                                <div className="text-center text-gray-500 py-8">
-                                    Không có công việc liên quan nào
-                                </div>
-                            )}
+                                {relatedJobs.length === 0 && (
+                                    <div className="text-center text-gray-500 py-8">
+                                        Không có công việc liên quan nào
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Right Sidebar */}
-                    <div className="md:w-1/4">
+                    {/* Right Sidebar - Show at top on mobile */}
+                    <div className="w-full md:w-1/4 order-1 md:order-2">
                         {/* Job Overview Card */}
                         <div className="bg-[#f7fcfb] rounded-lg p-6 mb-6">
                             <h3 className="text-xl font-bold mb-5 text-left">Tổng quan công việc</h3>
