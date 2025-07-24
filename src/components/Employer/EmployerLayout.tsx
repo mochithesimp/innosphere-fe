@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Dashboard/Sidebar';
@@ -6,6 +6,7 @@ import { checkEmployerProfileAndRedirect } from '../../utils/employerAuth';
 
 const EmployerLayout: React.FC = () => {
     const navigate = useNavigate();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     // Check employer profile on component mount to prevent unauthorized access
     useEffect(() => {
@@ -22,13 +23,16 @@ const EmployerLayout: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
-            {/* Header component with bottom border */}
+            {/* Header component */}
             <Header />
 
             <div className="flex flex-1">
                 {/* Sidebar component - hidden on mobile */}
                 <div className="hidden md:block border-r border-gray-300">
-                    <Sidebar isOpen={true} onClose={() => { }} />
+                    <Sidebar
+                        isOpen={isSidebarOpen}
+                        onClose={() => setIsSidebarOpen(false)}
+                    />
                 </div>
 
                 {/* Main Content with white background */}
