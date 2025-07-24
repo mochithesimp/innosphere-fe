@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaRegBookmark, FaChevronRight } from 'react-icons/fa';
+import { FaRegBookmark, FaChevronRight, FaBars } from 'react-icons/fa';
 import { HiOutlineBriefcase } from "react-icons/hi";
 import { FiBell } from "react-icons/fi";
 import Swal from 'sweetalert2';
@@ -397,6 +397,8 @@ const EmployeeDashboard: React.FC = () => {
         fetchEmployeeName();
     }, []);
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             {/* Header component with bottom border */}
@@ -404,23 +406,31 @@ const EmployeeDashboard: React.FC = () => {
                 <Header />
             </div>
 
-            <div className="flex flex-1">
+            <div className="flex flex-1 relative">
+                {/* Mobile Menu Toggle Button */}
+                <button
+                    className="md:hidden fixed top-20 left-4 z-50 bg-[#309689] text-white p-2 rounded-md shadow-lg"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                    <FaBars className="h-5 w-5" />
+                </button>
+
                 {/* Sidebar component with right border */}
-                <div className="border-r border-gray-300">
-                    <Sidebar />
+                <div className="md:relative">
+                    <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 </div>
 
                 {/* Main Content with white background */}
-                <div className="flex-1 flex flex-col bg-white">
+                <div className="flex-1 flex flex-col bg-white w-full">
                     {/* Dashboard Content */}
-                    <div className="flex-1 p-6 overflow-auto">
-                        <div className="mb-8 text-left">
-                            <h1 className="text-xl font-semibold">Hello, {employeeName}</h1>
-                            <p className="text-gray-600 text-sm">Đây là các hoạt động hàng ngày và thông báo công việc của bạn</p>
+                    <div className="flex-1 p-4 md:p-6 overflow-auto">
+                        <div className="mb-6 md:mb-8 text-left">
+                            <h1 className="text-lg md:text-xl font-semibold">Hello, {employeeName}</h1>
+                            <p className="text-sm text-gray-600">Đây là các hoạt động hàng ngày và thông báo công việc của bạn</p>
                         </div>
 
                         {/* Stat Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                             {/* Jobs Applied Card */}
                             <div style={{ backgroundColor: '#E7F0FA' }} className="rounded-lg p-5 flex items-center justify-between">
                                 <div className="text-left">
@@ -484,17 +494,17 @@ const EmployeeDashboard: React.FC = () => {
                         ) : null}
 
                         {/* Recent Jobs Section */}
-                        <div className="mb-8">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-lg font-semibold">Công việc đã nhận gần đây</h2>
+                        <div className="mb-6 md:mb-8">
+                            <div className="flex justify-between items-center mb-4 md:mb-6">
+                                <h2 className="text-base md:text-lg font-semibold">Công việc đã nhận gần đây</h2>
                                 <Link to="/employee/all-jobs" className="text-gray-600 text-sm flex items-center">
                                     Tất cả
                                     <FaChevronRight className="ml-1 h-3 w-3" />
                                 </Link>
                             </div>
 
-                            {/* Job Table Header */}
-                            <div className="bg-gray-100 grid grid-cols-4 py-3 px-4 rounded-t-lg text-sm font-medium text-gray-600">
+                            {/* Job Table Header - Hide on mobile */}
+                            <div className="hidden md:grid grid-cols-4 py-3 px-4 rounded-t-lg text-sm font-medium text-gray-600 bg-gray-100">
                                 <div>Công việc</div>
                                 <div>Ngày nhận</div>
                                 <div>Trạng thái</div>
@@ -534,7 +544,7 @@ const EmployeeDashboard: React.FC = () => {
                             }} />
 
                             {/* Job Items */}
-                            <div className="bg-white rounded-b-lg shadow-sm">
+                            <div className="bg-white rounded-lg shadow-sm">
                                 {isLoadingJobs ? (
                                     <div className="py-8 text-center text-gray-500">
                                         Đang tải dữ liệu...
@@ -545,33 +555,37 @@ const EmployeeDashboard: React.FC = () => {
                                     </div>
                                 ) : (
                                     displayedJobs.map((job, jobIndex) => (
-                                        <div key={job.id} className={`grid grid-cols-4 items-center py-4 px-4 hover:bg-gray-50 rounded-lg my-2 ${jobIndex < displayedJobs.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                            <div className="flex items-center">
+                                        <div key={job.id} className={`grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-0 items-start md:items-center py-4 px-4 hover:bg-gray-50 rounded-lg my-2 ${jobIndex < displayedJobs.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                            <div className="flex items-start md:items-center">
                                                 <div
-                                                    className="p-3 rounded-lg mr-4 flex items-center justify-center w-12 h-12"
+                                                    className="p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex items-center justify-center w-10 h-10 md:w-12 md:h-12"
                                                     style={{ backgroundColor: job.companyColor }}
                                                 >
-                                                    <span className="text-white font-bold text-lg">{job.companyInitial}</span>
+                                                    <span className="text-white font-bold text-base md:text-lg">{job.companyInitial}</span>
                                                 </div>
-                                                <div className="text-left">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h3 className="font-medium">{job.title}</h3>
-                                                        <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">
+                                                <div className="text-left flex-1">
+                                                    <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
+                                                        <h3 className="font-medium text-sm md:text-base">{job.title}</h3>
+                                                        <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3] inline-block md:inline">
                                                             {job.timeRange}
                                                         </span>
                                                     </div>
-                                                    <p className="text-xs text-gray-500 mt-1 flex items-center">
+                                                    <p className="text-xs text-gray-500 mt-1 flex items-center flex-wrap">
                                                         <IoLocationOutline className="mr-1" />
                                                         <span>{job.location}</span>
                                                         <span className="mx-2">•</span>
-                                                        <span className="flex items-center">
-                                                            <span>{job.hourlyRate}</span>
-                                                        </span>
+                                                        <span>{job.hourlyRate}</span>
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="text-sm text-gray-600">{job.date}</div>
-                                            <div>
+
+                                            {/* Mobile-only date */}
+                                            <div className="text-xs text-gray-500 md:hidden mt-2">{job.date}</div>
+
+                                            {/* Desktop-only date */}
+                                            <div className="hidden md:block text-sm text-gray-600">{job.date}</div>
+
+                                            <div className="mt-2 md:mt-0">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${job.status.style}`}>
                                                     <span
                                                         className="w-2 h-2 rounded-full mr-1.5"
@@ -580,7 +594,8 @@ const EmployeeDashboard: React.FC = () => {
                                                     {job.status.text}
                                                 </span>
                                             </div>
-                                            <div>
+
+                                            <div className="mt-3 md:mt-0">
                                                 {job.action.type === 'rating' ? (
                                                     (() => {
                                                         let jobApplicationId = 0;
@@ -625,7 +640,7 @@ const EmployeeDashboard: React.FC = () => {
                                                     })()
                                                 ) : (
                                                     <button
-                                                        className="detail-button"
+                                                        className="detail-button w-full md:w-auto"
                                                         onClick={() => job.jobPostingId && openJobDetailModal(job.jobPostingId)}
                                                     >
                                                         {job.action.text}

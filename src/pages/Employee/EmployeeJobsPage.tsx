@@ -33,48 +33,6 @@ interface JobItem {
     isFromAPI: boolean;
 }
 
-// Add CSS for the active pagination button and arrow icons
-const paginationStyles = `
-    .active-page-button {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background-color: #35a79c;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 500;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-    }
-    
-    .pagination-arrow svg {
-        color: #35a79c;
-        width: 16px;
-        height: 16px;
-    }
-`;
-
-// Add CSS for buttons
-const buttonStyles = `
-    .rating-button-fixed {
-        background-color: #F1F2F4 !important;
-        color: #309689 !important;
-        padding: 6px 16px !important;
-        border-radius: 6px !important;
-        border: 1px solid #e0e1e3 !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        display: inline-block !important;
-        cursor: pointer !important;
-        text-decoration: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-`;
-
 const EmployeeJobsPage: React.FC = () => {
     // State for managing the rating modal
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
@@ -99,6 +57,9 @@ const EmployeeJobsPage: React.FC = () => {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6; // Adjust as needed
+
+    // State for mobile menu
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Static job data (keeping original static data)
     const staticJobData: JobItem[] = [
@@ -448,33 +409,128 @@ const EmployeeJobsPage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
-            {/* Add the CSS styles */}
-            <style>{paginationStyles}</style>
-            <style>{buttonStyles}</style>
+            {/* Add direct styles with high specificity */}
+            <style>
+                {`
+                    /* Button styles */
+                    .rating-button-fixed {
+                        background-color: #F1F2F4 !important;
+                        color: #309689 !important;
+                        padding: 6px 16px !important;
+                        border-radius: 6px !important;
+                        border: 1px solid #e0e1e3 !important;
+                        font-size: 14px !important;
+                        font-weight: 500 !important;
+                        display: inline-block !important;
+                        cursor: pointer !important;
+                        text-decoration: none !important;
+                        outline: none !important;
+                        box-shadow: none !important;
+                    }
+
+                    /* Pagination styles with high specificity */
+                    .pagination-container .page-button {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 9999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 14px;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                        border: none;
+                        cursor: pointer;
+                    }
+
+                    .pagination-container .page-button.active {
+                        background-color: #309689 !important;
+                        color: white !important;
+                    }
+
+                    .pagination-container .page-button:not(.active) {
+                        color: #6B7280;
+                    }
+
+                    .pagination-container .page-button:not(.active):hover {
+                        background-color: #F3F4F6;
+                    }
+
+                    .pagination-container .arrow-button {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 9999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background-color: #E8F5F3;
+                        border: none;
+                        cursor: pointer;
+                    }
+
+                    .pagination-container .arrow-button:disabled {
+                        background-color: #F3F4F6;
+                        cursor: not-allowed;
+                    }
+
+                    .pagination-container .arrow-button svg {
+                        width: 12px;
+                        height: 12px;
+                        color: #309689;
+                    }
+
+                    .pagination-container .arrow-button:disabled svg {
+                        color: #9CA3AF;
+                    }
+
+                    @media (min-width: 768px) {
+                        .pagination-container .page-button,
+                        .pagination-container .arrow-button {
+                            width: 40px;
+                            height: 40px;
+                        }
+
+                        .pagination-container .arrow-button svg {
+                            width: 16px;
+                            height: 16px;
+                        }
+                    }
+                `}
+            </style>
 
             {/* Header component with bottom border */}
             <div className="w-full border-b border-gray-300">
                 <Header />
             </div>
 
-            <div className="flex flex-1">
-                {/* Sidebar component with right border */}
-                <div className="border-r border-gray-300">
-                    <Sidebar />
+            <div className="flex flex-1 relative">
+                {/* Mobile Menu Toggle Button */}
+                <button
+                    className="md:hidden fixed top-20 left-4 z-50 bg-[#309689] text-white p-2 rounded-md shadow-lg"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                    {/* <FaBars className="h-5 w-5" /> */}
+                </button>
+
+                {/* Sidebar component */}
+                <div className="md:relative">
+                    <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 </div>
 
                 {/* Main Content with white background */}
-                <div className="flex-1 flex flex-col bg-white">
+                <div className="flex-1 flex flex-col bg-white w-full">
                     {/* Jobs Content */}
-                    <div className="flex-1 p-6 overflow-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-xl font-semibold">Công việc đã nhận <span className="text-gray-500 font-normal text-lg">({totalItems})</span></h1>
+                    <div className="flex-1 p-4 md:p-6 overflow-auto">
+                        <div className="flex justify-between items-center mb-4 md:mb-6">
+                            <h1 className="text-lg md:text-xl font-semibold">
+                                Công việc đã nhận <span className="text-gray-500 font-normal text-base md:text-lg">({totalItems})</span>
+                            </h1>
                         </div>
 
                         {/* Job Table */}
-                        <div className="mb-6">
-                            {/* Job Table Header */}
-                            <div className="bg-gray-100 grid grid-cols-4 py-3 px-4 rounded-t-lg text-sm font-medium text-gray-600">
+                        <div className="mb-4 md:mb-6">
+                            {/* Job Table Header - Hide on mobile */}
+                            <div className="hidden md:grid grid-cols-4 py-3 px-4 rounded-t-lg text-sm font-medium text-gray-600 bg-gray-100">
                                 <div>Công việc</div>
                                 <div>Ngày nhận</div>
                                 <div>Trạng thái</div>
@@ -482,7 +538,7 @@ const EmployeeJobsPage: React.FC = () => {
                             </div>
 
                             {/* Job Items */}
-                            <div className="bg-white rounded-b-lg shadow-sm">
+                            <div className="bg-white rounded-lg shadow-sm">
                                 {isLoading ? (
                                     <div className="py-8 text-center text-gray-500">
                                         Đang tải dữ liệu...
@@ -497,22 +553,22 @@ const EmployeeJobsPage: React.FC = () => {
                                     </div>
                                 ) : (
                                     currentPageData.map((job, jobIndex) => (
-                                        <div key={job.id} className={`grid grid-cols-4 items-center py-4 px-4 hover:bg-gray-50 ${jobIndex < currentPageData.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                            <div className="flex items-center">
+                                        <div key={job.id} className={`grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-0 items-start md:items-center py-4 px-4 hover:bg-gray-50 ${jobIndex < currentPageData.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                            <div className="flex items-start md:items-center">
                                                 <div
-                                                    className="p-3 rounded-lg mr-4 flex items-center justify-center w-10 h-10"
+                                                    className="p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex items-center justify-center w-10 h-10"
                                                     style={{ backgroundColor: job.companyColor }}
                                                 >
-                                                    <span className="text-white font-bold text-lg">{job.companyInitial}</span>
+                                                    <span className="text-white font-bold text-base md:text-lg">{job.companyInitial}</span>
                                                 </div>
-                                                <div className="text-left overflow-hidden">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h3 className="font-medium truncate">{job.title}</h3>
-                                                        <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3] whitespace-nowrap">
+                                                <div className="text-left flex-1">
+                                                    <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
+                                                        <h3 className="font-medium text-sm md:text-base truncate">{job.title}</h3>
+                                                        <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3] inline-block md:inline whitespace-nowrap">
                                                             {job.timeRange}
                                                         </span>
                                                     </div>
-                                                    <p className="text-xs text-gray-500 mt-1 flex items-center">
+                                                    <p className="text-xs text-gray-500 mt-1 flex items-center flex-wrap">
                                                         <IoLocationOutline className="mr-1 flex-shrink-0" />
                                                         <span>{job.location}</span>
                                                         <span className="mx-2">•</span>
@@ -520,8 +576,14 @@ const EmployeeJobsPage: React.FC = () => {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="text-sm text-gray-600">{job.date}</div>
-                                            <div>
+
+                                            {/* Mobile-only date */}
+                                            <div className="text-xs text-gray-500 md:hidden mt-2">{job.date}</div>
+
+                                            {/* Desktop-only date */}
+                                            <div className="hidden md:block text-sm text-gray-600">{job.date}</div>
+
+                                            <div className="mt-2 md:mt-0">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${job.status.style}`}>
                                                     <span
                                                         className="w-2 h-2 rounded-full mr-1.5"
@@ -530,7 +592,8 @@ const EmployeeJobsPage: React.FC = () => {
                                                     {job.status.text}
                                                 </span>
                                             </div>
-                                            <div>
+
+                                            <div className="mt-3 md:mt-0">
                                                 {job.action.type === 'rating' ? (
                                                     (() => {
                                                         let jobApplicationId = 0;
@@ -558,12 +621,11 @@ const EmployeeJobsPage: React.FC = () => {
                                                                                 );
                                                                             }
                                                                         } else {
-                                                                            // For static data, we'll use placeholder values
                                                                             openRatingModal(job.title, job.action.employerName || 'Unknown', 0, 0);
                                                                         }
                                                                     }
                                                                 }}
-                                                                className="rating-button-fixed"
+                                                                className="rating-button-fixed w-full md:w-auto text-center"
                                                                 disabled={isRated}
                                                                 style={{
                                                                     backgroundColor: isRated ? '#9CA3AF' : '#F1F2F4',
@@ -579,21 +641,7 @@ const EmployeeJobsPage: React.FC = () => {
                                                 ) : (
                                                     <button
                                                         onClick={() => openJobDetailModal(job.id)}
-                                                        className="rating-button-fixed"
-                                                        style={{
-                                                            backgroundColor: '#F1F2F4 !important',
-                                                            color: '#309689 !important',
-                                                            padding: '6px 16px !important',
-                                                            borderRadius: '6px !important',
-                                                            border: '1px solid #e0e1e3 !important',
-                                                            fontSize: '14px !important',
-                                                            fontWeight: '500 !important',
-                                                            display: 'inline-block !important',
-                                                            cursor: 'pointer !important',
-                                                            textDecoration: 'none !important',
-                                                            outline: 'none !important',
-                                                            boxShadow: 'none !important'
-                                                        }}
+                                                        className="rating-button-fixed w-full md:w-auto text-center"
                                                     >
                                                         {job.action.text}
                                                     </button>
@@ -607,89 +655,31 @@ const EmployeeJobsPage: React.FC = () => {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex justify-center items-center space-x-6 mt-8">
+                            <div className="pagination-container flex justify-center items-center gap-2 md:gap-6 mt-6 md:mt-8">
                                 <button
                                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                                     disabled={currentPage === 1}
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        backgroundColor: currentPage === 1 ? '#f3f4f6' : '#e9f5f3',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: 'none',
-                                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-                                    }}
+                                    className="arrow-button"
                                 >
-                                    <FaChevronLeft style={{
-                                        color: currentPage === 1 ? '#9ca3af' : '#35a79c',
-                                        width: '16px',
-                                        height: '16px'
-                                    }} />
+                                    <FaChevronLeft />
                                 </button>
 
                                 {getPageNumbers().map((pageNumber) => (
-                                    pageNumber === currentPage ? (
-                                        <div
-                                            key={pageNumber}
-                                            style={{
-                                                width: '48px',
-                                                height: '48px',
-                                                borderRadius: '50%',
-                                                backgroundColor: '#35a79c',
-                                                color: 'white',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontWeight: '500',
-                                                fontSize: '14px',
-                                                border: 'none',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {pageNumber.toString().padStart(2, '0')}
-                                        </div>
-                                    ) : (
-                                        <button
-                                            key={pageNumber}
-                                            onClick={() => handlePageChange(pageNumber)}
-                                            className="flex items-center justify-center text-gray-500 font-medium text-sm hover:text-gray-700"
-                                            style={{
-                                                width: '48px',
-                                                height: '48px',
-                                                borderRadius: '50%',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                backgroundColor: 'transparent'
-                                            }}
-                                        >
-                                            {pageNumber.toString().padStart(2, '0')}
-                                        </button>
-                                    )
+                                    <button
+                                        key={pageNumber}
+                                        onClick={() => handlePageChange(pageNumber)}
+                                        className={`page-button ${pageNumber === currentPage ? 'active' : ''}`}
+                                    >
+                                        {pageNumber.toString().padStart(2, '0')}
+                                    </button>
                                 ))}
 
                                 <button
                                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                                     disabled={currentPage === totalPages}
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        backgroundColor: currentPage === totalPages ? '#f3f4f6' : '#e9f5f3',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: 'none',
-                                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-                                    }}
+                                    className="arrow-button"
                                 >
-                                    <FaChevronRight style={{
-                                        color: currentPage === totalPages ? '#9ca3af' : '#35a79c',
-                                        width: '16px',
-                                        height: '16px'
-                                    }} />
+                                    <FaChevronRight />
                                 </button>
                             </div>
                         )}
@@ -697,12 +687,12 @@ const EmployeeJobsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Footer with top border that spans full width */}
+            {/* Footer */}
             <footer className="bg-white p-4 text-center text-gray-500 text-sm border-t border-gray-300 w-full">
                 <p>© 2025 InnoSphere. All rights Reserved</p>
             </footer>
 
-            {/* Rating Modal */}
+            {/* Modals */}
             <RatingModal
                 isOpen={isRatingModalOpen}
                 onClose={() => setIsRatingModalOpen(false)}
@@ -713,7 +703,6 @@ const EmployeeJobsPage: React.FC = () => {
                 onRatingSuccess={handleRatingSuccess}
             />
 
-            {/* Job Detail Modal */}
             <JobDetailModal
                 isOpen={isJobDetailModalOpen}
                 onClose={() => setIsJobDetailModalOpen(false)}

@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../../components/Employee/Header';
 import Sidebar from '../../components/Employee/Sidebar';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { IoLocationOutline } from "react-icons/io5";
-import { FaBookmark } from 'react-icons/fa';
+import { FaBookmark, FaBars } from 'react-icons/fa';
 import { IoCloseCircle } from 'react-icons/io5';
 
 // Add pagination styles
@@ -44,6 +44,8 @@ const paginationStyles = `
 
 // Include CSS directly in component
 const EmployeeFavorites: React.FC = () => {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     // Sample data for favorite jobs
     const favoriteJobs = [
         {
@@ -193,33 +195,44 @@ const EmployeeFavorites: React.FC = () => {
             <style>
                 {`
                 .apply-button {
-                    margin-left: 12px;
                     background-color: #E8F5F3;
                     color: #309689;
-                    padding: 10px 24px;
-                    border-radius: 6px;
-                    font-size: 14px;
+                    padding: 0.625rem 1.5rem;
+                    border-radius: 0.375rem;
+                    font-size: 0.875rem;
                     font-weight: 500;
                     display: flex;
                     align-items: center;
+                    justify-content: center;
                     border: none;
                     cursor: pointer;
+                    transition: all 0.2s ease;
                 }
                 .apply-button:hover {
                     background-color: #d8efeb;
                 }
                 .apply-button svg {
-                    margin-left: 4px;
+                    margin-left: 0.25rem;
                 }
                 .expired-button {
-                    margin-left: 12px;
                     background-color: #E8F5F3;
                     color: #9ca3af;
-                    padding: 10px 24px;
-                    border-radius: 6px;
-                    font-size: 14px;
+                    padding: 0.625rem 1.5rem;
+                    border-radius: 0.375rem;
+                    font-size: 0.875rem;
                     font-weight: 500;
                     border: none;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                @media (max-width: 768px) {
+                    .apply-button,
+                    .expired-button {
+                        width: 100%;
+                        margin-left: 0;
+                    }
                 }
                 ${paginationStyles}
                 `}
@@ -230,56 +243,68 @@ const EmployeeFavorites: React.FC = () => {
                 <Header />
             </div>
 
-            <div className="flex flex-1">
-                {/* Sidebar component with right border */}
-                <div className="border-r border-gray-300">
-                    <Sidebar />
+            <div className="flex flex-1 relative">
+                {/* Mobile Menu Toggle Button */}
+                <button
+                    className="md:hidden fixed top-20 left-4 z-50 bg-[#309689] text-white p-2 rounded-md shadow-lg"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                    <FaBars className="h-5 w-5" />
+                </button>
+
+                {/* Sidebar component */}
+                <div className="md:relative">
+                    <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col bg-white overflow-hidden">
+                <div className="flex-1 flex flex-col bg-white overflow-hidden w-full">
                     {/* Page Content */}
-                    <div className="flex-1 p-6 overflow-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-2xl font-semibold text-gray-800">Công việc yêu thích <span className="text-sm text-gray-500 font-normal ml-2">(17)</span></h1>
+                    <div className="flex-1 p-4 md:p-6 overflow-auto">
+                        <div className="flex justify-between items-center mb-4 md:mb-6">
+                            <h1 className="text-lg md:text-2xl font-semibold text-gray-800">
+                                Công việc yêu thích <span className="text-sm text-gray-500 font-normal ml-2">(17)</span>
+                            </h1>
                         </div>
 
                         {/* Job Listings */}
                         <div className="space-y-4">
                             {favoriteJobs.map(job => (
-                                <div key={job.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex items-center justify-between relative group">
-                                    <div className="flex items-center flex-1">
+                                <div key={job.id} className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between relative group gap-4 md:gap-0">
+                                    <div className="flex items-start md:items-center flex-1">
                                         {/* Company Logo */}
                                         <div
-                                            className="flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center mr-4 text-white font-bold text-xl"
+                                            className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-md flex items-center justify-center mr-3 md:mr-4 text-white font-bold text-base md:text-xl"
                                             style={{ backgroundColor: job.companyColor }}
                                         >
                                             {job.companyIcon || job.companyLogo}
                                         </div>
 
                                         {/* Job Details */}
-                                        <div className="flex-1">
-                                            <div className="flex items-center mb-1">
-                                                <h3 className="font-medium text-gray-800">{job.title}</h3>
-                                                <span className="ml-2 text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3]">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
+                                                <h3 className="font-medium text-gray-800 text-sm md:text-base truncate">{job.title}</h3>
+                                                <span className="text-xs bg-[#EBF5F4] text-[#309689] px-2 py-0.5 rounded-md border border-[#d0e6e3] inline-block md:inline whitespace-nowrap">
                                                     {job.time}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-gray-500 flex items-center">
-                                                <IoLocationOutline className="mr-1" />
-                                                <span>{job.location}</span>
-                                                <span className="mx-2">•</span>
+                                            <p className="text-xs text-gray-500 flex items-center flex-wrap gap-2">
+                                                <span className="flex items-center">
+                                                    <IoLocationOutline className="mr-1" />
+                                                    {job.location}
+                                                </span>
+                                                <span className="hidden md:inline">•</span>
                                                 <span>{job.salary}</span>
 
                                                 {job.expired && (
-                                                    <span className="ml-2 text-xs text-red-500 flex items-center">
+                                                    <span className="text-xs text-red-500 flex items-center">
                                                         <IoCloseCircle className="mr-1 h-3.5 w-3.5" />
                                                         Công việc đã hết hạn
                                                     </span>
                                                 )}
 
                                                 {!job.expired && job.days && (
-                                                    <span className="ml-2 flex items-center">
+                                                    <span className="flex items-center">
                                                         <svg
                                                             className="mr-1 h-3.5 w-3.5 text-gray-400"
                                                             fill="none"
@@ -300,21 +325,21 @@ const EmployeeFavorites: React.FC = () => {
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="flex items-center">
+                                    <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-2">
                                         {/* Bookmark Button */}
                                         <button className="text-[#309689] hover:bg-[#f0f9f7] p-2 rounded-full">
                                             <FaBookmark className="h-5 w-5" />
                                         </button>
 
-                                        {/* Status/Apply Button - Using pure HTML/CSS */}
+                                        {/* Status/Apply Button */}
                                         {job.expired ? (
-                                            <div className="expired-button">
+                                            <div className="expired-button w-full md:w-auto">
                                                 Đã Hết Hạn
                                             </div>
                                         ) : (
-                                            <button className="apply-button">
+                                            <button className="apply-button w-full md:w-auto">
                                                 Ứng Tuyển Ngay
-                                                <FiChevronRight />
+                                                <FiChevronRight className="ml-1 h-4 w-4" />
                                             </button>
                                         )}
                                     </div>
@@ -323,30 +348,24 @@ const EmployeeFavorites: React.FC = () => {
                         </div>
 
                         {/* Pagination */}
-                        <div className="flex justify-center items-center space-x-6 mt-8">
-                            <button className="pagination-arrow">
-                                <FiChevronLeft />
+                        <div className="flex justify-center items-center space-x-2 md:space-x-6 mt-6 md:mt-8">
+                            <button className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-[#e9f5f3]">
+                                <FiChevronLeft className="w-4 h-4 text-[#35a79c]" />
                             </button>
 
-                            {/* Active page number */}
-                            <div className="active-page-button">
+                            {/* Page numbers */}
+                            <button className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-[#35a79c] text-white text-sm md:text-base font-medium">
                                 01
-                            </div>
+                            </button>
 
-                            <button className="flex items-center justify-center text-gray-500 font-medium text-sm">
-                                02
-                            </button>
-                            <button className="flex items-center justify-center text-gray-500 font-medium text-sm">
-                                03
-                            </button>
-                            <button className="flex items-center justify-center text-gray-500 font-medium text-sm">
-                                04
-                            </button>
-                            <button className="flex items-center justify-center text-gray-500 font-medium text-sm">
-                                05
-                            </button>
-                            <button className="pagination-arrow">
-                                <FiChevronRight />
+                            {[2, 3, 4, 5].map(num => (
+                                <button key={num} className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-500 text-sm md:text-base font-medium hover:bg-gray-100">
+                                    {num.toString().padStart(2, '0')}
+                                </button>
+                            ))}
+
+                            <button className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-[#e9f5f3]">
+                                <FiChevronRight className="w-4 h-4 text-[#35a79c]" />
                             </button>
                         </div>
                     </div>
