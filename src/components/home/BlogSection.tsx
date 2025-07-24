@@ -76,20 +76,19 @@ const BlogSection: React.FC = () => {
     }, []);
 
     return (
-        <section className="py-16 bg-white">
+        <section className="py-8 md:py-16 bg-white">
             <div className="container mx-auto px-4 max-w-[90%]">
-                <div className="mb-8">
+                <div className="mb-6 md:mb-8">
                     <div className="text-left">
-                        <h2 className="text-4xl font-bold text-black text-left">Tin tức & Quảng cáo</h2>
-                        <p className="text-gray-600 mt-2 text-left">
+                        <h2 className="text-2xl md:text-4xl font-bold text-black text-left">Tin tức & Quảng cáo</h2>
+                        <p className="text-sm md:text-base text-gray-600 mt-2 text-left">
                             Cập nhật những xu hướng tuyển dụng mới nhất và tìm các công việc phù hợp.
                         </p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 mt-4 md:mt-8">
                     {adPosts.map((post, i) => {
-                        // Use a more robust check: if the post is strictly the hardcoded post (by reference), or if its id and title match the hardcoded post
                         const isHardcoded =
                             (hardcodedPosts[i] && post.id === hardcodedPosts[i].id && post.title === hardcodedPosts[i].title && !post.employerUserName);
                         return (
@@ -98,24 +97,23 @@ const BlogSection: React.FC = () => {
                                     <img
                                         src={post.image}
                                         alt={post.title}
-                                        className="w-full h-72 object-cover transition-transform hover:scale-105 duration-500"
-                                        style={{ objectFit: 'cover', width: '100%', height: '18rem' }}
+                                        className="w-full h-48 md:h-72 object-cover transition-transform hover:scale-105 duration-500"
+                                        style={{ objectFit: 'cover', width: '100%' }}
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
                                             target.src = (hardcodedPosts[i] && hardcodedPosts[i].image) || 'https://via.placeholder.com/600x400?text=Blog+Image';
                                         }}
                                     />
-                                    <div className="absolute top-4 left-4 bg-[#309689] text-white py-1 px-4 rounded-full text-sm">
+                                    <div className="absolute top-4 left-4 bg-[#309689] text-white py-1 px-3 md:px-4 rounded-full text-xs md:text-sm">
                                         Ads
                                     </div>
                                 </div>
 
-                                <div className="p-6 text-left">
-                                    <div className="text-gray-500 text-sm mb-3 font-medium text-left">{isHardcoded ? hardcodedPosts[i].date : post.date}</div>
-                                    <h3 className="text-2xl font-bold mb-2 leading-tight text-left">{isHardcoded ? hardcodedPosts[i].title : post.title}</h3>
-                                    {/* Only show employerUserName if this is an API ad */}
+                                <div className="p-4 md:p-6 text-left">
+                                    <div className="text-gray-500 text-xs md:text-sm mb-2 md:mb-3 font-medium text-left">{isHardcoded ? hardcodedPosts[i].date : post.date}</div>
+                                    <h3 className="text-xl md:text-2xl font-bold mb-2 leading-tight text-left line-clamp-2">{isHardcoded ? hardcodedPosts[i].title : post.title}</h3>
                                     {post.employerUserName && !isHardcoded && (
-                                        <div className="text-gray-700 text-base mb-2 text-left font-medium">{post.employerUserName}</div>
+                                        <div className="text-gray-700 text-sm md:text-base mb-2 text-left font-medium">{post.employerUserName}</div>
                                     )}
                                 </div>
                             </div>

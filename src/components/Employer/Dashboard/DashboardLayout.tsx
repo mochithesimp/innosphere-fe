@@ -1,39 +1,31 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 import Header from '../Header';
 import Sidebar from './Sidebar';
 
 interface DashboardLayoutProps {
-    children: ReactNode;
+    children: React.ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-    // Note: Profile checking is now handled by EmployerLayout to prevent duplicate checks
-
     return (
-        <div className="flex flex-col min-h-screen bg-gray-100">
-            {/* Header component with bottom border */}
-            <div className="w-full">
-                <Header />
-            </div>
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <Header />
 
-            <div className="flex flex-1">
-                {/* Sidebar component with right border */}
-                <div className="border-r border-gray-300">
-                    <Sidebar />
+            {/* Main Content */}
+            <div className="flex flex-1 pt-16">
+                {/* Desktop Sidebar */}
+                <div className="hidden md:block">
+                    <Sidebar isOpen={true} onClose={() => { }} />
                 </div>
 
-                {/* Main Content with white background */}
-                <div className="flex-1 flex flex-col bg-white">
-                    {/* Dashboard Content */}
-                    <div className="flex-1 p-6 overflow-auto">
+                {/* Content Area */}
+                <main className="flex-1 min-h-screen">
+                    <div className="p-4 md:p-6">
                         {children}
                     </div>
-                </div>
+                </main>
             </div>
-
-            <footer className="bg-white py-4 text-center text-gray-500 text-sm border-t">
-                © 2025 InnoSphere. All rights Reserved
-            </footer>
         </div>
     );
 };

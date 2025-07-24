@@ -29,6 +29,8 @@ const HeroBanner: React.FC = () => {
   const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
   const [employerProfile, setEmployerProfile] = useState<EmployerProfileModel | null>(null);
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   useEffect(() => {
     const fetchCities = async () => {
       try {
@@ -196,13 +198,20 @@ const HeroBanner: React.FC = () => {
                 <img
                   src="/logo.png"
                   alt="InnoSphere"
-                  className="h-8 w-8 mr-2"
+                  className="h-6 w-6 md:h-8 md:w-8 mr-2"
                 />
-                <span className="font-bold text-xl text-white">InnoSphere</span>
+                <span className="font-bold text-lg md:text-xl text-white">InnoSphere</span>
               </Link>
             </div>
 
-            {/* Main Navigation */}
+            {/* Mobile Menu Button */}
+            <button className="md:hidden text-white p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Main Navigation - Desktop */}
             <nav className="hidden md:flex items-center space-x-8">
               <Link
                 to="/"
@@ -236,8 +245,105 @@ const HeroBanner: React.FC = () => {
               </Link>
             </nav>
 
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+              <div className="absolute top-16 left-0 right-0 bg-[#0f172a] md:hidden z-50 py-4 px-4 border-t border-gray-700">
+                {isLoggedIn ? (
+                  <div className="flex flex-col space-y-4">
+                    {/* User Avatar and Info */}
+                    <div className="flex items-center space-x-3 pb-4 border-b border-gray-700">
+                      <button
+                        onClick={handleAvatarClick}
+                        className="w-10 h-10 bg-[#309689] rounded-full flex items-center justify-center hover:bg-[#277a6e] transition-colors overflow-hidden"
+                        title="Đi tới Dashboard"
+                      >
+                        <img
+                          src={
+                            token && getRoleFromToken(token) === "Worker"
+                              ? workerProfile?.avatarUrl || "/avatar.jpg"
+                              : token && getRoleFromToken(token) === "Employer"
+                                ? employerProfile?.avatarUrl || "/avatar.jpg"
+                                : "/avatar.jpg"
+                          }
+                          alt="User Avatar"
+                          className="w-full h-full rounded-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/avatar.jpg";
+                          }}
+                        />
+                      </button>
+                      <div className="text-white">
+                        <p className="text-sm font-medium">
+                          {token && getRoleFromToken(token)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <Link to="/" className="text-white hover:text-[#309689] transition-colors">
+                      Trang chủ
+                    </Link>
+                    <Link to="/jobs" className="text-white hover:text-[#309689] transition-colors">
+                      Công việc
+                    </Link>
+                    <Link to="/about" className="text-white hover:text-[#309689] transition-colors">
+                      Về chúng tôi
+                    </Link>
+                    <Link to="/contact" className="text-white hover:text-[#309689] transition-colors">
+                      Liên hệ
+                    </Link>
+                    <Link to="/ads" className="text-white hover:text-[#309689] transition-colors">
+                      Quảng cáo
+                    </Link>
+
+                    {/* Logout Button */}
+                    <div className="pt-4 border-t border-gray-700">
+                      <Link
+                        to="/login"
+                        onClick={() => {
+                          handleLogout();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="text-red-500 hover:text-red-400 transition-colors flex items-center space-x-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 6.707 6.293a1 1 0 00-1.414 1.414L8.586 11l-3.293 3.293a1 1 0 101.414 1.414L10 12.414l3.293 3.293a1 1 0 001.414-1.414L11.414 11l3.293-3.293z" clipRule="evenodd" />
+                        </svg>
+                        <span>Đăng xuất</span>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col space-y-4">
+                    <Link to="/" className="text-white hover:text-[#309689] transition-colors">
+                      Trang chủ
+                    </Link>
+                    <Link to="/jobs" className="text-white hover:text-[#309689] transition-colors">
+                      Công việc
+                    </Link>
+                    <Link to="/about" className="text-white hover:text-[#309689] transition-colors">
+                      Về chúng tôi
+                    </Link>
+                    <Link to="/contact" className="text-white hover:text-[#309689] transition-colors">
+                      Liên hệ
+                    </Link>
+                    <Link to="/ads" className="text-white hover:text-[#309689] transition-colors">
+                      Quảng cáo
+                    </Link>
+                    <Link to="/login" className="text-white hover:text-[#309689] transition-colors">
+                      Đăng nhập
+                    </Link>
+                    <Link to="/register" className="bg-[#309689] hover:bg-[#277a6e] text-white px-4 py-2 rounded-md transition-colors text-center">
+                      Đăng ký
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Authentication Buttons */}
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               {isLoggedIn ? (
                 <div className="flex items-center space-x-3">
                   {/* User Avatar */}
@@ -293,15 +399,15 @@ const HeroBanner: React.FC = () => {
 
           {/* Banner Content */}
           <div className="max-w-4xl mx-auto text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
               Kết Nối Nhanh, Làm Việc Ngay!
             </h1>
-            <p className="text-gray-300 mb-8">
+            <p className="text-sm md:text-base text-gray-300 mb-8">
               Kết nối nhân lực với cơ hội: Giải pháp cho công việc ngắn hạn.
             </p>
 
-            {/* Search Bar - Matching Image Exactly */}
-            <div className="flex flex-col md:flex-row rounded-lg overflow-hidden max-w-3xl mx-auto shadow-sm">
+            {/* Search Bar */}
+            <div className="flex flex-col space-y-2 md:space-y-0 md:flex-row rounded-lg overflow-hidden max-w-3xl mx-auto shadow-sm">
               {/* Job or company input */}
               <div className="flex-1 bg-white">
                 <input
@@ -309,14 +415,14 @@ const HeroBanner: React.FC = () => {
                   placeholder="Công việc hoặc công ty"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
-                  className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none border-r border-gray-100"
+                  className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none md:border-r border-gray-100"
                 />
               </div>
 
               {/* Location dropdown */}
               <div className="flex-1 bg-white">
                 <select
-                  className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none border-r border-gray-100"
+                  className="w-full h-full px-4 py-3 text-sm text-gray-600 focus:outline-none md:border-r border-gray-100"
                   value={selectedCityId ?? ''}
                   onChange={(e) => setSelectedCityId(Number(e.target.value))}
                 >
@@ -343,10 +449,10 @@ const HeroBanner: React.FC = () => {
                 </select>
               </div>
 
-              {/* Search button → thêm onClick={handleSearch} */}
+              {/* Search button */}
               <div
                 onClick={handleSearch}
-                className="bg-[#309689] flex items-center justify-center px-6 py-3 text-sm text-white cursor-pointer hover:bg-[#277a6e]"
+                className="w-full md:w-auto bg-[#309689] flex items-center justify-center px-6 py-3 text-sm text-white cursor-pointer hover:bg-[#277a6e]"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -368,8 +474,8 @@ const HeroBanner: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-10 mt-10 text-center">
-            <div className="flex items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 mt-10 max-w-3xl mx-auto">
+            <div className="flex items-center justify-center gap-2">
               <div className="bg-[#309689] p-2 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -386,14 +492,13 @@ const HeroBanner: React.FC = () => {
                   />
                 </svg>
               </div>
-              <div>
-                {/* <h4 className="font-bold text-xl text-white">25,850</h4> */}
+              <div className="text-center">
                 <h4 className="font-bold text-xl text-white">{jobCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Công việc</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <div className="bg-[#309689] p-2 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -410,15 +515,13 @@ const HeroBanner: React.FC = () => {
                   />
                 </svg>
               </div>
-              <div>
-                {/* <h4 className="font-bold text-xl text-white">10,250</h4>
-                 */}
+              <div className="text-center">
                 <h4 className="font-bold text-xl text-white">{workerCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Ứng viên</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <div className="bg-[#309689] p-2 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -435,8 +538,7 @@ const HeroBanner: React.FC = () => {
                   />
                 </svg>
               </div>
-              <div>
-                {/* <h4 className="font-bold text-xl text-white">18,400</h4> */}
+              <div className="text-center">
                 <h4 className="font-bold text-xl text-white">{employerCount.toLocaleString()}</h4>
                 <p className="text-gray-300 text-sm">Doanh nghiệp</p>
               </div>
@@ -445,19 +547,19 @@ const HeroBanner: React.FC = () => {
         </div>
       </div>
 
-      {/* Partner Logos Section - Full Width */}
-      <div className="w-full bg-black py-10">
+      {/* Partner Logos Section */}
+      <div className="w-full bg-black py-8 md:py-10">
         <div className="container mx-auto px-4 max-w-[90%]">
-          <div className="flex flex-wrap justify-center md:justify-between items-center gap-8 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4 items-center justify-items-center">
             {[1, 2, 3, 4, 5].map((num) => (
               <div
                 key={num}
-                className="w-40 mx-4 md:mx-0 flex items-center justify-center"
+                className="w-32 md:w-40 flex items-center justify-center"
               >
                 <img
                   src={`/hero${num}.png`}
                   alt={`Partner Logo ${num}`}
-                  className="h-16 md:h-20 object-contain filter invert brightness-0"
+                  className="h-12 md:h-16 lg:h-20 object-contain filter invert brightness-0"
                 />
               </div>
             ))}

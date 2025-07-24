@@ -14,6 +14,7 @@ const Header: React.FC = () => {
     const isLoggedIn = token;
     const [workerProfile, setWorkerProfile] = useState<WorkerProfileResponse | null>(null);
     const [employerProfile, setEmployerProfile] = useState<EmployerProfileModel | null>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Load worker and employer profiles to get avatars
     const loadProfiles = async () => {
@@ -87,18 +88,34 @@ const Header: React.FC = () => {
     };
 
     return (
-        <header className="bg-black text-white py-4">
+        <header className="bg-black text-white py-4 relative">
             <div className="container mx-auto px-4 max-w-[90%]">
                 <div className="flex items-center justify-between">
                     {/* Logo */}
                     <div className="flex items-center">
                         <Link to="/" className="flex items-center">
-                            <img src="/logo.png" alt="InnoSphere Logo" className="h-8 mr-2" />
-                            <span className="font-semibold text-xl">InnoSphere</span>
+                            <img src="/logo.png" alt="InnoSphere Logo" className="h-6 w-6 md:h-8 md:w-8 mr-2" />
+                            <span className="font-semibold text-lg md:text-xl">InnoSphere</span>
                         </Link>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Mobile Menu Button */}
+                    <button
+                        className="md:hidden text-white p-2"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+                            />
+                        </svg>
+                    </button>
+
+                    {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center">
                         <Link
                             to="/"
@@ -132,8 +149,8 @@ const Header: React.FC = () => {
                         </Link>
                     </nav>
 
-                    {/* Auth buttons */}
-                    <div className="flex items-center">
+                    {/* Desktop Auth buttons */}
+                    <div className="hidden md:flex items-center">
                         {isLoggedIn ? (
                             <div className="flex items-center space-x-3">
                                 {/* User Avatar */}
@@ -183,6 +200,105 @@ const Header: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Mobile Menu */}
+                {isMobileMenuOpen && (
+                    <div className="md:hidden absolute top-full left-0 right-0 bg-black border-t border-gray-800 py-4 z-50">
+                        <nav className="flex flex-col space-y-2">
+                            <Link
+                                to="/"
+                                className={`px-4 py-2 text-base ${path === '/' ? 'font-bold text-white' : 'text-gray-300 hover:text-[#309689]'}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Trang chủ
+                            </Link>
+                            <Link
+                                to="/jobs"
+                                className={`px-4 py-2 text-base ${path === '/jobs' || path.includes('/job/') ? 'font-bold text-white' : 'text-gray-300 hover:text-[#309689]'}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Công việc
+                            </Link>
+                            <Link
+                                to="/about"
+                                className={`px-4 py-2 text-base ${path === '/about' ? 'font-bold text-white' : 'text-gray-300 hover:text-[#309689]'}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Về chúng tôi
+                            </Link>
+                            <Link
+                                to="/contact"
+                                className={`px-4 py-2 text-base ${path === '/contact' ? 'font-bold text-white' : 'text-gray-300 hover:text-[#309689]'}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Liên hệ
+                            </Link>
+                            <Link
+                                to="/ads"
+                                className={`px-4 py-2 text-base ${path === '/ads' ? 'font-bold text-white' : 'text-gray-300 hover:text-[#309689]'}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Quảng cáo
+                            </Link>
+
+                            {/* Mobile Auth Buttons */}
+                            {isLoggedIn ? (
+                                <div className="flex flex-col space-y-2 px-4 pt-2 border-t border-gray-800">
+                                    <div className="flex items-center space-x-3">
+                                        <button
+                                            onClick={handleAvatarClick}
+                                            className="w-8 h-8 bg-[#309689] rounded-full flex items-center justify-center hover:bg-[#277a6e] transition-colors overflow-hidden"
+                                            title="Đi tới Dashboard"
+                                        >
+                                            <img
+                                                src={
+                                                    token && getRoleFromToken(token) === "Worker"
+                                                        ? workerProfile?.avatarUrl || "/avatar.jpg"
+                                                        : token && getRoleFromToken(token) === "Employer"
+                                                            ? employerProfile?.avatarUrl || "/avatar.jpg"
+                                                            : "/avatar.jpg"
+                                                }
+                                                alt="User Avatar"
+                                                className="w-full h-full rounded-full object-cover"
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.src = "/avatar.jpg";
+                                                }}
+                                            />
+                                        </button>
+                                        <Link
+                                            to="/login"
+                                            onClick={() => {
+                                                handleLogout();
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className="text-white hover:text-[#309689] text-base"
+                                        >
+                                            Đăng xuất
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col space-y-2 px-4 pt-2 border-t border-gray-800">
+                                    <Link
+                                        to="/login"
+                                        className="text-white hover:text-[#309689] text-base"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        Đăng nhập
+                                    </Link>
+                                    <Link
+                                        to="/register"
+                                        className="bg-[#309689] hover:bg-[#277a6e] text-white px-4 py-2 rounded-md text-base text-center"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        Đăng ký
+                                    </Link>
+                                </div>
+                            )}
+                        </nav>
+                    </div>
+                )}
             </div>
         </header>
     );

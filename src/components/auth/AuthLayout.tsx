@@ -10,21 +10,23 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
     backgroundImage = '/loginLogo.png'
 }) => {
     return (
-        <div className="flex h-screen w-full bg-white fixed">
+        <div className="flex min-h-screen w-full bg-white">
             {/* Left side - Form Content */}
-            <div className="w-full lg:w-3/5 p-8 flex flex-col relative bg-white">
-                {/* Logo - Fixed position at the top */}
-                <div className="absolute top-8 left-8 z-10">
+            <div className="w-full lg:w-3/5 flex flex-col relative bg-white">
+                {/* Logo - Fixed at the top */}
+                <div className="sticky top-0 bg-white z-10 p-8 border-b">
                     <div className="flex items-center gap-3">
                         <img src="/logo.png" alt="InnoSphere Logo" className="w-8 h-8" />
                         <span className="text-xl font-medium">InnoSphere</span>
                     </div>
                 </div>
 
-                {/* Form Container - Centered */}
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="max-w-md w-full px-4">
-                        {children}
+                {/* Form Container - Scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="flex items-start justify-center px-8 py-6">
+                        <div className="w-full max-w-md">
+                            {children}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -37,7 +39,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
                         backgroundImage: `url('${backgroundImage}')`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
-                        transform: 'scale(1.05)'
                     }}
                 >
                 </div>
