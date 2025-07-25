@@ -31,14 +31,15 @@ const AccountsContent: React.FC = () => {
             .slice(0, 2);
     };
 
-    // Get user status (mock status since API doesn't provide this)
-    const getUserStatus = (index: number) => {
-        const statuses = [
-            { text: 'Chấp nhận', color: 'text-green-500' },
-            { text: 'Đang giải quyết', color: 'text-blue-500' },
-            { text: 'Từ chối', color: 'text-red-500' }
-        ];
-        return statuses[index % statuses.length];
+    // Get user type label and color
+    const getUserTypeLabel = (user: UserModel) => {
+        if (user.roles.includes('Employer')) {
+            return { text: 'Employer', color: 'text-blue-500' };
+        } else if (user.roles.includes('Worker')) {
+            return { text: 'Worker', color: 'text-green-500' };
+        } else {
+            return { text: 'Unknown', color: 'text-gray-500' };
+        }
     };
 
     // Format date to Vietnamese time format
@@ -288,7 +289,7 @@ const AccountsContent: React.FC = () => {
                             </div>
                         ) : (
                             accountUsers.map((user, index) => {
-                                const status = getUserStatus(index);
+                                const status = getUserTypeLabel(user);
                                 return (
                                     <div key={user.id} className="flex items-center justify-between py-3">
                                         <div className="flex items-center space-x-3">
@@ -298,8 +299,8 @@ const AccountsContent: React.FC = () => {
                                                 </span>
                                             </div>
                                             <div>
-                                                <h3 className="font-medium text-gray-900">{user.fullName}</h3>
-                                                <p className="text-sm text-gray-500">{getTimeFormat(index)}</p>
+                                                <h3 className="font-medium text-gray-900 text-left">{user.fullName}</h3>
+                                                <p className="text-sm text-gray-500 text-left">{getTimeFormat(index)}</p>
                                             </div>
                                         </div>
                                         <span className={`text-sm font-medium ${status.color}`}>
