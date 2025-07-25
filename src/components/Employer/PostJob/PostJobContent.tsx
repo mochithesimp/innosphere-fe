@@ -221,7 +221,7 @@ const PostJobContent: React.FC = () => {
             setPayosOrderCode(orderCode);
 
             // Divide amount by 1000 for PayOS QR payment (remove last 3 zeros)
-            const payosAmount = Math.round(parseInt(selectedPlan.price) / 1000);
+            const payosAmount = Math.round(parseInt(selectedPlan.price));
 
             // Generate short description (max 25 characters for PayOS)
             const shortDescription = selectedPlan.name === 'Doanh Nghiệp' ? 'Goi Doanh Nghiep' :
@@ -466,8 +466,8 @@ const PostJobContent: React.FC = () => {
         window.handleCaoCapClick = () => {
             handleSelectPlan({
                 name: 'Cao cấp',
-                price: '4600000',
-                formattedPrice: '4.600.000VNĐ',
+                price: '460000',
+                formattedPrice: '460.000VNĐ',
                 subscriptionPackageId: 2
             });
         };
@@ -574,9 +574,15 @@ const PostJobContent: React.FC = () => {
                     <div className="absolute top-0 right-0 bg-[#309689] text-white text-xs font-medium px-3 py-1 rounded-bl-lg rounded-tr-lg">
                         Khuyến Nghi
                     </div>
+                    <div className="absolute top-0 left-0 bg-red-500 text-white text-xs font-medium px-3 py-1 rounded-br-lg rounded-tl-lg">
+                        -90%
+                    </div>
                     <h3 className="text-xl font-bold text-[#309689] mb-4 text-center">Cao Cấp</h3>
                     <div className="text-xl font-bold text-[#309689] mb-4">
-                        4.600.000VNĐ <span className="text-sm font-normal text-gray-500">/tháng</span>
+                        <div className="flex flex-col">
+                            <span className="text-gray-500 line-through text-lg">4.600.000VNĐ</span>
+                            <span>460.000VNĐ <span className="text-sm font-normal text-gray-500">/tháng</span></span>
+                        </div>
                     </div>
                     <div className="space-y-2 mb-6">
                         <div className="flex items-start">

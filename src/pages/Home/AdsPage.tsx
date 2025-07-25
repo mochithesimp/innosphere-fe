@@ -341,10 +341,20 @@ const AdsPage: React.FC = () => {
 
                                     <div className="p-6 pb-2">
                                         <h2 className="text-5xl font-bold">
-                                            {new Intl.NumberFormat('vi-VN', {
-                                                style: 'currency',
-                                                currency: 'VND'
-                                            }).format(pkg.price)}
+                                            {pkg.packageName === "Gói Doanh Nghiệp" ? (
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="bg-red-500 text-white text-sm px-2 py-1 rounded">-90%</span>
+                                                        <span className="text-gray-500 line-through text-3xl">4.000.000 ₫</span>
+                                                    </div>
+                                                    <span>400.000 ₫</span>
+                                                </div>
+                                            ) : (
+                                                new Intl.NumberFormat('vi-VN', {
+                                                    style: 'currency',
+                                                    currency: 'VND'
+                                                }).format(pkg.price)
+                                            )}
                                         </h2>
                                     </div>
 
