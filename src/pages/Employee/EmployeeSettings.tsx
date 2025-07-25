@@ -13,6 +13,7 @@ import { WorkerService, WorkerProfileModel } from '../../services/workerService'
 import { getUserIdFromToken } from '../../utils/jwtHelper';
 import Swal from 'sweetalert2';
 import FirebaseStorageService from '../../services/firebaseStorageService';
+import { FaBars } from 'react-icons/fa';
 
 const settingStyles = `
     .tab-item {
@@ -765,6 +766,8 @@ const EmployeeSettings: React.FC = () => {
         setShowConfirmPassword(!showConfirmPassword);
     };
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             <style>
@@ -776,23 +779,31 @@ const EmployeeSettings: React.FC = () => {
                 <Header />
             </div>
 
-            <div className="flex flex-1">
-                {/* Sidebar component with right border */}
-                <div className="border-r border-gray-300">
-                    <Sidebar />
+            <div className="flex flex-1 relative">
+                {/* Mobile Menu Toggle Button */}
+                <button
+                    className="md:hidden fixed top-20 left-4 z-50 bg-[#309689] text-white p-2 rounded-md shadow-lg"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                    <FaBars className="h-5 w-5" />
+                </button>
+
+                {/* Sidebar component */}
+                <div className="md:relative">
+                    <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col bg-white overflow-hidden">
+                <div className="flex-1 flex flex-col bg-white overflow-hidden w-full">
                     {/* Page Content */}
-                    <div className="flex-1 p-6 overflow-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-2xl font-semibold text-gray-800">Cài đặt</h1>
+                    <div className="flex-1 p-4 md:p-6 overflow-auto">
+                        <div className="flex justify-between items-center mb-4 md:mb-6">
+                            <h1 className="text-lg md:text-2xl font-semibold text-gray-800">Cài đặt</h1>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="border-b border-gray-200 mb-6">
-                            <div className="flex">
+                        {/* Tabs - Scrollable on mobile */}
+                        <div className="border-b border-gray-200 mb-4 md:mb-6 overflow-x-auto">
+                            <div className="flex whitespace-nowrap">
                                 <button
                                     className={`tab-item ${activeTab === 'basic' ? 'tab-active' : ''}`}
                                     onClick={() => setActiveTab('basic')}
@@ -824,32 +835,12 @@ const EmployeeSettings: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Basic Information Form */}
+                        {/* Rest of the content remains the same, just update grid layouts to be responsive */}
                         {activeTab === 'basic' && (
                             <div>
-                                <style>
-                                    {`
-                                    .custom-save-button {
-                                        background-color: #309689;
-                                        color: white;
-                                        padding: 10px 24px;
-                                        border-radius: 6px;
-                                        font-size: 14px;
-                                        font-weight: 500;
-                                        display: inline-block;
-                                        border: none;
-                                        cursor: pointer;
-                                        text-align: center;
-                                    }
-                                    .custom-save-button:hover {
-                                        background-color: #277b70;
-                                    }
-                                    `}
-                                </style>
+                                <h2 className="text-base md:text-lg font-medium text-gray-800 mb-4 text-left">Thông tin cơ bản</h2>
 
-                                <h2 className="text-lg font-medium text-gray-800 mb-4 text-left">Thông tin cơ bản</h2>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                                     {/* Left Column - Avatar Upload */}
                                     <div className="md:col-span-1">
                                         <div className="mb-6">
@@ -1829,20 +1820,20 @@ const EmployeeSettings: React.FC = () => {
                             </div>
                         )}
                     </div>
-
-                    {/* Footer */}
-                    <div className="p-4 border-t border-gray-200 text-center text-xs text-gray-500">
-                        © 2025 InnoSphere. All rights Reserved
-                    </div>
                 </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-200 text-center text-xs text-gray-500">
+                © 2025 InnoSphere. All rights Reserved
             </div>
 
             {/* CV Modal */}
             <CVModal
                 isOpen={isCVModalOpen}
                 onClose={() => setIsCVModalOpen(false)}
-                workerId={workerProfile?.workerId || 0}
                 onResumeAdded={handleResumeAdded}
+                workerId={workerProfile?.workerId || 0}
             />
         </div>
     );

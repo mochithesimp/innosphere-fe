@@ -23,20 +23,18 @@ const EmployerLayout: React.FC = () => {
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             {/* Header component with bottom border */}
-            <div className="w-full">
-                <Header />
-            </div>
+            <Header />
 
             <div className="flex flex-1">
-                {/* Sidebar component with right border */}
-                <div className="border-r border-gray-300">
-                    <Sidebar />
+                {/* Sidebar component - hidden on mobile */}
+                <div className="hidden md:block border-r border-gray-300">
+                    <Sidebar isOpen={true} onClose={() => { }} />
                 </div>
 
                 {/* Main Content with white background */}
                 <div className="flex-1 flex flex-col bg-white">
                     {/* Dashboard Content */}
-                    <div className="flex-1 p-6 overflow-auto">
+                    <div className="flex-1 p-4 md:p-6 overflow-auto">
                         <Outlet />
                     </div>
                 </div>

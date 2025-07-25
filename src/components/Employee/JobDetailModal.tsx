@@ -103,33 +103,33 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
                 {/* Modal Header */}
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Chi Tiết Công Việc</h2>
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+                    <h2 className="text-xl md:text-2xl font-bold">Chi Tiết Công Việc</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                        className="text-gray-400 hover:text-gray-600 text-xl md:text-2xl font-bold"
                     >
                         ×
                     </button>
                 </div>
 
                 {/* Modal Content */}
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                     {/* Top section with job title and metadata */}
-                    <div className="mb-8">
+                    <div className="mb-6 md:mb-8">
                         {/* Time posted badge */}
-                        <div className="flex items-center mb-6">
-                            <div className="text-[#309689] bg-[#ecf8f6] text-sm py-1 px-3 rounded-full">
+                        <div className="flex items-center mb-4 md:mb-6">
+                            <div className="text-[#309689] bg-[#ecf8f6] text-xs md:text-sm py-1 px-2 md:px-3 rounded-full">
                                 {getTimeAgo(jobData.postedAt)}
                             </div>
                         </div>
 
                         {/* Job title and company */}
-                        <div className="flex items-start mb-6">
-                            <div className="mr-4">
-                                <div className="w-12 h-12 overflow-hidden">
+                        <div className="flex items-start mb-4 md:mb-6">
+                            <div className="mr-3 md:mr-4">
+                                <div className="w-10 h-10 md:w-12 md:h-12 overflow-hidden">
                                     <img
                                         src={jobData.companyLogoUrl || "https://th.bing.com/th/id/OIP.1d7TQI67pwfr0F5jqTgD1AHaGw?rs=1&pid=ImgDetMain"}
                                         alt={jobData.companyName}
@@ -138,75 +138,50 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
                                 </div>
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold mb-1 text-left">{jobData.title}</h2>
-                                <p className="text-gray-700 text-left">{jobData.companyName}</p>
+                                <h2 className="text-xl md:text-2xl font-bold mb-1 text-left">{jobData.title}</h2>
+                                <p className="text-sm md:text-base text-gray-700 text-left">{jobData.companyName}</p>
                             </div>
                         </div>
 
                         {/* Job metadata icons with Apply button */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-6">
-                                <div className="flex items-center text-gray-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                            <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-6">
+                                <div className="flex items-center text-gray-600 text-sm md:text-base">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                     <span>F&B</span>
                                 </div>
-                                <div className="flex items-center text-gray-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="flex items-center text-gray-600 text-sm md:text-base">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span>{formatTime(jobData.startTime)}-{formatTime(jobData.endTime)}</span>
                                 </div>
-                                <div className="flex items-center text-gray-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="flex items-center text-gray-600 text-sm md:text-base">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span>{jobData.hourlyRate?.toLocaleString()}đ/giờ</span>
                                 </div>
-                                <div className="flex items-center text-gray-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="flex items-center text-gray-600 text-sm md:text-base">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2 text-[#309689]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    <span>{jobData.cityName}</span>
+                                    <span className="line-clamp-1">{jobData.cityName}</span>
                                 </div>
                             </div>
 
                             {/* Apply button */}
-                            <div style={{ width: '280px' }}>
+                            <div className="w-full md:w-[280px]">
                                 {jobApplication.status === 'PENDING' ? (
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <div
-                                            style={{
-                                                backgroundColor: '#9CA3AF',
-                                                borderRadius: '4px',
-                                                padding: '8px 12px',
-                                                textAlign: 'center',
-                                                color: 'white',
-                                                fontWeight: '500',
-                                                flex: 1,
-                                                cursor: 'not-allowed',
-                                                opacity: 0.7,
-                                                fontSize: '13px'
-                                            }}
-                                        >
+                                    <div className="flex flex-col md:flex-row gap-2 md:gap-3">
+                                        <div className="w-full md:flex-1 bg-gray-400 rounded px-3 py-2 text-center text-white font-medium text-sm opacity-70 cursor-not-allowed">
                                             Đang chờ duyệt
                                         </div>
                                         <button
-                                            style={{
-                                                backgroundColor: '#EF4444',
-                                                borderRadius: '4px',
-                                                padding: '8px 12px',
-                                                textAlign: 'center',
-                                                color: 'white',
-                                                fontWeight: '500',
-                                                flex: 1,
-                                                cursor: isUpdatingStatus ? 'not-allowed' : 'pointer',
-                                                opacity: isUpdatingStatus ? 0.7 : 1,
-                                                fontSize: '13px',
-                                                border: 'none'
-                                            }}
+                                            className="w-full md:flex-1 bg-red-500 rounded px-3 py-2 text-center text-white font-medium text-sm disabled:opacity-70 disabled:cursor-not-allowed"
                                             onClick={handleCancelApplication}
                                             disabled={isUpdatingStatus}
                                         >
@@ -214,77 +189,43 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
                                         </button>
                                     </div>
                                 ) : jobApplication.status === 'ACCEPTED' ? (
-                                    <div
-                                        style={{
-                                            backgroundColor: '#37A594',
-                                            borderRadius: '4px',
-                                            padding: '12px 0',
-                                            textAlign: 'center',
-                                            color: 'white',
-                                            fontWeight: '500',
-                                            width: '100%',
-                                            cursor: 'not-allowed',
-                                            opacity: 0.8
-                                        }}
-                                    >
+                                    <div className="w-full bg-[#37A594] rounded px-3 py-2 text-center text-white font-medium text-sm opacity-80 cursor-not-allowed">
                                         Đã nhận việc
                                     </div>
                                 ) : jobApplication.status === 'REJECTED' ? (
-                                    <div
-                                        style={{
-                                            backgroundColor: '#EF4444',
-                                            borderRadius: '4px',
-                                            padding: '12px 0',
-                                            textAlign: 'center',
-                                            color: 'white',
-                                            fontWeight: '500',
-                                            width: '100%',
-                                            cursor: 'not-allowed',
-                                            opacity: 0.8
-                                        }}
-                                    >
+                                    <div className="w-full bg-red-500 rounded px-3 py-2 text-center text-white font-medium text-sm opacity-80 cursor-not-allowed">
                                         Đã từ chối
                                     </div>
                                 ) : (
-                                    <div
-                                        style={{
-                                            backgroundColor: '#37A594',
-                                            borderRadius: '4px',
-                                            padding: '12px 0',
-                                            textAlign: 'center',
-                                            color: 'white',
-                                            fontWeight: '500',
-                                            width: '100%',
-                                            cursor: 'pointer'
-                                        }}
+                                    <button
+                                        className="w-full bg-[#37A594] rounded px-3 py-2 text-center text-white font-medium text-sm hover:bg-[#2c8a7d] transition-colors"
                                         onClick={() => {
-                                            // Handle apply action - you can add your logic here
                                             console.log('Apply for job:', jobData.title);
                                         }}
                                     >
                                         Ứng Tuyển
-                                    </div>
+                                    </button>
                                 )}
                             </div>
                         </div>
                     </div>
 
                     {/* Main Content with sidebar */}
-                    <div className="flex flex-col md:flex-row gap-8">
+                    <div className="flex flex-col md:flex-row gap-6 md:gap-8">
                         {/* Left Content */}
-                        <div className="md:w-3/4">
+                        <div className="w-full md:w-3/4">
                             {/* Job description */}
-                            <div className="mb-8">
-                                <h3 className="text-xl font-bold mb-4 text-left">Chi tiết công việc</h3>
-                                <p className="text-gray-700 leading-relaxed mb-4 text-left">
+                            <div className="mb-6 md:mb-8">
+                                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-left">Chi tiết công việc</h3>
+                                <p className="text-sm md:text-base text-gray-700 leading-relaxed mb-4 text-left">
                                     {jobData.description || 'Mô tả công việc không có sẵn.'}
                                 </p>
                             </div>
 
                             {/* Responsibilities */}
-                            <div className="mb-8 pt-8">
-                                <h3 className="text-xl font-bold mb-4 text-left">Nhiệm vụ chính</h3>
-                                <ul className="space-y-3">
+                            <div className="mb-6 md:mb-8 pt-4 md:pt-8">
+                                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-left">Nhiệm vụ chính</h3>
+                                <ul className="space-y-2 md:space-y-3">
                                     <li className="flex items-start">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -325,9 +266,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
                             </div>
 
                             {/* Skills */}
-                            <div className="mb-8 pt-8">
-                                <h3 className="text-xl font-bold mb-4 text-left">Kỹ Năng Chuyên Môn</h3>
-                                <ul className="space-y-3">
+                            <div className="mb-6 md:mb-8 pt-4 md:pt-8">
+                                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-left">Kỹ Năng Chuyên Môn</h3>
+                                <ul className="space-y-2 md:space-y-3">
                                     {formatRequirements(jobData.requirements || '').map((requirement, index) => (
                                         <li key={index} className="flex items-start">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#309689] mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
@@ -349,13 +290,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
                         </div>
 
                         {/* Right Sidebar */}
-                        <div className="md:w-1/4">
+                        <div className="w-full md:w-1/4">
                             {/* Job Overview Card */}
-                            <div className="bg-[#f7fcfb] rounded-lg p-6 mb-6">
-                                <h3 className="text-xl font-bold mb-5 text-left">Tổng quan công việc</h3>
+                            <div className="bg-[#f7fcfb] rounded-lg p-4 md:p-6 mb-4 md:mb-6">
+                                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-5 text-left">Tổng quan công việc</h3>
 
                                 {/* Job Details */}
-                                <div className="space-y-5">
+                                <div className="space-y-4 md:space-y-5">
                                     {/* Job position */}
                                     <div className="flex">
                                         <div className="text-[#37A594] mr-4">
@@ -456,7 +397,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ isOpen, onClose, jobApp
                                     <img
                                         src="https://www.google.com/maps/vt/data=Q426DLsUFI04LGjc9TkDJ6k9vVRistX9hPN1GnCAMzA9JLmuWbaxacURQvF2sJMjecyQHT0a-V0sU0fuikDhy0hX4UOKUUmSq-6DDtxs_CakdfqIy7w4yUZYVwsWdoYGAVerTDuOH-INDbojoq4Nfgso9SHLdMrpbEgAa-wDMlXL2guaSccPp_a3W1CBsYHpbzbMFMCftJqK0MaPflhlwCFPZw3PNofrug"
                                         alt="Map location"
-                                        className="w-full h-36 object-cover"
+                                        className="w-full h-28 md:h-36 object-cover"
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
                                             target.src = "https://via.placeholder.com/600x300/f2f2f2/cccccc?text=Map";

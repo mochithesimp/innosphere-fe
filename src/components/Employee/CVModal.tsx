@@ -16,14 +16,15 @@ const buttonStyles = `
     .cancel-button {
         background-color: #E8F5F3;
         color: #309689;
-        padding: 10px 24px;
-        border-radius: 6px;
-        font-size: 14px;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
         font-weight: 500;
         display: flex;
         align-items: center;
         border: none;
         cursor: pointer;
+        transition: all 0.2s ease;
     }
     .cancel-button:hover {
         background-color: #d8efeb;
@@ -32,15 +33,16 @@ const buttonStyles = `
     .add-button {
         background-color: #309689;
         color: white;
-        padding: 10px 24px;
-        border-radius: 6px;
-        font-size: 14px;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
         font-weight: 500;
         display: flex;
         align-items: center;
         justify-content: center;
         border: none;
         cursor: pointer;
+        transition: all 0.2s ease;
     }
     .add-button:hover {
         background-color: #267b70;
@@ -48,6 +50,16 @@ const buttonStyles = `
     .add-button:disabled {
         background-color: #a0c4c0;
         cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+        .cancel-button,
+        .add-button {
+            width: 100%;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
     }
 `;
 
@@ -209,23 +221,23 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
             {/* Include styles exactly like in EmployeeFavorites */}
             <style>
                 {buttonStyles}
             </style>
 
-            <div className="bg-white rounded-lg w-full max-w-md mx-4">
-                <div className="relative p-6">
+            <div className="bg-white rounded-lg w-full max-w-md">
+                <div className="relative p-4 md:p-6">
                     {/* Close button */}
                     <button
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        className="absolute top-3 md:top-4 right-3 md:right-4 text-gray-400 hover:text-gray-600"
                         onClick={handleCancel}
                     >
-                        <FiX size={24} />
+                        <FiX className="w-5 h-5 md:w-6 md:h-6" />
                     </button>
 
-                    <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left">Thêm CV/Resume</h2>
+                    <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 md:mb-6 text-left pr-8">Thêm CV/Resume</h2>
 
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
@@ -235,7 +247,7 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
                             <input
                                 type="text"
                                 id="cvName"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689]"
+                                className="w-full px-3 py-2 text-sm md:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#309689] focus:border-[#309689]"
                                 placeholder="Nhập tên CV/Resume"
                                 value={cvName}
                                 onChange={(e) => setCvName(e.target.value)}
@@ -243,12 +255,12 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
                             />
                         </div>
 
-                        <div className="mb-6">
+                        <div className="mb-4 md:mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
                                 Tải lên CV/Resume của bạn
                             </label>
                             <div
-                                className="border-2 border-dashed border-gray-200 rounded-md p-8 text-center cursor-pointer hover:border-[#309689] hover:bg-gray-50 transition-colors"
+                                className="border-2 border-dashed border-gray-200 rounded-md p-4 md:p-8 text-center cursor-pointer hover:border-[#309689] hover:bg-gray-50 transition-colors"
                                 onClick={() => fileInputRef.current?.click()}
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
@@ -261,24 +273,24 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
                                     onChange={handleFileChange}
                                 />
                                 <div className="flex flex-col items-center justify-center">
-                                    <div className="mb-3 text-gray-400">
-                                        <FiUpload size={36} />
+                                    <div className="mb-2 md:mb-3 text-gray-400">
+                                        <FiUpload className="w-6 h-6 md:w-9 md:h-9" />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-700">Chọn File hoặc thả vào đây</p>
-                                    <p className="text-xs text-gray-500 mt-1">Hỗ trợ: PDF, DOC, DOCX</p>
+                                    <p className="text-sm md:text-base font-medium text-gray-700">Chọn File hoặc thả vào đây</p>
+                                    <p className="text-xs md:text-sm text-gray-500 mt-1">Hỗ trợ: PDF, DOC, DOCX</p>
                                 </div>
                             </div>
 
                             {/* Selected File Display */}
                             {selectedFile && (
-                                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                                <div className="mt-3 p-2 md:p-3 bg-gray-50 rounded-lg border">
                                     <div className="flex items-center">
-                                        <FiFile className="h-5 w-5 text-[#309689] mr-3" />
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-800">
+                                        <FiFile className="h-4 w-4 md:h-5 md:w-5 text-[#309689] mr-2 md:mr-3" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm md:text-base font-medium text-gray-800 truncate">
                                                 {selectedFile.name}
                                             </p>
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs md:text-sm text-gray-500">
                                                 {getFileType(selectedFile.name)} • {formatFileSize(selectedFile.size)}
                                             </p>
                                         </div>
@@ -290,7 +302,7 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
                                                     fileInputRef.current.value = '';
                                                 }
                                             }}
-                                            className="text-gray-400 hover:text-red-500 ml-2"
+                                            className="text-gray-400 hover:text-red-500 ml-2 p-1"
                                         >
                                             <FiX className="h-4 w-4" />
                                         </button>
@@ -301,18 +313,22 @@ const CVModal: React.FC<CVModalProps> = ({ isOpen, onClose, workerId, onResumeAd
 
                         {/* Error Message */}
                         {error && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                                <p className="text-sm text-red-600">{error}</p>
+                            <div className="mb-4 p-2 md:p-3 bg-red-50 border border-red-200 rounded-md">
+                                <p className="text-xs md:text-sm text-red-600">{error}</p>
                             </div>
                         )}
 
-                        <div className="flex justify-between">
-                            <div className="cancel-button" onClick={handleCancel}>
+                        <div className="flex flex-col-reverse md:flex-row md:justify-between space-y-3 space-y-reverse md:space-y-0">
+                            <button
+                                type="button"
+                                className="cancel-button w-full md:w-auto justify-center md:justify-start text-sm md:text-base"
+                                onClick={handleCancel}
+                            >
                                 Hủy Bỏ
-                            </div>
+                            </button>
                             <button
                                 type="submit"
-                                className="add-button"
+                                className="add-button w-full md:w-auto text-sm md:text-base"
                                 disabled={!cvName || !selectedFile || isSubmitting || isUploading}
                             >
                                 {isUploading ? 'Đang tải lên...' : isSubmitting ? 'Đang lưu...' : 'Thêm CV/Resume'}

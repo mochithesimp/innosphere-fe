@@ -1,10 +1,57 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { IoNotificationsOutline, IoSettingsOutline } from 'react-icons/io5';
+import React, { useState } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { IoNotificationsOutline, IoSettingsOutline, IoMenuOutline, IoCloseOutline } from 'react-icons/io5';
+import {
+    IoHomeOutline,
+    IoReceiptOutline,
+    IoPersonOutline,
+    IoStatsChartOutline,
+    IoLayersOutline,
+} from 'react-icons/io5';
 
 const AdminHeader: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const menuItems = [
+        {
+            id: 'dashboard',
+            label: 'Bảng điều khiển',
+            icon: <IoHomeOutline className="h-5 w-5" />,
+            path: '/admin/dashboard'
+        },
+        {
+            id: 'orders',
+            label: 'Giao dịch',
+            icon: <IoReceiptOutline className="h-5 w-5" />,
+            path: '/admin/orders'
+        },
+        {
+            id: 'accounts',
+            label: 'Tài khoản',
+            icon: <IoPersonOutline className="h-5 w-5" />,
+            path: '/admin/accounts'
+        },
+        {
+            id: 'statistics',
+            label: 'Thống kê',
+            icon: <IoStatsChartOutline className="h-5 w-5" />,
+            path: '/admin/statistics'
+        },
+        {
+            id: 'packages',
+            label: 'Các gói dịch vụ và quảng cáo',
+            icon: <IoLayersOutline className="h-5 w-5" />,
+            path: '/admin/packages'
+        },
+        {
+            id: 'settings',
+            label: 'Cài đặt',
+            icon: <IoSettingsOutline className="h-5 w-5" />,
+            path: '/admin/settings'
+        }
+    ];
 
     const getPageTitle = () => {
         switch (location.pathname) {
@@ -31,13 +78,29 @@ const AdminHeader: React.FC = () => {
         }
     };
 
+    const isActive = (path: string) => {
+        return location.pathname === path;
+    };
+
     return (
         <header className="bg-white shadow-sm border-b border-gray-200">
-            <div className="flex items-center justify-between px-6 py-4 pr-12">
-                {/* Logo - matching sidebar style */}
+            <div className="flex items-center justify-between px-4 md:px-6 py-4 md:pr-12">
+                {/* Mobile Menu Button */}
+                <button
+                    className="md:hidden p-2 text-gray-600 hover:text-gray-900"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                    {isMobileMenuOpen ? (
+                        <IoCloseOutline className="h-6 w-6" />
+                    ) : (
+                        <IoMenuOutline className="h-6 w-6" />
+                    )}
+                </button>
+
+                {/* Logo */}
                 <button
                     onClick={() => navigate('/')}
-                    className="flex items-center w-64 px-4 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="flex items-center md:w-64 px-4 hover:opacity-80 transition-opacity cursor-pointer"
                 >
                     <img
                         src="/logo.png"
@@ -47,15 +110,15 @@ const AdminHeader: React.FC = () => {
                     <span className="ml-2 text-xl font-semibold" style={{ color: '#00FF19' }}>InnoSphere</span>
                 </button>
 
-                {/* Center section - Page title */}
-                <div className="flex-1 flex items-center">
+                {/* Center section - Page title (hidden on mobile) */}
+                <div className="hidden md:flex flex-1 items-center">
                     <h1 className="text-xl font-semibold text-gray-800">{getPageTitle()}</h1>
                 </div>
 
                 {/* Right side - User info and actions */}
                 <div className="flex items-center space-x-4">
-                    {/* Search bar */}
-                    <div className="relative">
+                    {/* Search bar (hidden on mobile) */}
+                    <div className="hidden md:block relative">
                         <input
                             type="text"
                             placeholder="Tìm kiếm"
@@ -80,6 +143,33 @@ const AdminHeader: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden bg-white border-t border-gray-200">
+                    <nav className="px-4 py-2">
+                        {menuItems.map((item) => {
+                            const active = isActive(item.path);
+                            return (
+                                <Link
+                                    key={item.id}
+                                    to={item.path}
+                                    className={`
+                                        flex items-center px-4 py-3 mb-1 rounded-lg
+                                        ${active ? 'bg-gray-100 text-[#309689]' : 'text-gray-600 hover:bg-gray-50'}
+                                    `}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <span className={`mr-3 ${active ? 'text-[#309689]' : 'text-gray-500'}`}>
+                                        {item.icon}
+                                    </span>
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                </div>
+            )}
         </header>
     );
 };
