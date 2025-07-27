@@ -237,48 +237,7 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
     };
 
     // Sample data for applicants
-    const allApplicants: Applicant[] = [
-        {
-            id: 1,
-            name: 'Lê Thanh Vũ',
-            position: 'UI/UX Designer',
-            experience: '7 năm',
-            education: 'Học vấn: tốt nghiệp MIT',
-            applicationDate: 'Jan 23, 2025'
-        },
-        {
-            id: 2,
-            name: 'Vũ Lê',
-            position: 'UI/UX Designer',
-            experience: '7 năm',
-            education: 'Học vấn: tốt nghiệp Harvard',
-            applicationDate: 'Jan 23, 2025'
-        },
-        {
-            id: 3,
-            name: 'Mochi',
-            position: 'Product Designer',
-            experience: '7 năm',
-            education: 'Học vấn: High School Degree',
-            applicationDate: 'Jan 23, 2025'
-        },
-        {
-            id: 4,
-            name: 'Anh Vũ Lê',
-            position: 'User Experience Designer',
-            experience: '7 năm',
-            education: 'Học vấn: Master Degree',
-            applicationDate: 'Jan 23, 2025'
-        },
-        {
-            id: 5,
-            name: 'Vũ Lê Thanh',
-            position: 'UI/UX Designer',
-            experience: '7 năm',
-            education: 'Học vấn: tốt nghiệp Stanford',
-            applicationDate: 'Jan 23, 2025'
-        }
-    ];
+    const allApplicants: Applicant[] = [];
 
     // For the right column, just the first two applicants
     const selectedApplicants: Applicant[] = [
@@ -618,7 +577,7 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                 <div className="w-full md:w-1/2">
                     <div className="bg-[#E4E5E8] rounded-lg shadow mb-4">
                         <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-[#E4E5E8]">
-                            <h2 className="text-base font-medium text-gray-700 text-left">Tất cả (213)</h2>
+                            <h2 className="text-base font-medium text-gray-700 text-left">Tất cả ({combinedApplicants.length})</h2>
                             <div className="relative" ref={el => setMenuRef('all', el)}>
                                 <div
                                     onClick={() => toggleMenu('all')}
@@ -639,7 +598,13 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                                     Đang tải dữ liệu...
                                 </div>
                             ) : (
-                                combinedApplicants.map(applicant => renderApplicantCard(applicant))
+                                combinedApplicants.length === 0 ? (
+                                    <div className="py-8 text-center text-gray-500">
+                                        Hiện chưa có người ứng tuyển
+                                    </div>
+                                ) : (
+                                    combinedApplicants.map(applicant => renderApplicantCard(applicant))
+                                )
                             )}
                         </div>
                     </div>

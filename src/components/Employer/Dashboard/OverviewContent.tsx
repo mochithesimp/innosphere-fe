@@ -16,6 +16,7 @@ const OverviewContent: React.FC = () => {
     const [showJobApplications, setShowJobApplications] = useState(false);
     const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
     const [employerName, setEmployerName] = useState<string>('');
+    const [allJobs, setAllJobs] = useState<JobPostingListItem[]>([]);
 
     // Add CSS styling for the view profile button
     useEffect(() => {
@@ -106,6 +107,26 @@ const OverviewContent: React.FC = () => {
         };
 
         fetchRecentJobs();
+    }, []);
+
+    // Fetch all jobs for the employer
+    useEffect(() => {
+        const fetchAllJobs = async () => {
+            try {
+                // Get employer profile to get employerId
+                const employerProfile = await SubscriptionService.getEmployerProfile();
+                if (!employerProfile || !employerProfile.employerId) {
+                    console.error('Could not get employer profile');
+                    return;
+                }
+                // Get all job postings for this employer
+                const jobs = await JobPostingService.getJobPostingsByEmployer(employerProfile.employerId);
+                setAllJobs(jobs);
+            } catch (error) {
+                console.error('Error fetching all jobs:', error);
+            }
+        };
+        fetchAllJobs();
     }, []);
 
     // Format time from datetime string to "HHh00" format (e.g., "7h00", "15h00")
@@ -255,7 +276,7 @@ const OverviewContent: React.FC = () => {
                 {/* Job Stats Card */}
                 <div style={{ backgroundColor: '#E7F0FA' }} className="rounded-lg p-5 flex items-center justify-between">
                     <div className="text-left">
-                        <h3 className="text-2xl font-bold mb-1">589</h3>
+                        <h3 className="text-2xl font-bold mb-1">{allJobs.length}</h3>
                         <p className="text-gray-600 text-sm">Công việc đang hoạt động</p>
                     </div>
                     <div style={{ backgroundColor: 'white' }} className="p-3 rounded-lg shadow-sm">
@@ -266,7 +287,7 @@ const OverviewContent: React.FC = () => {
                 {/* Candidate Stats Card */}
                 <div style={{ backgroundColor: '#FFF6E6' }} className="rounded-lg p-5 flex items-center justify-between">
                     <div className="text-left">
-                        <h3 className="text-2xl font-bold mb-1">2,517</h3>
+                        <h3 className="text-2xl font-bold mb-1">0</h3>
                         <p className="text-gray-600 text-sm">Nhân viên đã lưu</p>
                     </div>
                     <div style={{ backgroundColor: 'white' }} className="p-3 rounded-lg shadow-sm">

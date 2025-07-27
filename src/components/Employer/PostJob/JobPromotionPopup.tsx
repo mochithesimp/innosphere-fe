@@ -164,11 +164,6 @@ const JobPromotionPopup: React.FC<JobPromotionPopupProps> = ({
                                     <div className="ml-3 text-left">
                                         <h4 className="font-medium">Nổi bật công việc của bạn</h4>
                                         <p className="text-sm text-gray-600">Hiển thị công việc này trên top đầu các công việc của bạn.</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">-90%</span>
-                                            <span className="text-gray-500 line-through">4.600.000 VNĐ</span>
-                                            <span className="text-[#309689] font-semibold">460.000 VNĐ</span>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
