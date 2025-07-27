@@ -4,6 +4,7 @@ import { RiHome2Line, RiEditLine, RiDeleteBinLine, RiMoreFill, RiCloseLine } fro
 import ApplicantPopup from './ApplicantPopup';
 import { JobApplicationService, WorkerJobApplicationsResponse } from '../../../services/jobApplicationService';
 import { downloadFileFromUrl } from '../../../utils/fileDownload';
+import RatingService, { WorkerRatingModel } from '../../../services/ratingService';
 
 // Define the Applicant type
 interface Applicant {
@@ -262,45 +263,76 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
     // Combine API data (on top) with static data for "Tất cả" column
     const combinedApplicants = [...apiApplicants, ...allApplicants];
 
-    // Render applicant card in the Tất cả column
-    const renderApplicantCard = (applicant: Applicant) => {
-        const handleHireClick = async (e: React.MouseEvent) => {
-            e.stopPropagation(); // Prevent opening the popup
-            if (applicant.applicationId && applicant.applicationStatus !== 'ACCEPTED') {
-                await handleHireApplicant(applicant.id);
-            }
-        };
+    // Add at the top-level of the file
+    const ApplicantCard: React.FC<{ applicant: Applicant; onHire: () => void; handleDownloadCV: (e: React.MouseEvent, applicant: Applicant) => void; onClick: () => void }> = ({ applicant, onHire, handleDownloadCV, onClick }) => {
+        const [averageWorkerRating, setAverageWorkerRating] = React.useState<number | null>(null);
+        const [hasWorkerRating, setHasWorkerRating] = React.useState<boolean>(true);
 
-        // Debug log for card rendering
-        if (applicant.isFromAPI) {
-            console.log(`Card - Applicant ${applicant.name}:`, {
-                applicationStatus: applicant.applicationStatus,
-                jobPostingStatus: applicant.jobPostingStatus,
-                showRatingButton: applicant.applicationStatus === 'ACCEPTED' && applicant.jobPostingStatus === 'CLOSED'
-            });
-        }
+        React.useEffect(() => {
+            let isMounted = true;
+            async function fetchWorkerRating() {
+                if (applicant.workerId) {
+                    try {
+                        const ratings: WorkerRatingModel[] = await RatingService.getWorkerRatings(applicant.workerId);
+                        if (ratings.length > 0) {
+                            const avg = ratings.reduce((sum, r) => sum + r.ratingValue, 0) / ratings.length;
+                            if (isMounted) {
+                                setAverageWorkerRating(avg);
+                                setHasWorkerRating(true);
+                            }
+                        } else {
+                            if (isMounted) {
+                                setAverageWorkerRating(null);
+                                setHasWorkerRating(false);
+                            }
+                        }
+                    } catch {
+                        if (isMounted) {
+                            setAverageWorkerRating(null);
+                            setHasWorkerRating(false);
+                        }
+                    }
+                } else {
+                    if (isMounted) {
+                        setAverageWorkerRating(null);
+                        setHasWorkerRating(false);
+                    }
+                }
+            }
+            fetchWorkerRating();
+            return () => { isMounted = false; };
+        }, [applicant.workerId]);
+
+        const handleHireClick = onHire;
 
         return (
-            <div
-                key={applicant.id}
-                className="bg-white rounded-lg shadow border border-gray-200 mb-4 text-left cursor-pointer hover:border-[#309689]"
-                onClick={() => handleApplicantClick(applicant)}
-            >
-                <div className="p-4">
-                    <div className="flex items-start">
-                        {/* Avatar */}
-                        <div className="mr-3">
-                            {renderAvatar(applicant)}
+            <div className="bg-white rounded-lg shadow border border-gray-200 mb-4 text-left cursor-pointer hover:border-[#309689]" onClick={onClick}>
+                <div className="flex items-center p-4">
+                    <div className="mr-4">
+                        {/* Avatar rendering logic here (reuse from renderAvatar) */}
+                        {renderAvatar(applicant)}
+                    </div>
+                    <div className="flex-1 text-left">
+                        <div className="flex items-center mb-2">
+                            <div className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+                                {applicant.workerProfile?.fullName || applicant.name}
+                                {hasWorkerRating ? (
+                                    averageWorkerRating !== null ? (
+                                        <span className="flex items-center text-yellow-500 text-sm font-medium ml-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
+                                            </svg>
+                                            {averageWorkerRating.toFixed(1)}
+                                        </span>
+                                    ) : null
+                                ) : (
+                                    <span className="text-gray-400 text-xs ml-2">Chưa có đánh giá</span>
+                                )}
+                            </div>
                         </div>
-
-                        {/* Name and Title */}
-                        <div className="flex-1 text-left">
-                            <h3 className="text-base font-medium text-gray-900 text-left">{applicant.name}</h3>
-                            <p className="text-sm text-gray-500 text-left">{applicant.position}</p>
-                        </div>
+                        <p className="text-sm text-gray-500 text-left">{applicant.position}</p>
                     </div>
                 </div>
-
                 {/* Divider */}
                 <div className="border-t border-gray-200"></div>
 
@@ -603,7 +635,15 @@ const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ jobId, onClos
                                         Hiện chưa có người ứng tuyển
                                     </div>
                                 ) : (
-                                    combinedApplicants.map(applicant => renderApplicantCard(applicant))
+                                    combinedApplicants.map(applicant => (
+                                        <ApplicantCard
+                                            key={applicant.id}
+                                            applicant={applicant}
+                                            onHire={() => handleHireApplicant(applicant.id)}
+                                            handleDownloadCV={handleDownloadCV}
+                                            onClick={() => handleApplicantClick(applicant)}
+                                        />
+                                    ))
                                 )
                             )}
                         </div>

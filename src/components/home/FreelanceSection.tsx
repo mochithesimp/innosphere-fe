@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { JobService, JobPostingApiResponse } from '../../services';
+import RatingService, { EmployerRatingModel } from '../../services/ratingService';
 
 // Interface for display data (hybrid of API + static)
 interface JobProps {
@@ -13,6 +14,7 @@ interface JobProps {
     timeRange: string;
     salary: string;
     location: string; // Now from API (cityName)
+    employerId?: number; // Added for rating
 }
 
 // Static data for the fields that should remain hardcoded (cycling pattern for categories only)
@@ -77,12 +79,51 @@ const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[]): JobProps[] =
             schedule: staticCategory, // Static cycling category
             timeRange: timeRange, // Dynamic from API (formatted)
             salary: formattedSalary, // Dynamic from API (formatted)
-            location: actualLocation // Dynamic from API (cityName or location)
+            location: actualLocation, // Dynamic from API (cityName or location)
+            employerId: apiJob.employerId // Dynamic from API
         };
     });
 };
 
 const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
+    const [averageRating, setAverageRating] = React.useState<number | null>(null);
+    const [hasRating, setHasRating] = React.useState<boolean>(true);
+
+    React.useEffect(() => {
+        let isMounted = true;
+        async function fetchRating() {
+            try {
+                if (job.employerId) {
+                    const ratings: EmployerRatingModel[] = await RatingService.getEmployerRatings(job.employerId);
+                    if (ratings.length > 0) {
+                        const avg = ratings.reduce((sum, r) => sum + r.ratingValue, 0) / ratings.length;
+                        if (isMounted) {
+                            setAverageRating(avg);
+                            setHasRating(true);
+                        }
+                    } else {
+                        if (isMounted) {
+                            setAverageRating(null);
+                            setHasRating(false);
+                        }
+                    }
+                } else {
+                    if (isMounted) {
+                        setAverageRating(null);
+                        setHasRating(false);
+                    }
+                }
+            } catch {
+                if (isMounted) {
+                    setAverageRating(null);
+                    setHasRating(false);
+                }
+            }
+        }
+        fetchRating();
+        return () => { isMounted = false; };
+    }, [job.employerId]);
+
     return (
         <div className="border border-gray-200 rounded-lg p-4 md:p-6 mb-4 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-3 md:mb-4">
@@ -110,7 +151,21 @@ const JobCard: React.FC<{ job: JobProps }> = ({ job }) => {
                 <div className="flex-1">
                     <div className="mb-4 md:mb-5">
                         <h3 className="font-bold text-xl md:text-2xl mb-1 text-left line-clamp-2">{job.title}</h3>
-                        <p className="text-gray-700 text-sm md:text-base text-left">{job.company}</p>
+                        <p className="text-gray-700 text-sm md:text-base text-left flex items-center gap-2">
+                            {job.company}
+                            {hasRating ? (
+                                averageRating !== null ? (
+                                    <span className="flex items-center text-yellow-500 text-xs md:text-sm font-medium ml-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
+                                        </svg>
+                                        {averageRating.toFixed(1)}
+                                    </span>
+                                ) : null
+                            ) : (
+                                <span className="text-gray-400 text-xs ml-2">Chưa có đánh giá</span>
+                            )}
+                        </p>
                     </div>
 
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">

@@ -4,6 +4,7 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import Popup from '../../components/Popup';
 import { JobService, JobPostingApiResponse } from '../../services';
+import RatingService, { EmployerRatingModel } from '../../services/ratingService';
 
 const JobDetailPage: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
@@ -12,6 +13,8 @@ const JobDetailPage: React.FC = () => {
     const [relatedJobs, setRelatedJobs] = useState<JobPostingApiResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [averageRating, setAverageRating] = useState<number | null>(null);
+    const [hasRating, setHasRating] = useState<boolean>(true);
 
     const jobId = searchParams.get('id');
 
@@ -87,6 +90,26 @@ const JobDetailPage: React.FC = () => {
 
                 if (job) {
                     setJobData(job);
+                    // Fetch employer rating
+                    if (job.employerId) {
+                        try {
+                            const ratings: EmployerRatingModel[] = await RatingService.getEmployerRatings(job.employerId);
+                            if (ratings.length > 0) {
+                                const avg = ratings.reduce((sum, r) => sum + r.ratingValue, 0) / ratings.length;
+                                setAverageRating(avg);
+                                setHasRating(true);
+                            } else {
+                                setAverageRating(null);
+                                setHasRating(false);
+                            }
+                        } catch {
+                            setAverageRating(null);
+                            setHasRating(false);
+                        }
+                    } else {
+                        setAverageRating(null);
+                        setHasRating(false);
+                    }
                 } else {
                     console.error('❌ Job not found for ID:', jobId);
                     setError('Job not found');
@@ -198,7 +221,21 @@ const JobDetailPage: React.FC = () => {
                         </div>
                         <div>
                             <h2 className="text-xl md:text-2xl font-bold mb-1 text-left">{jobData.title}</h2>
-                            <p className="text-gray-700 text-left">{jobData.companyName}</p>
+                            <p className="text-gray-700 text-left flex items-center gap-2">
+                                {jobData.companyName}
+                                {hasRating ? (
+                                    averageRating !== null ? (
+                                        <span className="flex items-center text-yellow-500 text-sm font-medium ml-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
+                                            </svg>
+                                            {averageRating.toFixed(1)}
+                                        </span>
+                                    ) : null
+                                ) : (
+                                    <span className="text-gray-400 text-xs ml-2">Chưa có đánh giá</span>
+                                )}
+                            </p>
                         </div>
                     </div>
 

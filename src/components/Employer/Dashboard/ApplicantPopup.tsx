@@ -3,7 +3,7 @@ import { IoMdClose } from 'react-icons/io';
 import { RiStarLine, RiMailLine, RiUserReceived2Line, RiToggleLine, RiToggleFill } from 'react-icons/ri';
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaRedditAlien, FaInstagram, FaYoutube, FaStar } from 'react-icons/fa';
 import { JobApplicationService } from '../../../services/jobApplicationService';
-import RatingService, { RatingCriteriaModel, CreateWorkerRatingModel } from '../../../services/ratingService';
+import RatingService, { RatingCriteriaModel, CreateWorkerRatingModel, WorkerRatingModel } from '../../../services/ratingService';
 import { isWorkerRated, markWorkerAsRated } from '../../../utils/ratingUtils';
 import { downloadFileFromUrl } from '../../../utils/fileDownload';
 import Swal from 'sweetalert2';
@@ -305,6 +305,8 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
     const [isHired, setIsHired] = useState(false);
     const [isHiring, setIsHiring] = useState(false);
     const [hasRatedWorker, setHasRatedWorker] = useState(false);
+    const [averageWorkerRating, setAverageWorkerRating] = useState<number | null>(null);
+    const [hasWorkerRating, setHasWorkerRating] = useState<boolean>(true);
 
     // Inject CSS styles for button matching Employee page
     useEffect(() => {
@@ -327,6 +329,39 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
         if (applicant?.applicationId) {
             setHasRatedWorker(isWorkerRated(applicant.applicationId));
         }
+        // Fetch worker rating
+        let isMounted = true;
+        async function fetchWorkerRating() {
+            if (applicant?.workerId) {
+                try {
+                    const ratings: WorkerRatingModel[] = await RatingService.getWorkerRatings(applicant.workerId);
+                    if (ratings.length > 0) {
+                        const avg = ratings.reduce((sum, r) => sum + r.ratingValue, 0) / ratings.length;
+                        if (isMounted) {
+                            setAverageWorkerRating(avg);
+                            setHasWorkerRating(true);
+                        }
+                    } else {
+                        if (isMounted) {
+                            setAverageWorkerRating(null);
+                            setHasWorkerRating(false);
+                        }
+                    }
+                } catch {
+                    if (isMounted) {
+                        setAverageWorkerRating(null);
+                        setHasWorkerRating(false);
+                    }
+                }
+            } else {
+                if (isMounted) {
+                    setAverageWorkerRating(null);
+                    setHasWorkerRating(false);
+                }
+            }
+        }
+        fetchWorkerRating();
+        return () => { isMounted = false; };
     }, [applicant]);
 
     if (!isOpen || !applicant) return null;
@@ -424,8 +459,20 @@ const ApplicantPopup: React.FC<ApplicantPopupProps> = ({ isOpen, onClose, applic
                                 })()}
                             </div>
                             <div className="text-left">
-                                <h2 className="text-2xl font-semibold text-gray-800">
+                                <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
                                     {applicant.workerProfile?.fullName || applicant.name}
+                                    {hasWorkerRating ? (
+                                        averageWorkerRating !== null ? (
+                                            <span className="flex items-center text-yellow-500 text-sm font-medium ml-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
+                                                </svg>
+                                                {averageWorkerRating.toFixed(1)}
+                                            </span>
+                                        ) : null
+                                    ) : (
+                                        <span className="text-gray-400 text-xs ml-2">Chưa có đánh giá</span>
+                                    )}
                                 </h2>
                                 <p className="text-gray-600">{applicant.position}</p>
                             </div>

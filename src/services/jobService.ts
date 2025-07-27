@@ -21,6 +21,7 @@ export interface JobPostingApiResponse {
     applicationsCount: number;
     cityId: number | null;
     cityName: string | null;
+    employerId: number; // Added for rating
 }
 
 // Interface for paginated response (matching backend PagedResultModel)

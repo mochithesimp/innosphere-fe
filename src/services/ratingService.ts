@@ -116,6 +116,11 @@ export class RatingService {
             throw error;
         }
     }
+
+    static async getWorkerRatings(workerId: number): Promise<WorkerRatingModel[]> {
+        const response = await axios.get(`${API_BASE_URL}/api/workerrating/worker/${workerId}`, this.getAuthHeaders());
+        return response.data;
+    }
 }
 
 export default RatingService; 

@@ -3,6 +3,7 @@ import Footer from '../../components/layout/Footer';
 import Header from '../../components/layout/Header';
 import { JobService, JobPostingApiResponse, JobSearchFilters } from '../../services';
 import { AdminService } from '../../services/adminService';
+import RatingService, { EmployerRatingModel } from '../../services/ratingService';
 
 // Interface for display data (hybrid of API + static)
 interface JobProps {
@@ -15,6 +16,7 @@ interface JobProps {
     timeRange: string;
     salary: string;
     location: string; // Now from API (cityName)
+    employerId?: number; // Added for rating
 }
 
 // Static data for the fields that should remain hardcoded (cycling pattern for categories only)
@@ -89,7 +91,8 @@ const convertApiToDisplayData = (apiJobs: JobPostingApiResponse[], startIndex: n
             category: staticCategory, // Static cycling category
             timeRange: timeRange, // Dynamic from API (formatted)
             salary: formattedSalary, // Dynamic from API (formatted)
-            location: actualLocation // Dynamic from API (cityName or location)
+            location: actualLocation, // Dynamic from API (cityName or location)
+            employerId: apiJob.employerId // Pass employerId for rating
         };
     });
 };
@@ -144,6 +147,45 @@ const ChiTietButton: React.FC<{ jobId: number }> = ({ jobId }) => {
 };
 
 const JobListItem = ({ job }: { job: JobProps }) => {
+    const [averageRating, setAverageRating] = React.useState<number | null>(null);
+    const [hasRating, setHasRating] = React.useState<boolean>(true);
+
+    React.useEffect(() => {
+        let isMounted = true;
+        async function fetchRating() {
+            try {
+                // Use job.employerId if available
+                if (job.employerId) {
+                    const ratings: EmployerRatingModel[] = await RatingService.getEmployerRatings(job.employerId);
+                    if (ratings.length > 0) {
+                        const avg = ratings.reduce((sum, r) => sum + r.ratingValue, 0) / ratings.length;
+                        if (isMounted) {
+                            setAverageRating(avg);
+                            setHasRating(true);
+                        }
+                    } else {
+                        if (isMounted) {
+                            setAverageRating(null);
+                            setHasRating(false);
+                        }
+                    }
+                } else {
+                    if (isMounted) {
+                        setAverageRating(null);
+                        setHasRating(false);
+                    }
+                }
+            } catch {
+                if (isMounted) {
+                    setAverageRating(null);
+                    setHasRating(false);
+                }
+            }
+        }
+        fetchRating();
+        return () => { isMounted = false; };
+    }, [job.employerId]);
+
     return (
         <div className="border-b border-gray-200 py-6 first:pt-0">
             <div className="flex justify-between items-start mb-2">
@@ -171,7 +213,21 @@ const JobListItem = ({ job }: { job: JobProps }) => {
                 <div className="flex-1">
                     <div className="mb-4">
                         <h3 className="font-bold text-xl mb-1 text-left">{job.title}</h3>
-                        <p className="text-gray-700 text-left">{job.company}</p>
+                        <p className="text-gray-700 text-left flex items-center gap-2">
+                            {job.company}
+                            {hasRating ? (
+                                averageRating !== null ? (
+                                    <span className="flex items-center text-yellow-500 text-sm font-medium ml-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
+                                        </svg>
+                                        {averageRating.toFixed(1)}
+                                    </span>
+                                ) : null
+                            ) : (
+                                <span className="text-gray-400 text-xs ml-2">Chưa có đánh giá</span>
+                            )}
+                        </p>
 
                     </div>
 
