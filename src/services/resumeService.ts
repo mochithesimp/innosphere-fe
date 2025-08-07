@@ -50,6 +50,11 @@ export class ResumeService {
         return response.data;
     }
 
+    static async getWorkerProfileById(workerId: number): Promise<WorkerProfileResponse> {
+        const response = await axios.get(`${API_BASE_URL}/api/worker/${workerId}/profile`, this.getAuthHeaders());
+        return response.data;
+    }
+
     static async getResumesByWorker(workerId: number): Promise<ResumeModel[]> {
         const response = await axios.get(`${API_BASE_URL}/api/resume/worker/${workerId}`, this.getAuthHeaders());
         return response.data;

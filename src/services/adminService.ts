@@ -18,6 +18,7 @@ export interface AdvertisementModel {
     transactionId: string;
     employerUserName?: string;
     employerFullName?: string;
+    employerPhoneNumber?: string;
 }
 
 // JobPosting Models
@@ -69,6 +70,7 @@ export interface SubscriptionModel {
     employerUserName?: string;
     employerFullName?: string;
     packageName?: string;
+    employerPhoneNumber?: string;
 }
 
 // Combined Package Data for display

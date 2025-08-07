@@ -5,6 +5,7 @@ export interface SubscriptionData {
     amountPaid: number;
     startDate: string;
     paymentStatus: string;
+    phoneNumber?: string; // Added for receipt
 }
 
 class PaymentReceiptService {

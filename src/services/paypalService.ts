@@ -170,101 +170,60 @@ class PayPalService {
         };
     }
 
-    generateReceiptHTML(transaction: PayPalTransactionInfo, employerName: string, packageName?: string): string {
+    generateReceiptHTML(
+        transaction: PayPalTransactionInfo,
+        employerName: string,
+        packageName?: string,
+        employerPhoneNumber?: string
+    ): string {
         const formatCurrency = (amount: string, currency: string) => {
-            if (currency === 'VND') {
-                return new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                }).format(parseFloat(amount));
-            }
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: currency
-            }).format(parseFloat(amount));
+            return Number(amount).toLocaleString('vi-VN', { style: 'currency', currency: currency });
         };
-
         const formatDate = (dateString: string) => {
-            return new Date(dateString).toLocaleDateString('vi-VN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            return new Date(dateString).toLocaleDateString('vi-VN');
         };
-
         return `
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background: #fff;">
-                <div style="text-align: center; border-bottom: 3px solid #309689; padding-bottom: 20px; margin-bottom: 30px;">
-                    <h1 style="color: #309689; margin: 0; font-size: 28px;">INNOSPHERE</h1>
-                    <p style="color: #666; margin: 5px 0 0 0; font-size: 16px;">Biên lai thanh toán</p>
-                </div>
-
+            <div style="max-width: 700px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <h1 style="color: #26AB7B; text-align: center;">Biên lai thanh toán</h1>
                 <div style="margin-bottom: 30px;">
-                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Thông tin giao dịch</h2>
+                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Khách hàng</h2>
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
-                            <td style="padding: 8px 0; color: #666; width: 40%;">Mã giao dịch:</td>
-                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${transaction.transaction_id}</td>
+                            <td style="padding: 8px 0; color: #666; width: 40%;">Tên khách hàng:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                        </tr>
+                        ${employerPhoneNumber ? `<tr><td style='padding: 8px 0; color: #666;'>Số điện thoại khách hàng:</td><td style='padding: 8px 0; color: #333;'>${employerPhoneNumber}</td></tr>` : ''}
+                    </table>
+                </div>
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Thông tin dịch vụ</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #666; width: 40%;">Gói dịch vụ:</td>
+                            <td style="padding: 8px 0; color: #333;">${packageName || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Số tiền thanh toán:</td>
+                            <td style="padding: 8px 0; color: #333;">${formatCurrency(transaction.transaction_amount.value, transaction.transaction_amount.currency_code)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Ngày thanh toán:</td>
+                            <td style="padding: 8px 0; color: #333;">${formatDate(transaction.transaction_initiation_date)}</td>
                         </tr>
                         <tr>
                             <td style="padding: 8px 0; color: #666;">Trạng thái:</td>
-                            <td style="padding: 8px 0; font-weight: bold; color: #16DBAA;">${transaction.transaction_status}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #666;">Ngày giao dịch:</td>
-                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${formatDate(transaction.transaction_initiation_date)}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
-                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
-                        </tr>
-                        ${packageName ? `
-                        <tr>
-                            <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
-                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${packageName}</td>
-                        </tr>
-                        ` : ''}
-                    </table>
-                </div>
-
-                <div style="margin-bottom: 30px;">
-                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Chi tiết thanh toán</h2>
-                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-                        <tr style="background-color: #f8f9fa;">
-                            <td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">Số tiền</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #333;">
-                                ${formatCurrency(transaction.transaction_amount.value, transaction.transaction_amount.currency_code)}
-                            </td>
-                        </tr>
-                        ${transaction.fee_amount ? `
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #ddd; color: #666;">Phí giao dịch</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; color: #666;">
-                                ${formatCurrency(transaction.fee_amount.value, transaction.fee_amount.currency_code)}
-                            </td>
-                        </tr>
-                        ` : ''}
-                        <tr style="background-color: #f8f9fa;">
-                            <td style="padding: 12px; font-weight: bold; color: #333;">Tổng cộng</td>
-                            <td style="padding: 12px; text-align: right; font-weight: bold; color: #309689; font-size: 18px;">
-                                ${formatCurrency(transaction.transaction_amount.value, transaction.transaction_amount.currency_code)}
-                            </td>
+                            <td style="padding: 8px 0; color: #333;">${transaction.transaction_status}</td>
                         </tr>
                     </table>
                 </div>
-
                 ${transaction.payer_info ? `
                 <div style="margin-bottom: 30px;">
-                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Thông tin người thanh toán</h2>
+                    <h2 style="color: #333; font-size: 20px; margin-bottom: 15px;">Thông tin PayPal</h2>
                     <table style="width: 100%; border-collapse: collapse;">
-                        ${transaction.payer_info.payer_name ? `
                         <tr>
-                            <td style="padding: 8px 0; color: #666; width: 40%;">Tên:</td>
-                            <td style="padding: 8px 0; color: #333;">${transaction.payer_info.payer_name.given_name} ${transaction.payer_info.payer_name.surname}</td>
+                            <td style="padding: 8px 0; color: #666; width: 40%;">Tên tài khoản:</td>
+                            <td style="padding: 8px 0; color: #333;">${transaction.payer_info.payer_name?.given_name || ''} ${transaction.payer_info.payer_name?.surname || ''}</td>
                         </tr>
-                        ` : ''}
                         <tr>
                             <td style="padding: 8px 0; color: #666;">Email:</td>
                             <td style="padding: 8px 0; color: #333;">${transaction.payer_info.email_address}</td>
@@ -276,7 +235,6 @@ class PayPalService {
                     </table>
                 </div>
                 ` : ''}
-
                 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
                     <p>Cảm ơn bạn đã sử dụng dịch vụ của INNOSPHERE!</p>
                     <p>Biên lai này được tạo tự động vào ${formatDate(new Date().toISOString())}</p>
@@ -293,7 +251,8 @@ class PayPalService {
             amountPaid: number;
             startDate: string;
             paymentStatus: string;
-        }
+        },
+        employerPhoneNumber?: string
     ): Promise<void> {
         try {
             // Get transaction details from PayPal
@@ -319,7 +278,7 @@ class PayPalService {
             }
 
             // Generate HTML content
-            const htmlContent = this.generateReceiptHTML(transaction, employerName, packageName);
+            const htmlContent = this.generateReceiptHTML(transaction, employerName, packageName, employerPhoneNumber);
 
             // Create a new window and print
             const printWindow = window.open('', '_blank');

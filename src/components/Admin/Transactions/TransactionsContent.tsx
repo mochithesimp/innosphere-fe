@@ -55,6 +55,13 @@ const TransactionsContent: React.FC = () => {
         fetchAllData();
     }, []);
 
+
+
+    // Helper to get phone number from the transaction data
+    const getPhoneNumber = (transaction: SubscriptionModel | AdvertisementModel): string => {
+        return transaction.employerPhoneNumber || '';
+    };
+
     // Calculate pagination based on active tab
     const getCurrentData = () => {
         if (activeTab === 'services') {
@@ -220,13 +227,14 @@ const TransactionsContent: React.FC = () => {
             setDownloadingId(subscription.transactionId);
 
             const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
-            const packageName = subscription.packageName || 'Gói dịch vụ';
+            const phoneNumber = getPhoneNumber(subscription);
 
             await PaymentReceiptService.downloadReceipt(
                 subscription.transactionId,
                 employerName,
-                packageName,
+                subscription.packageName || 'Gói dịch vụ',
                 {
+                    phoneNumber, // Custom field for receipt template
                     amountPaid: subscription.amountPaid,
                     startDate: subscription.startDate,
                     paymentStatus: subscription.paymentStatus
@@ -253,15 +261,17 @@ const TransactionsContent: React.FC = () => {
             setDownloadingId(advertisement.transactionId);
 
             const employerName = advertisement.employerFullName || advertisement.employerUserName || 'Khách hàng';
+            const phoneNumber = getPhoneNumber(advertisement);
 
             await PaymentReceiptService.downloadReceipt(
                 advertisement.transactionId,
                 employerName,
                 `Quảng cáo ${advertisement.adTitle}`,
                 {
+                    phoneNumber, // Custom field for receipt template
                     amountPaid: advertisement.price,
                     startDate: advertisement.startDate,
-                    paymentStatus: 'PAID' // Advertisements are paid when created
+                    paymentStatus: 'PAID'
                 }
             );
         } catch (error) {
@@ -353,6 +363,7 @@ const TransactionsContent: React.FC = () => {
                     const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
                     const packageName = subscription.packageName || 'Gói dịch vụ';
                     const providerName = PaymentReceiptService.getProviderName(subscription.transactionId);
+                    const phoneNumber = getPhoneNumber(subscription);
 
                     combinedHTML += `
                         <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid;">
@@ -372,6 +383,10 @@ const TransactionsContent: React.FC = () => {
                                 <tr>
                                     <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
                                     <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                                    <td style="padding: 8px 0; font-weight: bold; color: #333;">${phoneNumber}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
@@ -398,6 +413,7 @@ const TransactionsContent: React.FC = () => {
                     const advertisement = transaction as AdvertisementModel & { type: 'advertisement' };
                     const employerName = advertisement.employerFullName || advertisement.employerUserName || 'Khách hàng';
                     const providerName = PaymentReceiptService.getProviderName(advertisement.transactionId);
+                    const phoneNumber = getPhoneNumber(advertisement);
 
                     combinedHTML += `
                         <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid;">
@@ -417,6 +433,10 @@ const TransactionsContent: React.FC = () => {
                                 <tr>
                                     <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
                                     <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                                    <td style="padding: 8px 0; font-weight: bold; color: #333;">${phoneNumber}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 8px 0; color: #666;">Tiêu đề quảng cáo:</td>
@@ -568,6 +588,7 @@ const TransactionsContent: React.FC = () => {
                 const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
                 const packageName = subscription.packageName || 'Gói dịch vụ';
                 const providerName = PaymentReceiptService.getProviderName(subscription.transactionId);
+                const phoneNumber = getPhoneNumber(subscription);
 
                 combinedHTML += `
                     <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid;">
@@ -587,6 +608,10 @@ const TransactionsContent: React.FC = () => {
                             <tr>
                                 <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
                                 <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #333;">${phoneNumber}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
@@ -717,6 +742,7 @@ const TransactionsContent: React.FC = () => {
             advertisementsWithTransactionId.forEach((advertisement, index) => {
                 const employerName = advertisement.employerFullName || advertisement.employerUserName || 'Khách hàng';
                 const providerName = PaymentReceiptService.getProviderName(advertisement.transactionId);
+                const phoneNumber = getPhoneNumber(advertisement);
 
                 combinedHTML += `
                     <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid;">
@@ -736,6 +762,10 @@ const TransactionsContent: React.FC = () => {
                             <tr>
                                 <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
                                 <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                                <td style="padding: 8px 0; font-weight: bold; color: #333;">${phoneNumber}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #666;">Tiêu đề quảng cáo:</td>

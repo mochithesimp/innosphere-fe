@@ -231,7 +231,8 @@ class PayOSService {
             amountPaid: number;
             startDate: string;
             paymentStatus: string;
-        }
+        },
+        employerPhoneNumber?: string
     ): string {
         if (!payosData) return '';
 
@@ -358,7 +359,8 @@ class PayOSService {
             amountPaid: number;
             startDate: string;
             paymentStatus: string;
-        }
+        },
+        employerPhoneNumber?: string
     ): Promise<void> {
         try {
             // Get PayOS transaction details
@@ -369,7 +371,7 @@ class PayOSService {
             }
 
             // Generate HTML content
-            const htmlContent = this.generateReceiptHTML(response.data, employerName, packageName, subscriptionData);
+            const htmlContent = this.generateReceiptHTML(response.data, employerName, packageName, subscriptionData, employerPhoneNumber);
 
             // Create a new window and print
             const printWindow = window.open('', '_blank');
