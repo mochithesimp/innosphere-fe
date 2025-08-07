@@ -285,6 +285,12 @@ class PayOSService {
                             <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
                             <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
                         </tr>
+                        ${employerPhoneNumber ? `
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerPhoneNumber}</td>
+                        </tr>
+                        ` : ''}
                         ${packageName ? `
                         <tr>
                             <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
