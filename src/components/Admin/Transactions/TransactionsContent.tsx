@@ -267,20 +267,89 @@ const TransactionsContent: React.FC = () => {
             const employerName = subscription.employerFullName || subscription.employerUserName || 'Khách hàng';
             const phoneNumber = getPhoneNumber(subscription);
 
-            await PaymentReceiptService.downloadReceipt(
-                subscription.transactionId,
-                employerName,
-                subscription.packageName || 'Gói dịch vụ',
-                {
-                    phoneNumber, // Custom field for receipt template
-                    amountPaid: subscription.amountPaid,
-                    startDate: subscription.startDate,
-                    paymentStatus: subscription.paymentStatus
-                }
-            );
+            // Create HTML content for the receipt
+            const receiptHTML = `
+            <div style="max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+                <div style="text-align: center; border-bottom: 3px solid #309689; padding-bottom: 20px; margin-bottom: 30px;">
+                    <h1 style="color: #309689; margin: 0; font-size: 28px;">INNOSPHERE</h1>
+                    <p style="color: #666; margin: 5px 0 0 0;">Biên lai thanh toán</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #666; width: 30%;">Mã giao dịch:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #333;">${subscription.transactionId}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #333;">${phoneNumber}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Gói dịch vụ:</td>
+                        <td style="padding: 8px 0; color: #333;">${subscription.packageName || 'Gói dịch vụ'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Ngày giao dịch:</td>
+                        <td style="padding: 8px 0; color: #333;">${formatDate(subscription.startDate)}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Trạng thái:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #16DBAA;">Đã thanh toán</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Số tiền:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #309689; font-size: 16px;">
+                            ${formatAmount(subscription.amountPaid)}
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="text-align: center; margin-top: 40px; color: #666;">
+                    <p>Cảm ơn bạn đã sử dụng dịch vụ của INNOSPHERE!</p>
+                    <p style="font-size: 12px;">Biên lai được tạo vào: ${new Date().toLocaleString('vi-VN')}</p>
+                </div>
+            </div>
+        `;
+
+            // Create a new window and print
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                throw new Error('Popup blocked. Please allow popups for this site.');
+            }
+
+            printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Receipt - ${subscription.transactionId}</title>
+                <style>
+                    @media print {
+                        body { margin: 0; }
+                        @page { margin: 1cm; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${receiptHTML}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.onafterprint = function() {
+                            window.close();
+                        }
+                    }
+                </script>
+            </body>
+            </html>
+        `);
+
+            printWindow.document.close();
         } catch (error) {
             console.error('Download receipt error:', error);
-
             const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải biên lai';
             alert(`Lỗi: ${errorMessage}`);
         } finally {
@@ -301,20 +370,97 @@ const TransactionsContent: React.FC = () => {
             const employerName = advertisement.employerFullName || advertisement.employerUserName || 'Khách hàng';
             const phoneNumber = getPhoneNumber(advertisement);
 
-            await PaymentReceiptService.downloadReceipt(
-                advertisement.transactionId,
-                employerName,
-                `Quảng cáo ${advertisement.adTitle}`,
-                {
-                    phoneNumber, // Custom field for receipt template
-                    amountPaid: advertisement.price,
-                    startDate: advertisement.startDate,
-                    paymentStatus: 'PAID'
-                }
-            );
+            // Create HTML content for the receipt
+            const receiptHTML = `
+            <div style="max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+                <div style="text-align: center; border-bottom: 3px solid #309689; padding-bottom: 20px; margin-bottom: 30px;">
+                    <h1 style="color: #309689; margin: 0; font-size: 28px;">INNOSPHERE</h1>
+                    <p style="color: #666; margin: 5px 0 0 0;">Biên lai thanh toán quảng cáo</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #666; width: 30%;">Mã giao dịch:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #333;">${advertisement.transactionId}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Khách hàng:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #333;">${employerName}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Số điện thoại:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #333;">${phoneNumber}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Tiêu đề quảng cáo:</td>
+                        <td style="padding: 8px 0; color: #333;">${advertisement.adTitle}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Vị trí:</td>
+                        <td style="padding: 8px 0; color: #333;">${advertisement.adPosition}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Ngày bắt đầu:</td>
+                        <td style="padding: 8px 0; color: #333;">${formatDate(advertisement.startDate)}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Ngày kết thúc:</td>
+                        <td style="padding: 8px 0; color: #333;">${formatDate(advertisement.endDate)}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Trạng thái:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #16DBAA;">Đã thanh toán</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Số tiền:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #309689; font-size: 16px;">
+                            ${formatAmount(advertisement.price)}
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="text-align: center; margin-top: 40px; color: #666;">
+                    <p>Cảm ơn bạn đã sử dụng dịch vụ của INNOSPHERE!</p>
+                    <p style="font-size: 12px;">Biên lai được tạo vào: ${new Date().toLocaleString('vi-VN')}</p>
+                </div>
+            </div>
+        `;
+
+            // Create a new window and print
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                throw new Error('Popup blocked. Please allow popups for this site.');
+            }
+
+            printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Receipt - ${advertisement.transactionId}</title>
+                <style>
+                    @media print {
+                        body { margin: 0; }
+                        @page { margin: 1cm; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${receiptHTML}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.onafterprint = function() {
+                            window.close();
+                        }
+                    }
+                </script>
+            </body>
+            </html>
+        `);
+
+            printWindow.document.close();
         } catch (error) {
             console.error('Download advertisement receipt error:', error);
-
             const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải biên lai';
             alert(`Lỗi: ${errorMessage}`);
         } finally {
