@@ -63,24 +63,62 @@ const TransactionsContent: React.FC = () => {
     };
 
     // Calculate pagination based on active tab
+
     const getCurrentData = () => {
+        let filteredSubscriptions = [...subscriptions];
+
+        // Only apply filtering for activeTab === 'services' or 'all'
+        if (subscriptions.length > 26) {
+            // Sort ascending to get oldest first
+            const sortedAsc = [...subscriptions].sort((a, b) => {
+                const dateA = new Date(a.startDate).getTime();
+                const dateB = new Date(b.startDate).getTime();
+                return dateA - dateB;
+            });
+
+            const oldest21Ids = new Set(sortedAsc.slice(0, 26).map(sub => sub.id));
+
+            // Exclude the oldest 21
+            filteredSubscriptions = subscriptions.filter(sub => !oldest21Ids.has(sub.id));
+        }
+
         if (activeTab === 'services') {
-            return subscriptions;
+            return filteredSubscriptions;
         } else if (activeTab === 'advertisements') {
             return advertisements;
-        } else { // 'all' tab
-            // Combine both arrays and sort by startDate (most recent first)
+        } else {
+            // 'all' tab – combine and filter only subscription part
             const combined = [
-                ...subscriptions.map(sub => ({ ...sub, dataType: 'subscription' as const })),
+                ...filteredSubscriptions.map(sub => ({ ...sub, dataType: 'subscription' as const })),
                 ...advertisements.map(ad => ({ ...ad, dataType: 'advertisement' as const }))
             ];
+
             return combined.sort((a, b) => {
-                const dateA = new Date(a.startDate);
-                const dateB = new Date(b.startDate);
-                return dateB.getTime() - dateA.getTime(); // Most recent first
+                const dateA = new Date(a.startDate).getTime();
+                const dateB = new Date(b.startDate).getTime();
+                return dateB - dateA; // Most recent first
             });
         }
     };
+
+    // const getCurrentData = () => {
+    //     if (activeTab === 'services') {
+    //         return subscriptions;
+    //     } else if (activeTab === 'advertisements') {
+    //         return advertisements;
+    //     } else { // 'all' tab
+    //         // Combine both arrays and sort by startDate (most recent first)
+    //         const combined = [
+    //             ...subscriptions.map(sub => ({ ...sub, dataType: 'subscription' as const })),
+    //             ...advertisements.map(ad => ({ ...ad, dataType: 'advertisement' as const }))
+    //         ];
+    //         return combined.sort((a, b) => {
+    //             const dateA = new Date(a.startDate);
+    //             const dateB = new Date(b.startDate);
+    //             return dateB.getTime() - dateA.getTime(); // Most recent first
+    //         });
+    //     }
+    // };
 
     const totalPages = Math.ceil(getCurrentData().length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
