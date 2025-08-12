@@ -517,12 +517,12 @@ const EmployeeSettings: React.FC = () => {
             const previewUrl = URL.createObjectURL(file);
             setAvatarPreview(previewUrl);
 
-            // Auto-upload the image
-            await uploadAvatarToFirebase(file);
+            // Auto-upload the image (pass the previewUrl so we can revoke it later)
+            await uploadAvatarToFirebase(file, previewUrl);  // <-- Adjusted: Pass previewUrl as a new parameter
         }
     };
 
-    const uploadAvatarToFirebase = async (file: File) => {
+    const uploadAvatarToFirebase = async (file: File, previewUrl: string) => {  // <-- Adjusted: Add previewUrl parameter
         try {
             setIsUploadingAvatar(true);
 
@@ -550,6 +550,10 @@ const EmployeeSettings: React.FC = () => {
                 avatarUrl: downloadURL
             }));
 
+            // <-- New: Revoke the local preview URL and set avatarPreview to null to force display of Firebase URL
+            URL.revokeObjectURL(previewUrl);
+            setAvatarPreview(null);
+
             Swal.fire({
                 title: 'Thành công!',
                 text: 'Ảnh đại diện đã được tải lên thành công',
@@ -559,6 +563,9 @@ const EmployeeSettings: React.FC = () => {
 
         } catch (error) {
             console.error('❌ Error uploading avatar:', error);
+            // <-- New (optional): On failure, revoke and reset preview to avoid showing unsaved image
+            URL.revokeObjectURL(previewUrl);
+            setAvatarPreview(null);
             Swal.fire({
                 title: 'Lỗi!',
                 text: error instanceof Error ? error.message : 'Có lỗi xảy ra khi tải ảnh lên',
