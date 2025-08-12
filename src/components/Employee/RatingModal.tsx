@@ -117,7 +117,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
 
             // Call rating API
             console.log('🚀 Making API call...');
-            const response = await fetch('https://103.163.24.72/api/employerrating', {
+            const response = await fetch('https://api-innosphere.innosphere.io.vn/api/employerrating', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
