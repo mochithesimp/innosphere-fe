@@ -62,137 +62,7 @@ const EmployeeJobsPage: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Static job data (keeping original static data)
-    const staticJobData: JobItem[] = [
-        {
-            id: 'static-1',
-            title: 'Rửa chén',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '13h00-16h00',
-            date: '2 tháng 3, 2025 19:28',
-            sortDate: new Date('2025-03-02T19:28:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'Up',
-            companyColor: '#4CBB17',
-            isFromAPI: false
-        },
-        {
-            id: 'static-2',
-            title: 'Bán rau má',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '11h00-18h00',
-            date: '8 tháng 3, 2025 09:30',
-            sortDate: new Date('2025-03-08T09:30:00'),
-            status: {
-                text: 'Đã xong',
-                style: 'bg-[#EBF5F4] text-[#309689]',
-                color: '#309689'
-            },
-            action: {
-                type: 'rating',
-                text: 'Đánh Giá',
-                employerName: 'Di Bảy'
-            },
-            companyInitial: 'B',
-            companyColor: '#FF69B4',
-            isFromAPI: false
-        },
-        {
-            id: 'static-3',
-            title: 'Cắt bịch nước mắm',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '7h00-13h00',
-            date: '12 tháng 3, 2025 16:01',
-            sortDate: new Date('2025-03-12T16:01:00'),
-            status: {
-                text: 'Đã xong',
-                style: 'bg-[#EBF5F4] text-[#309689]',
-                color: '#309689'
-            },
-            action: {
-                type: 'rating',
-                text: 'Đánh Giá',
-                employerName: 'Di Bảy'
-            },
-            companyInitial: 'C',
-            companyColor: 'black',
-            isFromAPI: false
-        },
-        {
-            id: 'static-4',
-            title: 'Bán đậu hũ',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '9h00-15h00',
-            date: '21 tháng 3, 2025 11:00',
-            sortDate: new Date('2025-03-21T11:00:00'),
-            status: {
-                text: 'Đã xong',
-                style: 'bg-[#EBF5F4] text-[#309689]',
-                color: '#309689'
-            },
-            action: {
-                type: 'rating',
-                text: 'Đánh Giá',
-                employerName: 'Di Bảy'
-            },
-            companyInitial: 'B',
-            companyColor: '#ccc',
-            isFromAPI: false
-        },
-        {
-            id: 'static-5',
-            title: 'Bán giò heo chiên nước mắm',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '13h00-18h00',
-            date: '2 tháng 4, 2025 19:28',
-            sortDate: new Date('2025-04-02T19:28:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'B',
-            companyColor: '#3B82F6',
-            isFromAPI: false
-        },
-        {
-            id: 'static-6',
-            title: 'Thiết kế UI/UX',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '19h00-23h00',
-            date: '3 tháng 4, 2025 15:28',
-            sortDate: new Date('2025-04-03T15:28:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'T',
-            companyColor: '#2563EB',
-            isFromAPI: false
-        }
-    ];
+
 
     // Function to format time from API format to display format
     const formatTime = (startTime: string, endTime: string): string => {
@@ -340,8 +210,8 @@ const EmployeeJobsPage: React.FC = () => {
     }, []);
 
     // Combine API data (on top) with static data, sort by date (nearest first)
-    const allJobData = [...apiJobApplications, ...staticJobData];
-    const sortedJobData = allJobData.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+
+    const sortedJobData = apiJobApplications.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
 
     // Calculate pagination
     const totalItems = sortedJobData.length;

@@ -104,92 +104,7 @@ const EmployeeDashboard: React.FC = () => {
     };
 
     // Static job data (keeping original static data)
-    const staticJobData: JobItem[] = [
-        {
-            id: 'static-1',
-            title: 'Rửa chén',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '13h00-18h00',
-            date: '2 tháng 3, 2025 19:28',
-            sortDate: new Date('2025-03-02T19:28:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'Up',
-            companyColor: '#4CBB17',
-            isFromAPI: false
-        },
-        {
-            id: 'static-2',
-            title: 'Sửa ống nước',
-            location: 'HCM',
-            hourlyRate: '20.000/Giờ',
-            timeRange: '10h00-15h00',
-            date: '3 tháng 3, 2025 23:26',
-            sortDate: new Date('2025-03-03T23:26:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'S',
-            companyColor: '#FF69B4',
-            isFromAPI: false
-        },
-        {
-            id: 'static-3',
-            title: 'Làm thumbnail',
-            location: 'HCM',
-            hourlyRate: '25.000/Giờ',
-            timeRange: '7h00-13h00',
-            date: '12 tháng 3, 2025 19:28',
-            sortDate: new Date('2025-03-12T19:28:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'T',
-            companyColor: 'black',
-            isFromAPI: false
-        },
-        {
-            id: 'static-4',
-            title: 'Vẽ 3D',
-            location: 'HCM',
-            hourlyRate: '28.000/Giờ',
-            timeRange: '9h00-16h00',
-            date: '11 tháng 3, 2025 23:26',
-            sortDate: new Date('2025-03-11T23:26:00'),
-            status: {
-                text: 'Hoạt động',
-                style: 'bg-[#EBF5F4] text-[#309689] border border-[#d0e6e3]',
-                color: '#309689'
-            },
-            action: {
-                type: 'detail',
-                text: 'Xem Chi Tiết'
-            },
-            companyInitial: 'V',
-            companyColor: '#ccc',
-            isFromAPI: false
-        }
-    ];
+
 
     // Function to format time from API format to display format
     const formatTime = (startTime: string, endTime: string): string => {
@@ -381,8 +296,7 @@ const EmployeeDashboard: React.FC = () => {
     }, []);
 
     // Combine API data (on top) with static data, sort by date (nearest first), limit to 4 items
-    const allJobData = [...apiJobApplications, ...staticJobData];
-    const sortedJobData = allJobData.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+    const sortedJobData = apiJobApplications.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
     const displayedJobs = sortedJobData.slice(0, 4);
 
     useEffect(() => {
