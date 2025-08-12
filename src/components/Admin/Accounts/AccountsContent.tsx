@@ -1,9 +1,207 @@
 import React, { useState, useEffect } from 'react';
 import { UserService, UserModel } from '../../../services';
 
+// User Popup Component
+const UserPopup: React.FC<{ user: UserModel | null; isOpen: boolean; onClose: () => void }> = ({ user, isOpen, onClose }) => {
+    if (!isOpen || !user) return null;
+
+    const getUserTypeLabel = (user: UserModel) => {
+        if (user.roles.includes('Employer')) {
+            return { text: 'Employer', color: 'text-blue-600', bgColor: 'bg-blue-100' };
+        } else if (user.roles.includes('Worker')) {
+            return { text: 'Worker', color: 'text-green-600', bgColor: 'bg-green-100' };
+        } else {
+            return { text: 'Unknown', color: 'text-gray-600', bgColor: 'bg-gray-100' };
+        }
+    };
+
+    const getUserInitials = (fullName: string) => {
+        return fullName
+            .split(' ')
+            .map(name => name.charAt(0))
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    const status = getUserTypeLabel(user);
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-t-2xl text-white">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-left">Thông tin người dùng</h2>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all duration-200"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* User Avatar and Name */}
+                    <div className="flex items-center mt-4">
+                        <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
+                            {user.avatarUrl ? (
+                                <img src={user.avatarUrl} alt={user.fullName} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                                <span className="text-white text-lg font-bold">
+                                    {getUserInitials(user.fullName)}
+                                </span>
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-left">{user.fullName}</h3>
+                            <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.color} mt-1`}>
+                                {status.text}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-6">
+                    {/* Basic Information */}
+                    <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 text-left">
+                            Thông tin cơ bản
+                        </h4>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="flex items-start space-x-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 text-left">Tên đầy đủ</p>
+                                    <p className="font-medium text-gray-900 text-left">{user.fullName}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start space-x-3">
+                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 text-left">Email</p>
+                                    <p className="font-medium text-gray-900 break-words text-left">{user.email}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start space-x-3">
+                                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 text-left">Tên người dùng</p>
+                                    <p className="font-medium text-gray-900 text-left">{user.userName}</p>
+                                </div>
+                            </div>
+
+                            {user.phoneNumber && (
+                                <div className="flex items-start space-x-3">
+                                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500 text-left">Số điện thoại</p>
+                                        <p className="font-medium text-gray-900 text-left">{user.phoneNumber}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Account Details */}
+                    <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 text-left">
+                            Chi tiết tài khoản
+                        </h4>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="flex items-start space-x-3">
+                                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 text-left">ID người dùng</p>
+                                    <p className="font-medium text-gray-900 font-mono text-sm text-left">{user.id}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start space-x-3">
+                                <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 text-left">Vai trò</p>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {user.roles.map((role, index) => (
+                                            <span key={index} className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.color} text-left`}>
+                                                {role}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start space-x-3">
+                                <div className={`w-10 h-10 ${user.isDeleted === 'true' ? 'bg-red-100' : 'bg-green-100'} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                    <svg className={`w-5 h-5 ${user.isDeleted === 'true' ? 'text-red-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        {user.isDeleted === 'true' ? (
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        ) : (
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        )}
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Trạng thái tài khoản</p>
+                                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${user.isDeleted === 'true' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                                        }`}>
+                                        {user.isDeleted === 'true' ? 'Đã xóa' : 'Đang hoạt động'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-gray-50 p-4 rounded-b-2xl">
+                    <button
+                        onClick={onClose}
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02]"
+                    >
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AccountsContent: React.FC = () => {
     const [accountUsers, setAccountUsers] = useState<UserModel[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [selectedUser, setSelectedUser] = useState<UserModel | null>(null);
+    const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -105,6 +303,18 @@ const AccountsContent: React.FC = () => {
             amountColor: 'text-green-500'
         }
     ];
+
+    // Handle user click to open popup
+    const handleUserClick = (user: UserModel) => {
+        setSelectedUser(user);
+        setIsPopupOpen(true);
+    };
+
+    // Close popup
+    const closePopup = () => {
+        setIsPopupOpen(false);
+        setSelectedUser(null);
+    };
 
     return (
         <div className="space-y-6">
@@ -291,7 +501,11 @@ const AccountsContent: React.FC = () => {
                             accountUsers.map((user, index) => {
                                 const status = getUserTypeLabel(user);
                                 return (
-                                    <div key={user.id} className="flex items-center justify-between py-3">
+                                    <div
+                                        key={user.id}
+                                        className="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-3 transition-all duration-200 hover:shadow-sm"
+                                        onClick={() => handleUserClick(user)}
+                                    >
                                         <div className="flex items-center space-x-3">
                                             <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
                                                 <span className="text-pink-500 text-xs font-medium">
@@ -313,6 +527,12 @@ const AccountsContent: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {/* User Popup */}
+            <UserPopup
+                user={selectedUser}
+                isOpen={isPopupOpen}
+                onClose={closePopup}
+            />
         </div>
     );
 };

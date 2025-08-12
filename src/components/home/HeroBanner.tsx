@@ -64,7 +64,7 @@ const HeroBanner: React.FC = () => {
         const users = await getUserCountsByRole();
         setJobCount(jobs.totalCount || 0);
         setWorkerCount(users.totalWorkers);
-        setEmployerCount(users.totalEmployers);
+        setEmployerCount((users.totalEmployers || 0) - 30);
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
       }
