@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaRegBookmark, FaChevronRight, FaBars } from 'react-icons/fa';
+import { FaChevronRight, FaBars } from 'react-icons/fa';
 import { HiOutlineBriefcase } from "react-icons/hi";
-import { FiBell } from "react-icons/fi";
 import Swal from 'sweetalert2';
 
 import Header from '../../components/Employee/Header';
@@ -345,36 +344,14 @@ const EmployeeDashboard: React.FC = () => {
 
                         {/* Stat Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                            {/* Jobs Applied Card */}
+                            {/* Jobs Applied Card (Dynamic Count) */}
                             <div style={{ backgroundColor: '#E7F0FA' }} className="rounded-lg p-5 flex items-center justify-between">
                                 <div className="text-left">
-                                    <h2 className="text-2xl font-bold mb-1">589</h2>
+                                    <h2 className="text-2xl font-bold mb-1">{apiJobApplications.length}</h2>
                                     <p className="text-gray-600 text-sm">Công Việc đã nhận</p>
                                 </div>
                                 <div style={{ backgroundColor: 'white' }} className="p-3 rounded-lg shadow-sm">
                                     <HiOutlineBriefcase style={{ color: '#0A65CC' }} className="h-6 w-6" />
-                                </div>
-                            </div>
-
-                            {/* Favorite Jobs Card */}
-                            <div style={{ backgroundColor: '#FFF6E6' }} className="rounded-lg p-5 flex items-center justify-between">
-                                <div className="text-left">
-                                    <h2 className="text-2xl font-bold mb-1">238</h2>
-                                    <p className="text-gray-600 text-sm">Công Việc yêu thích</p>
-                                </div>
-                                <div style={{ backgroundColor: 'white' }} className="p-3 rounded-lg shadow-sm">
-                                    <FaRegBookmark style={{ color: '#FFA500' }} className="h-6 w-6" />
-                                </div>
-                            </div>
-
-                            {/* Job Alerts Card */}
-                            <div style={{ backgroundColor: '#E7F6EA' }} className="rounded-lg p-5 flex items-center justify-between">
-                                <div className="text-left">
-                                    <h2 className="text-2xl font-bold mb-1">574</h2>
-                                    <p className="text-gray-600 text-sm">Cảnh báo công việc</p>
-                                </div>
-                                <div style={{ backgroundColor: 'white' }} className="p-3 rounded-lg shadow-sm">
-                                    <FiBell style={{ color: '#0BA02C' }} className="h-6 w-6" />
                                 </div>
                             </div>
                         </div>
